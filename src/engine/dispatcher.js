@@ -139,16 +139,16 @@ export class WhatsAppDispatcher {
    */
   enqueueForPacedDispatch(txId) {
     const config = storage.getConfig();
-    const minDelay = config.pacingDelayMinSeconds || 15;
+    // Strict Anti-Ban: Spaced randomly between 10 and 15 seconds
+    const randomDelay = Math.floor(10 + Math.random() * 6); // 10s - 15s random jitter
     
     const now = Date.now();
-    // Leaky Bucket: Next dispatch is baseTime + 15s spacing
     const baseTime = Math.max(now, this.nextAvailableDispatchTime || now);
-    this.nextAvailableDispatchTime = baseTime + (minDelay * 1000);
+    this.nextAvailableDispatchTime = baseTime + (randomDelay * 1000);
 
     const estimatedWaitMs = this.nextAvailableDispatchTime - now;
     const estimatedWaitSeconds = Math.round(estimatedWaitMs / 1000);
-    const queuePosition = Math.max(1, Math.round(estimatedWaitSeconds / minDelay));
+    const queuePosition = Math.max(1, Math.round(estimatedWaitSeconds / randomDelay));
     const scheduledTime = new Date(this.nextAvailableDispatchTime).toISOString();
 
     storage.updateTransactionStatus(txId, 'SCHEDULED_DISPATCH', {

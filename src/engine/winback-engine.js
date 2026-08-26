@@ -110,11 +110,19 @@ Hope to see you again soon!
     const dispatched = [];
     const batch = eligibleLapsed.slice(0, maxBatch);
 
-    for (const customer of batch) {
+    for (let i = 0; i < batch.length; i++) {
+      const customer = batch[i];
       try {
         const res = await this.dispatchToCustomer(code, customer.phone);
         if (res.success) {
           dispatched.push(res.record);
+        }
+
+        // Apply 10 to 15 seconds randomized humanized spacing between batch dispatches
+        if (i < batch.length - 1) {
+          const jitterDelayMs = Math.floor(10000 + Math.random() * 5000); // 10,000ms - 15,000ms
+          console.log(`[Win-Back Engine] ⏳ Humanized spacing: waiting ${(jitterDelayMs / 1000).toFixed(1)}s before next WhatsApp dispatch...`);
+          await new Promise(r => setTimeout(r, jitterDelayMs));
         }
       } catch (err) {
         console.error(`[Win-Back Engine] Error dispatching to +91 ${customer.phone}:`, err.message);
