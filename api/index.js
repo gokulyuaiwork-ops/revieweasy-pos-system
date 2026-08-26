@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 import { storage } from '../src/engine/storage.js';
 import { SupabaseSyncEngine } from '../src/engine/supabase-sync.js';
+import { WinBackEngine } from '../src/engine/winback-engine.js';
 import { parseReceiptItems, generateInvoicePdfBuffer } from '../src/engine/invoice-generator.js';
 import { PersonalizedImageGenerator } from '../src/engine/personalized-image-generator.js';
 import { BUSINESS_CATEGORIES, getCategoryTemplate, formatWhatsAppMessage } from '../src/engine/business-templates.js';
@@ -13,6 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const winBackEngine = new WinBackEngine();
 
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ limit: '25mb', extended: true }));
@@ -403,6 +405,27 @@ app.post('/api/winback/template', (req, res) => {
     storage.updateConfig({ customWinBackTemplate: template });
     
     res.json({ success: true, message: 'Win-Back WhatsApp template updated successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/winback/dispatch', async (req, res) => {
+  try {
+    const { storeCode, customerPhone, mode, customMessage } = req.body;
+    const code = storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01';
+
+    if (mode === 'BATCH_SCAN') {
+      const result = await winBackEngine.runDailyScanAndDispatch(code, req.body.maxBatch || 5);
+      return res.json(result);
+    }
+
+    if (!customerPhone) {
+      return res.status(400).json({ error: 'customerPhone is required for direct winback dispatch' });
+    }
+
+    const result = await winBackEngine.dispatchToCustomer(code, customerPhone, customMessage);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

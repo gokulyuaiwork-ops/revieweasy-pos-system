@@ -1256,8 +1256,14 @@ async function runBatchWinBackScan() {
     });
     const data = await res.json();
     if (data.success) {
-      alert(`🚀 Win-Back Scan Complete!\n• Scanned: ${data.scannedCount} customers\n• Lapsed (30–60d): ${data.lapsedEligibleCount}\n• Dispatched: ${data.dispatchedCount} invites`);
+      if (data.dispatchedCount > 0) {
+        alert(`🚀 Win-Back Scan & Dispatch Complete!\n\n• Customers Scanned: ${data.scannedCount}\n• Lapsed Inactive (30–60d): ${data.lapsedEligibleCount}\n• WhatsApp Re-Invites Dispatched: ${data.dispatchedCount}`);
+      } else {
+        alert(`ℹ️ Win-Back Scan Complete (${data.scannedCount || 0} customers scanned).\n\nNo lapsed customers in the 30–60 day inactive window right now! All your active customers have visited recently.`);
+      }
       fetchWinBackData();
+    } else {
+      alert('Win-Back note: ' + (data.reason || data.error || 'Scan complete'));
     }
   } catch (err) {
     alert('Failed to run batch win-back: ' + err.message);
