@@ -31,6 +31,22 @@ export class LocalBaileysEngine {
     this.authFolder = path.join(SESSIONS_DIR, `session_${this.storeId}`);
     this.isReconnecting = false;
     this.reconnectTimer = null;
+    this.reconnectAttempts = 0;
+    this.watchdogTimer = null;
+    this.startSocketWatchdog();
+  }
+
+  startSocketWatchdog() {
+    if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+    this.watchdogTimer = setInterval(() => {
+      if (!this.authFolder) return;
+      const credsFile = path.join(this.authFolder, 'creds.json');
+      // If store credentials exist on disk and socket dropped, proactively restore
+      if (fs.existsSync(credsFile) && this.status !== 'CONNECTED' && !this.isReconnecting) {
+        console.log('[Local Baileys Watchdog] 🩺 Preserved credentials detected on disk. Proactively restoring WhatsApp connection...');
+        this.initialize(this.storeId);
+      }
+    }, 45000);
   }
 
   async initialize(customStoreId = null) {
@@ -116,18 +132,28 @@ export class LocalBaileysEngine {
           if (shouldReconnect && !this.isReconnecting) {
             this.isReconnecting = true;
             clearTimeout(this.reconnectTimer);
-            const delay = statusCode === DisconnectReason.timedOut ? 2000 : 5000;
-            console.log(`[Local Baileys] Refreshing WhatsApp QR connection in ${delay / 1000}s...`);
+            
+            // Exponential Backoff with Random Jitter (2s -> 3.5s -> 6s -> 10s ... max 30s)
+            const baseDelay = statusCode === DisconnectReason.timedOut ? 2000 : 4000;
+            const delay = Math.min(30000, Math.round(baseDelay * Math.pow(1.4, Math.min(this.reconnectAttempts || 0, 7)) + (Math.random() * 1500)));
+            this.reconnectAttempts = (this.reconnectAttempts || 0) + 1;
+
+            console.log(`[Local Baileys] 🔄 Network recovery (Attempt #${this.reconnectAttempts}): Re-establishing WhatsApp socket in ${(delay / 1000).toFixed(1)}s...`);
             this.reconnectTimer = setTimeout(() => {
               this.isReconnecting = false;
               this.initialize(this.storeId);
             }, delay);
+          } else if (!shouldReconnect) {
+            console.log(`[Local Baileys] ⚠️ Device was unlinked/logged out from phone. Generating fresh pairing QR code.`);
+            this.reconnectAttempts = 0;
+            this.resetSession();
           }
         } else if (connection === 'open') {
           this.status = 'CONNECTED';
           this.rawQr = null;
           this.qrDataUrl = null;
           this.isReconnecting = false;
+          this.reconnectAttempts = 0;
           console.log(`\n🎉 [Local Baileys] SUCCESS: WhatsApp Linked! Store phone is actively paired with Local Agent.`);
           this.broadcast('WHATSAPP_STATUS', { status: this.status });
         }
