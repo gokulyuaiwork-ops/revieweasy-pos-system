@@ -387,12 +387,14 @@ app.get('/api/winback/customers', (req, res) => {
 app.get('/api/winback/template', (req, res) => {
   const storeCode = (req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
   const store = storage.getStoreByCode(storeCode) || storage.getConfig();
+  const cfg = storage.getConfig();
   const defaultTpl = `Hi {{name}}! ✨ We noticed it’s been a while since your last visit to {{storeName}}.\n\nWe’ve refreshed our seasonal specialties and ambiance, and our entire team would love to welcome you back! ☕🍰\n\nHope to see you again soon!\n📍 Directions & Location: {{googleMapUrl}}\n\n(Reply STOP to unsubscribe)`;
   
+  const activeTemplate = store.customWinBackTemplate || cfg.customWinBackTemplate || defaultTpl;
   res.json({
     success: true,
-    template: store.customWinBackTemplate || defaultTpl,
-    isCustom: !!store.customWinBackTemplate
+    template: activeTemplate,
+    isCustom: !!(store.customWinBackTemplate || cfg.customWinBackTemplate)
   });
 });
 
