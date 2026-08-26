@@ -11,11 +11,11 @@
   <style>
     /* Tab Switching Logic */
     .tab-content-pane {
-      display: none;
+      display: none !important;
       animation: fadeIn 0.25s ease;
     }
     .tab-content-pane.active {
-      display: block;
+      display: block !important;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
@@ -464,16 +464,20 @@
 
   <script src="js/app.js"></script>
   <script>
-    // Tab Navigation Handler (Only Essential Merchant Tabs)
+    // Tab Navigation Handler (Explicit Dictionary Mapping)
     function switchClientTab(tabName) {
-      const tabs = ['overview', 'shield', 'winback'];
-      tabs.forEach(t => {
-        const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
-        const pane = document.getElementById(`tabPane${t.charAt(0).toUpperCase() + t.slice(1)}`);
-        if (btn && pane) {
-          btn.classList.toggle('active', t === tabName);
-          pane.classList.toggle('active', t === tabName);
-        }
+      const tabMap = {
+        'overview': { btn: 'tabBtnOverview', pane: 'tabPaneOverview' },
+        'shield': { btn: 'tabBtnShield', pane: 'tabPaneShield' },
+        'winback': { btn: 'tabBtnWinBack', pane: 'tabPaneWinBack' }
+      };
+
+      Object.keys(tabMap).forEach(key => {
+        const item = tabMap[key];
+        const btn = document.getElementById(item.btn);
+        const pane = document.getElementById(item.pane);
+        if (btn) btn.classList.toggle('active', key === tabName);
+        if (pane) pane.classList.toggle('active', key === tabName);
       });
     }
   </script>
