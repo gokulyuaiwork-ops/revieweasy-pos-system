@@ -48,10 +48,15 @@ Hope to see you again soon!
 
     const cleanPhone = (customerPhone || '').replace(/\D/g, '').slice(-10);
     const directory = storage.getCustomerDirectory(code);
-    const customer = directory.find(c => c.phone === cleanPhone);
+    let customer = directory.find(c => c.phone === cleanPhone);
 
     if (!customer) {
-      throw new Error(`Customer with phone +91 ${cleanPhone} not found in store history.`);
+      customer = {
+        name: 'Valued Customer',
+        phone: cleanPhone,
+        daysSinceLastVisit: 0,
+        lastVisit: new Date().toISOString()
+      };
     }
 
     const message = customMessage || this.generateWinBackMessage(
