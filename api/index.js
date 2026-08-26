@@ -42,16 +42,15 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const result = storage.authenticateUser(email, password);
-  if (!result.success) {
-    return res.status(401).json({ error: result.reason });
+  const user = storage.authenticateUser(email, password);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  const redirectUrl = result.user.role === 'ADMIN' ? '/admin.html' : '/index.html';
+  const redirectUrl = user.role === 'ADMIN' ? '/admin.html' : '/index.html';
   res.json({
     success: true,
-    user: result.user,
-    store: result.store,
+    user,
     redirectUrl
   });
 });
