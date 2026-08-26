@@ -312,7 +312,7 @@
     "smartShieldEnabled": true,
     "dailyDigestEnabled": true,
     "dailyDigestTime": "21:00",
-    "appBaseUrl": "http://localhost:3000",
+    "appBaseUrl": "https://pos.revieweasy.in",
     "winBackEnabled": true,
     "winBackMinDays": 30,
     "winBackMaxDays": 60,
