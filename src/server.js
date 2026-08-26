@@ -84,6 +84,7 @@ wss.on('connection', (ws) => {
     data: {
       config: storage.getConfig(),
       metrics: storage.getMetrics(),
+      analytics: storage.getClientDetailedAnalytics(storage.getConfig().storeCode),
       quota: storage.getTodayQuotaUsage(),
       transactions: storage.getTransactions(50),
       health: resilience.getHealthSummary(),

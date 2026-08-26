@@ -416,7 +416,7 @@ function renderTransactions(txList) {
   if (!tbody || !txList) return;
 
   if (txList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 24px;">No print jobs intercepted yet. Click any test scenario on the left!</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 32px 16px; font-weight: 500;">No print jobs intercepted yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
     return;
   }
 
@@ -424,16 +424,16 @@ function renderTransactions(txList) {
     const timeStr = new Date(tx.timestamp).toLocaleTimeString();
     const statusClass = `status-${tx.status}`;
     const syncBadge = tx.synced === 1
-      ? `<span style="color: #34d399; font-size: 10px; margin-left: 4px;" title="Synced to Supabase Cloud">☁️</span>`
-      : `<span style="color: #fbbf24; font-size: 10px; margin-left: 4px;" title="Offline Disk Cache">💾</span>`;
+      ? `<span style="color: #059669; font-size: 11px; margin-left: 4px;" title="Synced to Supabase Cloud">☁️</span>`
+      : `<span style="color: #d97706; font-size: 11px; margin-left: 4px;" title="Offline Disk Cache">💾</span>`;
 
     return `
       <tr>
-        <td style="color: #94a3b8; font-family: 'JetBrains Mono', monospace;">${timeStr}</td>
-        <td><strong style="color: #38bdf8;">${tx.invoiceNo || 'N/A'}</strong>${syncBadge}</td>
-        <td>${tx.customerName || 'Walk-in'}</td>
-        <td style="font-family: 'JetBrains Mono', monospace;">${tx.formattedPhone || tx.customerPhone || '—'}</td>
-        <td style="font-weight: 700; color: #f8fafc;">₹${tx.totalAmount || '0.00'}</td>
+        <td style="color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 11px;">${timeStr}</td>
+        <td><strong style="color: #0284c7; font-family: 'JetBrains Mono', monospace;">${tx.invoiceNo || 'N/A'}</strong>${syncBadge}</td>
+        <td style="font-weight: 600; color: #0f172a;">${tx.customerName || 'Valued Customer'}</td>
+        <td style="font-family: 'JetBrains Mono', monospace; color: #334155;">${tx.formattedPhone || tx.customerPhone || '—'}</td>
+        <td style="font-weight: 700; color: #0f172a;">₹${tx.totalAmount || '0.00'}</td>
         <td>
           <span class="badge-status ${statusClass}">${formatStatus(tx.status)}</span>
         </td>
@@ -546,6 +546,24 @@ function renderWhatsAppStatus(wsData) {
   const img = document.getElementById('qrImage');
   const loading = document.getElementById('qrLoading');
   const connected = document.getElementById('qrConnected');
+
+  const isCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  if (isCloud || wsData.mode === 'CLOUD_HOSTED') {
+    img.style.display = 'none';
+    loading.style.display = 'none';
+    connected.style.display = 'flex';
+    connected.innerHTML = `
+      <div class="connected-icon" style="font-size: 32px;">☁️</div>
+      <h4 style="color: #0284c7; font-weight: 700; margin: 4px 0;">Cloud SaaS Portal</h4>
+      <p style="font-size: 11px; color: #64748b; line-height: 1.5;">Cloud Hub Active. Local POS Terminal (<code>localhost:3000</code>) on your billing counter dispatches messages to WhatsApp.</p>
+      <span class="session-path" style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 6px;">Sync: pos.revieweasy.in ➔ Supabase</span>
+    `;
+    const statusText = document.getElementById('whatsappStatusText');
+    const statusChip = document.getElementById('whatsappStatusChip');
+    if (statusText) statusText.innerText = 'Cloud SaaS (Online)';
+    if (statusChip) statusChip.className = 'status-chip chip-cyan';
+    return;
+  }
 
   if (status === 'CONNECTED') {
     img.style.display = 'none';
@@ -1172,9 +1190,18 @@ function clientLogout() {
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
   checkClientAuth();
-  connectWebSocket();
+  fetchState();
   fetchFeedbacks();
   fetchWinBackData();
   fetchUpdaterStatus();
-  document.getElementById('rawReceiptInput').value = PRESET_SCENARIOS.STANDARD_INVOICE;
+
+  // Connect WebSocket if on localhost
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    connectWebSocket();
+  }
+
+  // Periodic polling fallback (keeps cloud & local state 100% in sync)
+  setInterval(() => {
+    fetchState();
+  }, 3000);
 });
