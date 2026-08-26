@@ -344,9 +344,29 @@ app.get('/api/winback/analytics', (req, res) => {
   res.json({ success: true, analytics: storage.getWinBackAnalytics(storeCode) });
 });
 
-// Root & fallback handler
-app.get('/', (req, res) => {
+// HTML Page Route Handlers
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin.html'));
+});
+
+app.get('/review.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/review.html'));
+});
+
+app.get('/bill.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/bill.html'));
+});
+
+app.get('/index.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
 export default app;
