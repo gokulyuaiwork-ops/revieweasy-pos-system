@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Digital Tax Invoice & Receipt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --primary: #0284c7;
+      --success: #059669;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(2, 132, 199, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.04) 0px, transparent 50%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    .bill-wrapper {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bill-header {
+      background: linear-gradient(135deg, #f0f9ff, #f8fafc);
+      border-bottom: 1px dashed var(--border);
+      padding: 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .store-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ecfdf5;
+      color: var(--success);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      border: 1px solid #a7f3d0;
+    }
+
+    .store-name {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    .store-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .bill-body {
+      padding: 24px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+
+    .meta-item label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .meta-item span {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    .items-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .items-table th.tar { text-align: right; }
+
+    .items-table td {
+      padding: 12px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .items-table td.tar {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    .item-name {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .item-qty {
+      font-size: 11px;
+      color: var(--primary);
+      margin-right: 6px;
+      font-weight: 700;
+    }
+
+    .totals-box {
+      border-top: 1px dashed var(--border);
+      padding-top: 14px;
+      margin-bottom: 24px;
+    }
+
+    .tot-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .grand-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 12px 0;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+
+    .grand-total-row .label {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+    }
+
+    .grand-total-row .amount {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--success);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .actions-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-pdf {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
+    }
+
+    .btn-pdf:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(2, 132, 199, 0.4);
+    }
+
+    .btn-review {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-review:hover {
+      background: rgba(245, 158, 11, 0.25);
+    }
+
+    .btn-print {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 10px;
+      font-size: 11px;
+    }
+
+    .btn-print:hover {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    @media print {
+      body { background: white; color: black; }
+      .bill-wrapper { box-shadow: none; border: none; }
+      .actions-box { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bill-wrapper" id="billApp">
+    <!-- Header -->
+    <div class="bill-header">
+      <div class="store-badge">✓ Verified Digital Tax Invoice</div>
+      <h1 class="store-name" id="storeName">Loading Merchant...</h1>
+      <div class="store-meta">
+        <span id="storeGstin">GSTIN: --</span>
+        <span id="storePhone">Phone: --</span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="bill-body">
+      <!-- Invoice Meta Grid -->
+      <div class="meta-grid">
+        <div class="meta-item">
+          <label>Invoice Number</label>
+          <span id="invoiceNo" style="font-family: 'JetBrains Mono', monospace; color: var(--primary);">--</span>
+        </div>
+        <div class="meta-item">
+          <label>Date & Time</label>
+          <span id="invoiceDate">--</span>
+        </div>
+        <div class="meta-item">
+          <label>Billed To</label>
+          <span id="customerName">--</span>
+        </div>
+        <div class="meta-item">
+          <label>Payment Method</label>
+          <span id="paymentMethod">--</span>
+        </div>
+      </div>
+
+      <!-- Line Items Table -->
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="tar">Price</th>
+            <th class="tar">Total</th>
+          </tr>
+        </thead>
+        <tbody id="itemsTableBody">
+          <!-- Rendered via JS -->
+        </tbody>
+      </table>
+
+      <!-- Totals -->
+      <div class="totals-box">
+        <div class="tot-row" id="subtotalRow">
+          <span>Subtotal</span>
+          <span id="subtotalAmount">₹0.00</span>
+        </div>
+        <div class="tot-row" id="cgstRow" style="display: none;">
+          <span>CGST</span>
+          <span id="cgstAmount">₹0.00</span>
+        </div>
+        <div class="tot-row" id="sgstRow" style="display: none;">
+          <span>SGST</span>
+          <span id="sgstAmount">₹0.00</span>
+        </div>
+        <div class="grand-total-row">
+          <span class="label">Amount Paid</span>
+          <span class="amount" id="grandTotal">₹0.00</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="actions-box">
+        <a id="downloadPdfBtn" href="#" class="btn btn-pdf">
+          <span>📄</span> Download Official PDF Invoice
+        </a>
+
+        <a id="reviewBtn" href="#" target="_blank" class="btn btn-review">
+          <span>⭐</span> Rate Us on Google Maps
+        </a>
+
+        <button onclick="window.print()" class="btn btn-print">
+          🖨️ Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const billId = urlParams.get('id') || 'DEMO_1';
+    const storeCode = urlParams.get('store') || 'STORE_DEMO_01';
+
+    async function loadBill() {
+      try {
+        const res = await fetch(`/api/bill-info/${billId}?store=${storeCode}`);
+        const data = await res.json();
+        if (!data.success) throw new Error('Invoice data not found');
+
+        const { store, transaction, parsed } = data;
+
+        // Render Store Info
+        document.getElementById('storeName').innerText = store.storeName;
+        document.getElementById('storeGstin').innerText = store.storeGstin ? `GSTIN: ${store.storeGstin}` : 'Official Tax Receipt';
+        document.getElementById('storePhone').innerText = `+91 ${store.storePhone}`;
+
+        // Render Meta
+        document.getElementById('invoiceNo').innerText = transaction.invoiceNo;
+        document.getElementById('invoiceDate').innerText = `${parsed.dateStr} ${parsed.timeStr}`;
+        document.getElementById('customerName').innerText = transaction.customerName || 'Valued Customer';
+        document.getElementById('paymentMethod').innerText = parsed.paymentMethod || 'UPI / Cash';
+
+        // Render Items
+        const tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = parsed.items.map(item => `
+          <tr>
+            <td>
+              <span class="item-qty">${item.qty}x</span>
+              <span class="item-name">${item.name}</span>
+            </td>
+            <td class="tar">₹${item.price.toFixed(2)}</td>
+            <td class="tar">₹${item.total.toFixed(2)}</td>
+          </tr>
+        `).join('');
+
+        // Render Totals
+        document.getElementById('subtotalAmount').innerText = `₹${parsed.subtotal.toFixed(2)}`;
+        if (parsed.cgst > 0) {
+          document.getElementById('cgstRow').style.display = 'flex';
+          document.getElementById('cgstAmount').innerText = `₹${parsed.cgst.toFixed(2)}`;
+        }
+        if (parsed.sgst > 0) {
+          document.getElementById('sgstRow').style.display = 'flex';
+          document.getElementById('sgstAmount').innerText = `₹${parsed.sgst.toFixed(2)}`;
+        }
+        document.getElementById('grandTotal').innerText = `₹${transaction.totalAmount || parsed.total}`;
+
+        // Setup PDF & Review Links
+        document.getElementById('downloadPdfBtn').href = `/api/bill-pdf/${billId}?store=${storeCode}`;
+        document.getElementById('reviewBtn').href = store.googleReviewUrl || `http://localhost:3000/review.html?id=${billId}&store=${storeCode}`;
+      } catch (err) {
+        console.error('Error loading bill:', err);
+      }
+    }
+
+    loadBill();
+  </script>
+</body>
+</html>

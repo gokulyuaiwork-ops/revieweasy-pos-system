@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual POS & Thermal Printer Hardware Testing Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/pos-lab.css">
+</head>
+<body>
+  <div class="lab-container">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="brand">
+        <span class="brand-icon">🛒</span>
+        <div>
+          <h1>Virtual POS & Thermal Printer Simulator</h1>
+          <p>100% Laptop-Only Hardware Emulator for ReviewEasy Spooler & TCP 9100 Testing</p>
+        </div>
+      </div>
+
+      <div class="header-links">
+        <a href="http://localhost:3000" target="_blank" class="btn-dashboard-link">
+          📊 Open ReviewEasy Dashboard (:3000) ↗
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Workspace: Split into Virtual POS Counter (Left) & Virtual Printer (Right) -->
+    <div class="workspace-grid">
+      
+      <!-- LEFT: Interactive Billing Terminal (POS) -->
+      <section class="pos-terminal-card">
+        <div class="pos-topbar">
+          <div class="pos-title">
+            <h2>🏪 Sunshine Cafe & Retail POS</h2>
+            <span class="pos-badge">Terminal #01 (Online)</span>
+          </div>
+
+          <!-- Quick Scenario Presets -->
+          <div class="preset-pills">
+            <button class="pill" onclick="loadPreset('NORMAL')">Standard Bill</button>
+            <button class="pill" onclick="loadPreset('KOT')">Kitchen KOT</button>
+            <button class="pill" onclick="loadPreset('OWNER_PHONE')">Owner Phone</button>
+            <button class="pill" onclick="loadPreset('DUMMY')">Dummy 9999999999</button>
+            <button class="pill" onclick="loadPreset('ESTIMATE')">Estimate Slip</button>
+          </div>
+        </div>
+
+        <div class="pos-body">
+          <!-- Left Column of POS: Menu Catalog -->
+          <div class="menu-section">
+            <h3>Menu Items (Click to Add)</h3>
+            <div class="menu-grid" id="menuGrid">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Right Column of POS: Current Order & Customer -->
+          <div class="cart-section">
+            
+            <div class="customer-box">
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label>Customer Name:</label>
+                  <input type="text" id="custName" value="Rahul Sharma">
+                </div>
+                <div class="form-group flex-1">
+                  <label>Customer Mobile (+91):</label>
+                  <input type="text" id="custPhone" value="9876543219" placeholder="10-digit number">
+                </div>
+              </div>
+            </div>
+
+            <!-- Cart Items Table -->
+            <div class="cart-table-wrapper">
+              <table class="cart-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th width="40">Qty</th>
+                    <th width="70">Price</th>
+                    <th width="30"></th>
+                  </tr>
+                </thead>
+                <tbody id="cartTableBody">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Order Totals & Breakdown -->
+            <div class="totals-box">
+              <div class="tot-row">
+                <span>Subtotal:</span>
+                <span id="totSubtotal">₹0.00</span>
+              </div>
+              <div class="tot-row">
+                <span>GST (CGST 2.5% + SGST 2.5%):</span>
+                <span id="totGst">₹0.00</span>
+              </div>
+              <div class="tot-row grand-total">
+                <span>Grand Total:</span>
+                <strong id="totGrandTotal">₹0.00</strong>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pos-actions">
+              <button class="btn-pos btn-tax-invoice" onclick="triggerPrint('TAX_INVOICE')">
+                🧾 Print Tax Invoice (Normal)
+              </button>
+              <div class="sub-actions">
+                <button class="btn-sub btn-kot" onclick="triggerPrint('KOT')">🍳 Print KOT</button>
+                <button class="btn-sub btn-estimate" onclick="triggerPrint('ESTIMATE')">📋 Print Estimate</button>
+                <button class="btn-sub btn-reprint" onclick="triggerPrint('REPRINT')">🔁 Reprint Last</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: 80mm Virtual Thermal Printer Hardware Emulator -->
+      <section class="printer-hardware-card">
+        
+        <!-- Physical Thermal Printer Mockup -->
+        <div class="printer-chassis">
+          
+          <div class="chassis-header">
+            <div class="printer-brand-logo">
+              <span class="p-brand">EPSON / POS-80</span>
+              <span class="p-model">Thermal Receipt Printer (80mm)</span>
+            </div>
+            
+            <div class="printer-leds">
+              <div class="led-group">
+                <span class="led-bulb led-power" id="ledPower"></span>
+                <span class="led-label">POWER</span>
+              </div>
+              <div class="led-group">
+                <span class="led-bulb led-error" id="ledError"></span>
+                <span class="led-label">ERROR</span>
+              </div>
+              <div class="led-group">
+                <span class="led-bulb led-paper" id="ledPaper"></span>
+                <span class="led-label">PAPER</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paper Cutter Slot & Feed Window -->
+          <div class="cutter-slot">
+            <div class="paper-roll-window" id="paperRollWindow">
+              <!-- Animated Receipt Paper Extruded Here -->
+              <div class="receipt-paper" id="receiptPaper">
+                <div class="paper-header">
+                  <div class="paper-brand">SUNSHINE CAFE & BISTRO</div>
+                  <div class="paper-tag">GSTIN: 33AABCS1429B1ZB</div>
+                </div>
+                <pre id="paperReceiptContent">
+========================================
+     80MM THERMAL PRINTER READY
+========================================
+Status: Online (USB001 / Port 9100)
+Buffer: 0 bytes queued
+Paper Roll: 80mm Thermal Paper
+
+Press "Print Tax Invoice" in the POS
+to watch this receipt roll out live!
+========================================</pre>
+                <div class="paper-footer" id="paperFooter">
+                  <div class="barcode">|||| | |||||| || |||| |||||</div>
+                  <div class="cut-line">┈┈┈┈┈┈┈┈┈┈ TEAR HERE ┈┈┈┈┈┈┈┈┈┈</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Printer Physical Controls -->
+          <div class="chassis-controls">
+            <button class="btn-hardware" onclick="printerFeed()">📄 FEED PAPER</button>
+            <button class="btn-hardware btn-cut" onclick="printerCut()">✂️ TEAR OFF</button>
+            <button class="btn-hardware btn-clear" onclick="printerReset()">🔄 CLEAR BUFFER</button>
+          </div>
+        </div>
+
+        <!-- Connection Channel Selector & Diagnostic Log -->
+        <div class="channel-box">
+          <div class="channel-header">
+            <h4>🛰️ Active Connection Mode to ReviewEasy:</h4>
+          </div>
+          <div class="channel-options">
+            <label class="channel-opt">
+              <input type="radio" name="connMode" value="SPOOLER" checked>
+              <span>Windows Spooler Tap (C:\Windows\spool)</span>
+            </label>
+            <label class="channel-opt">
+              <input type="radio" name="connMode" value="TCP_9100">
+              <span>Raw TCP Port 9100 Stream (LAN/WiFi Proxy)</span>
+            </label>
+          </div>
+          <div class="stream-log" id="streamLog">
+            [Printer Online] Listening on USB001 & TCP 127.0.0.1:9100.
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </div>
+
+  <script src="js/virtual-pos.js"></script>
+  <script src="js/virtual-printer.js"></script>
+</body>
+</html>

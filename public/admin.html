@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReviewEasy | SaaS Admin Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #c084fc;
+    }
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+    .clients-table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      margin-bottom: 24px;
+    }
+    .table-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .table-top h2 {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-add-client {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-add-client:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+    .secret-key-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      color: #38bdf8;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-copy {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .btn-copy:hover { color: #ffffff; }
+    .action-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-action {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      color: var(--text-main);
+      transition: all 0.2s;
+    }
+    .btn-edit:hover { background: rgba(59, 130, 246, 0.2); border-color: var(--primary); color: #60a5fa; }
+    .btn-delete:hover { background: rgba(239, 68, 68, 0.2); border-color: var(--rose); color: #f87171; }
+    
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-content {
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .modal-header h3 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .btn-close-modal {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo-icon">👑</div>
+        <div>
+          <h1>ReviewEasy <span class="badge-pro" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; border-color: rgba(139, 92, 246, 0.4);">SAAS ADMIN PORTAL</span></h1>
+          <p class="tagline">Multi-Tenant Merchant Accounts, Industry-Tailored Templates & 3-Tier Performance Cockpit</p>
+        </div>
+      </div>
+      
+      <div class="admin-header-actions">
+        <div class="user-profile">
+          <span>👑</span> <strong id="adminUserName">Admin</strong>
+        </div>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <!-- 3-Tier Multi-Period Performance Cockpit Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div>
+        <h3 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 2px;">📊 Global Network Performance</h3>
+        <span style="font-size: 11px; color: var(--text-muted);">Real-time aggregated telemetry across all active merchant POS terminals</span>
+      </div>
+
+      <!-- 3-Tier Period Switcher Tabs -->
+      <div class="period-tabs">
+        <button class="period-tab-btn active" id="tabToday" onclick="switchPeriod('today')">
+          <span>⚡</span> Everyday (Today)
+        </button>
+        <button class="period-tab-btn" id="tabMonth" onclick="switchPeriod('month')">
+          <span>📅</span> Monthly (30 Days)
+        </button>
+        <button class="period-tab-btn" id="tabAllTime" onclick="switchPeriod('alltime')">
+          <span>⭐</span> All-Time History
+        </button>
+      </div>
+    </div>
+
+    <!-- Global Telemetry Overview Grid -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon bg-purple">🏬</div>
+        <div class="metric-info">
+          <span class="metric-label" id="lbl_m1">Active Client Stores</span>
+          <span class="metric-value" id="m_totalStores">0</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon bg-indigo">🖨️</div>
+        <div class="metric-info">
+          <span class="metric-label" id="lbl_m2">Today Receipts Intercepted</span>
+          <span class="metric-value" id="m_totalPrints">0</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon bg-green">💬</div>
+        <div class="metric-info">
+          <span class="metric-label" id="lbl_m3">Today WhatsApp Sent</span>
+          <span class="metric-value" id="m_whatsAppDelivered">0</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon bg-emerald">💰</div>
+        <div class="metric-info">
+          <span class="metric-label" id="lbl_m4">Today Revenue Tracked</span>
+          <span class="metric-value" id="m_salesTracked">₹0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Client Stores Management Table -->
+    <section class="clients-table-card">
+      <div class="table-top">
+        <div>
+          <h2>🏬 Merchant Client Accounts & Live Status</h2>
+          <span class="panel-subtitle">Manage accounts, industry categories, customized WhatsApp templates, and per-store metrics</span>
+        </div>
+        <button class="btn-add-client" onclick="openAddModal()">
+          <span>➕</span> Add New Client Store
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Store Code</th>
+              <th>Store Name</th>
+              <th>Category</th>
+              <th>Helpline Phone</th>
+              <th>Today Sent</th>
+              <th>Last Week (7d)</th>
+              <th>Last Month (30d)</th>
+              <th>All-Time Sent</th>
+              <th>Secret Key</th>
+              <th width="160">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="clientsTableBody">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Client Details & Time-Window Analytics Modal -->
+  <div class="modal-overlay" id="detailsModal" style="display: none;">
+    <div class="modal-content" style="max-width: 860px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <div>
+          <h3 id="det_storeTitle" style="display: flex; align-items: center; gap: 8px;">
+            <span>🏪</span> Sunshine Cafe & Bistro
+          </h3>
+          <span style="font-size: 11px; color: var(--text-muted);" id="det_storeSubtitle">Code: STORE_DEMO_01 | Helpline: 9840012345</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeDetailsModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- 4-Card Time Breakdown Grid -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px; text-align: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">⚡ Today</span>
+            <div id="det_todaySent" style="font-size: 24px; font-weight: 800; color: #ffffff; margin: 4px 0;">0</div>
+            <div style="font-size: 10px; color: var(--text-muted);"><span id="det_todayBills">0</span> Bills | ₹<span id="det_todaySales">0</span></div>
+          </div>
+
+          <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 14px; text-align: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #60a5fa; text-transform: uppercase;">📅 Last Week (7d)</span>
+            <div id="det_weekSent" style="font-size: 24px; font-weight: 800; color: #ffffff; margin: 4px 0;">0</div>
+            <div style="font-size: 10px; color: var(--text-muted);"><span id="det_weekBills">0</span> Bills | ₹<span id="det_weekSales">0</span></div>
+          </div>
+
+          <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 14px; text-align: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #c084fc; text-transform: uppercase;">🗓️ Last Month (30d)</span>
+            <div id="det_monthSent" style="font-size: 24px; font-weight: 800; color: #ffffff; margin: 4px 0;">0</div>
+            <div style="font-size: 10px; color: var(--text-muted);"><span id="det_monthBills">0</span> Bills | ₹<span id="det_monthSales">0</span></div>
+          </div>
+
+          <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 12px; padding: 14px; text-align: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">⭐ All-Time Sent</span>
+            <div id="det_allTimeSent" style="font-size: 24px; font-weight: 800; color: #ffffff; margin: 4px 0;">0</div>
+            <div style="font-size: 10px; color: var(--text-muted);"><span id="det_allTimeBills">0</span> Bills | <span id="det_reachRate">100</span>% Reach</div>
+          </div>
+        </div>
+
+        <!-- Store Bill History Table -->
+        <h4 style="font-size: 13px; font-weight: 700; margin: 12px 0 6px; color: var(--text-main);">📋 Intercepted POS Bills & Review Dispatches</h4>
+        <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+          <table class="tx-table" style="font-size: 12px;">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Invoice #</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Amount</th>
+                <th>WhatsApp Status</th>
+              </tr>
+            </thead>
+            <tbody id="det_billsTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-sm btn-secondary" onclick="closeDetailsModal()">Close Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Client Modal with Business Category & Dynamic Message Templates -->
+  <div class="modal-overlay" id="addModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>➕ Add New Merchant Account</h3>
+        <button class="btn-close-modal" onclick="closeAddModal()">✕</button>
+      </div>
+      <form onsubmit="handleAddClient(event)">
+        <div class="modal-body">
+          <div class="input-group">
+            <label>Store Code (Unique Identifier, e.g. STORE_MUM_004)</label>
+            <input type="text" id="add_storeCode" required placeholder="STORE_MUM_004">
+          </div>
+          <div class="input-group">
+            <label>Business / Store Name</label>
+            <input type="text" id="add_storeName" required placeholder="Third Wave Coffee Roasters">
+          </div>
+
+          <!-- Business Category Selector -->
+          <div class="input-group">
+            <label>🏢 Business Category / Industry Type</label>
+            <select id="add_businessCategory" onchange="handleCategoryChange('add')" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #38bdf8; font-weight: 700; padding: 10px; border-radius: 8px; font-size: 13px;">
+              <option value="RESTAURANT_CAFE">🍽️ Restaurant / Cafe / Bakery / QSR</option>
+              <option value="RETAIL_FASHION">🛍️ Retail / Clothing / Fashion & Footwear</option>
+              <option value="SALON_SPA">💇 Salon / Spa / Beauty & Wellness</option>
+              <option value="CLINIC_HEALTHCARE">🏥 Clinic / Dental / Diagnostics / Pharmacy</option>
+              <option value="AUTOMOBILE_SERVICE">🚗 Automobile / Garage / Car Detailing</option>
+              <option value="SUPERMARKET_GROCERY">🛒 Supermarket / Grocery / Electronics</option>
+              <option value="GENERAL_SERVICES">🏢 General Services / Custom Business</option>
+            </select>
+          </div>
+
+          <!-- Custom Category Message Template Editor -->
+          <div class="input-group">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label>💬 WhatsApp Message Copy (Auto-Tailored to Category)</label>
+              <button type="button" class="chip-btn" onclick="resetCategoryTemplate('add')">🔄 Reset to Category Default</button>
+            </div>
+            <textarea id="add_customMessageTemplate" rows="4" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #f8fafc; font-family: inherit; font-size: 11px; padding: 8px; border-radius: 6px; resize: vertical; line-height: 1.4;"></textarea>
+            <span style="font-size: 10px; color: var(--text-sub);">Placeholders: <code>{{name}}</code>, <code>{{store_name}}</code>, <code>{{invoice_no}}</code>, <code>{{total_amount}}</code>, <code>{{review_link}}</code>, <code>{{ebill_url}}</code></span>
+          </div>
+
+          <div class="input-group">
+            <label>Store Helpline Mobile (Blacklisted from Customer Spam)</label>
+            <input type="text" id="add_storePhone" required placeholder="9812345678">
+          </div>
+          <div class="input-group">
+            <label>GSTIN / Tax ID (Optional)</label>
+            <input type="text" id="add_storeGstin" placeholder="27AABCS1429B1ZB">
+          </div>
+          <div class="input-group">
+            <label>Google Maps 5-Star Review URL</label>
+            <input type="url" id="add_reviewUrl" required placeholder="https://g.page/r/thirdwave/review">
+          </div>
+          <div class="input-group">
+            <label>Merchant Login Email (Used to Unlock Installed Setup)</label>
+            <input type="email" id="add_clientEmail" placeholder="owner@thirdwave.com">
+          </div>
+          <div class="input-group">
+            <label>Merchant Login Password</label>
+            <input type="password" id="add_clientPassword" placeholder="client123">
+          </div>
+
+          <!-- Dynamic Personalized Flyer Personalization Studio -->
+          <div class="flyer-studio-card">
+            <div class="flyer-studio-header">
+              <h4>🎨 Dynamic Customer Name Flyer Studio</h4>
+              <label style="font-size: 11px; color: #38bdf8; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="add_flyerPersonalizeEnabled" checked onchange="updateAddFlyerStudioPreview()">
+                Personalize Name on Image
+              </label>
+            </div>
+
+            <!-- Image Uploader -->
+            <div class="input-group">
+              <label>Brand Flyer Image (JPEG / PNG)</label>
+              <input type="file" id="add_flyerFile" accept="image/*" onchange="previewFlyerImage(this, 'add_flyerCanvasImg', 'add_flyerUrl', updateAddFlyerStudioPreview)" style="font-size: 11px; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <input type="text" id="add_flyerUrl" value="/assets/default-review-flyer.jpg" onchange="updateAddFlyerImgSrc(this.value)" placeholder="Image URL (e.g. /assets/default-review-flyer.jpg)" style="font-size: 11px; margin-top: 4px;">
+            </div>
+
+            <!-- Interactive Visual Preview Canvas -->
+            <div class="flyer-canvas-wrapper" id="add_canvasWrapper">
+              <img id="add_flyerCanvasImg" src="/assets/default-review-flyer.jpg" class="flyer-bg-img" alt="Flyer Base">
+              <div id="add_nameBadge" class="flyer-name-badge" style="top: 18%; left: 50%; background: rgba(0,0,0,0.7); color: #FFFFFF; font-size: 14px;">
+                Freshly prepared for Rahul Sharma! 🍽️
+              </div>
+            </div>
+
+            <!-- Template & Position Sliders -->
+            <div class="input-group">
+              <label>Flyer Name Template (Use <code>{{name}}</code> or <code>{{first_name}}</code>)</label>
+              <input type="text" id="add_flyerTemplate" value="Freshly prepared for {{name}}! 🍽️" oninput="updateAddFlyerStudioPreview()">
+              <div class="template-chips" id="add_templateChips">
+                <button type="button" class="chip-btn" onclick="setAddTemplate('Freshly prepared for {{name}}! 🍽️')">Freshly prepared for {{name}}! 🍽️</button>
+                <button type="button" class="chip-btn" onclick="setAddTemplate('Specially for {{name}}! ✨')">Specially for {{name}}! ✨</button>
+                <button type="button" class="chip-btn" onclick="setAddTemplate('Hi {{first_name}}, Thank You! ⭐')">Hi {{first_name}}, Thank You! ⭐</button>
+              </div>
+            </div>
+
+            <div class="studio-controls-grid">
+              <div class="studio-slider-group">
+                <label>Horizontal (X): <strong id="add_lblPosX">50%</strong></label>
+                <input type="range" id="add_flyerPosX" min="5" max="95" value="50" oninput="updateAddFlyerStudioPreview()">
+              </div>
+
+              <div class="studio-slider-group">
+                <label>Vertical (Y): <strong id="add_lblPosY">18%</strong></label>
+                <input type="range" id="add_flyerPosY" min="5" max="95" value="18" oninput="updateAddFlyerStudioPreview()">
+              </div>
+
+              <div class="studio-slider-group">
+                <label>Font Size: <strong id="add_lblFontSize">28px</strong></label>
+                <input type="range" id="add_flyerFontSize" min="16" max="52" value="28" oninput="updateAddFlyerStudioPreview()">
+              </div>
+
+              <div class="studio-slider-group">
+                <label>Text Color</label>
+                <input type="color" id="add_flyerTextColor" value="#FFFFFF" oninput="updateAddFlyerStudioPreview()" style="height: 32px; padding: 2px; background: transparent; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;">
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin-top: 8px; background: rgba(56, 189, 248, 0.06); padding: 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);">
+            <input type="checkbox" id="add_enableDigitalReceipts" checked style="width: 18px; height: 18px; cursor: pointer;">
+            <label for="add_enableDigitalReceipts" style="margin-bottom: 0; cursor: pointer; color: #38bdf8; font-weight: 600; font-size: 12px;">
+              📄 Enable Digital PDF Invoicing & E-Bills on WhatsApp
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-sm btn-secondary" onclick="closeAddModal()">Cancel</button>
+          <button type="submit" class="btn-sm btn-primary">Create Store & Generate Credentials</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Client Modal with Business Category & Dynamic Message Templates -->
+  <div class="modal-overlay" id="editModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>✏️ Edit Merchant Account</h3>
+        <button class="btn-close-modal" onclick="closeEditModal()">✕</button>
+      </div>
+      <form onsubmit="handleEditClient(event)">
+        <input type="hidden" id="edit_storeCode">
+        <div class="modal-body">
+          <div class="input-group">
+            <label>Store Name</label>
+            <input type="text" id="edit_storeName" required>
+          </div>
+
+          <!-- Business Category Selector -->
+          <div class="input-group">
+            <label>🏢 Business Category / Industry Type</label>
+            <select id="edit_businessCategory" onchange="handleCategoryChange('edit')" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #38bdf8; font-weight: 700; padding: 10px; border-radius: 8px; font-size: 13px;">
+              <option value="RESTAURANT_CAFE">🍽️ Restaurant / Cafe / Bakery / QSR</option>
+              <option value="RETAIL_FASHION">🛍️ Retail / Clothing / Fashion & Footwear</option>
+              <option value="SALON_SPA">💇 Salon / Spa / Beauty & Wellness</option>
+              <option value="CLINIC_HEALTHCARE">🏥 Clinic / Dental / Diagnostics / Pharmacy</option>
+              <option value="AUTOMOBILE_SERVICE">🚗 Automobile / Garage / Car Detailing</option>
+              <option value="SUPERMARKET_GROCERY">🛒 Supermarket / Grocery / Electronics</option>
+              <option value="GENERAL_SERVICES">🏢 General Services / Custom Business</option>
+            </select>
+          </div>
+
+          <!-- Custom Category Message Template Editor -->
+          <div class="input-group">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label>💬 WhatsApp Message Copy (Auto-Tailored to Category)</label>
+              <button type="button" class="chip-btn" onclick="resetCategoryTemplate('edit')">🔄 Reset to Category Default</button>
+            </div>
+            <textarea id="edit_customMessageTemplate" rows="4" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #f8fafc; font-family: inherit; font-size: 11px; padding: 8px; border-radius: 6px; resize: vertical; line-height: 1.4;"></textarea>
+            <span style="font-size: 10px; color: var(--text-sub);">Placeholders: <code>{{name}}</code>, <code>{{store_name}}</code>, <code>{{invoice_no}}</code>, <code>{{total_amount}}</code>, <code>{{review_link}}</code>, <code>{{ebill_url}}</code></span>
+          </div>
+
+          <div class="input-group">
+            <label>Store Owner Mobile</label>
+            <input type="text" id="edit_storePhone" required>
+          </div>
+          <div class="input-group">
+            <label>Google Review URL</label>
+            <input type="url" id="edit_reviewUrl" required>
+          </div>
+          <div class="input-group">
+            <label>Account Status</label>
+            <select id="edit_status" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: white; padding: 8px; border-radius: 6px;">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="PAUSED">PAUSED</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Personalized Flyer Studio in Edit Modal -->
+          <div class="flyer-studio-card">
+            <div class="flyer-studio-header">
+              <h4>🎨 Dynamic Customer Name Flyer Studio</h4>
+              <label style="font-size: 11px; color: #38bdf8; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="edit_flyerPersonalizeEnabled" checked onchange="updateEditFlyerStudioPreview()">
+                Personalize Name on Image
+              </label>
+            </div>
+
+            <div class="input-group">
+              <label>Brand Flyer Image</label>
+              <input type="file" id="edit_flyerFile" accept="image/*" onchange="previewFlyerImage(this, 'edit_flyerCanvasImg', 'edit_flyerUrl', updateEditFlyerStudioPreview)" style="font-size: 11px; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <input type="text" id="edit_flyerUrl" onchange="updateEditFlyerImgSrc(this.value)" placeholder="Image URL (e.g. /assets/default-review-flyer.jpg)" style="font-size: 11px; margin-top: 4px;">
+            </div>
+
+            <!-- Interactive Preview Canvas -->
+            <div class="flyer-canvas-wrapper" id="edit_canvasWrapper">
+              <img id="edit_flyerCanvasImg" src="/assets/default-review-flyer.jpg" class="flyer-bg-img" alt="Flyer Base">
+              <div id="edit_nameBadge" class="flyer-name-badge" style="top: 18%; left: 50%; background: rgba(0,0,0,0.7); color: #FFFFFF; font-size: 14px;">
+                Specially for Rahul Sharma! ✨
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label>Flyer Name Template (Use <code>{{name}}</code> or <code>{{first_name}}</code>)</label>
+              <input type="text" id="edit_flyerTemplate" value="Specially for {{name}}! ✨" oninput="updateEditFlyerStudioPreview()">
+              <div class="template-chips" id="edit_templateChips">
+                <button type="button" class="chip-btn" onclick="setEditTemplate('Specially for {{name}}! ✨')">Specially for {{name}}! ✨</button>
+                <button type="button" class="chip-btn" onclick="setEditTemplate('Hi {{first_name}}, Thank You! ⭐')">Hi {{first_name}}, Thank You! ⭐</button>
+              </div>
+            </div>
+
+            <div class="studio-controls-grid">
+              <div class="studio-slider-group">
+                <label>Horizontal (X): <strong id="edit_lblPosX">50%</strong></label>
+                <input type="range" id="edit_flyerPosX" min="5" max="95" value="50" oninput="updateEditFlyerStudioPreview()">
+              </div>
+
+              <div class="studio-slider-group">
+                <label>Vertical (Y): <strong id="edit_lblPosY">18%</strong></label>
+                <input type="range" id="edit_flyerPosY" min="5" max="95" value="18" oninput="updateEditFlyerStudioPreview()">
+              </div>
+
+              <div class="studio-slider-group">
+                <label>Font Size: <strong id="edit_lblFontSize">28px</strong></label>
+                <input type="range" id="edit_flyerFontSize" min="16" max="52" value="28" oninput="updateEditFlyerStudioPreview()">
+              </div>
+
+              <div class="studio-slider-group">
+                <label>Text Color</label>
+                <input type="color" id="edit_flyerTextColor" value="#FFFFFF" oninput="updateEditFlyerStudioPreview()" style="height: 32px; padding: 2px; background: transparent; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;">
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin-top: 8px; background: rgba(56, 189, 248, 0.06); padding: 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);">
+            <input type="checkbox" id="edit_enableDigitalReceipts" style="width: 18px; height: 18px; cursor: pointer;">
+            <label for="edit_enableDigitalReceipts" style="margin-bottom: 0; cursor: pointer; color: #38bdf8; font-weight: 600; font-size: 12px;">
+              📄 Enable Digital PDF Invoicing & E-Bills on WhatsApp
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-sm btn-secondary" onclick="closeEditModal()">Cancel</button>
+          <button type="submit" class="btn-sm btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

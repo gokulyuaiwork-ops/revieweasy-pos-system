@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Free Cloud POS Simulator</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 480px; margin: 40px auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    h2 { margin-top: 0; color: #0f172a; }
+    label { font-size: 14px; font-weight: 600; color: #475569; display: block; margin-top: 12px; }
+    input, button { width: 100%; padding: 12px; margin-top: 6px; box-sizing: border-box; font-size: 15px; border-radius: 6px; border: 1px solid #cbd5e1; }
+    button { background: #2563eb; color: white; border: none; font-weight: 600; margin-top: 20px; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #1d4ed8; }
+    .receipt { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      .receipt, .receipt * { visibility: visible; }
+      .receipt { display: block; position: absolute; left: 0; top: 0; font-family: "Courier New", Courier, monospace; font-size: 12px; line-height: 1.4; color: black; }
+    }
+  </style>
+</head>
+<body>
+  <h2>🛒 Cloud POS Simulator</h2>
+  <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Use this mock billing terminal to test the Universal Spooler Tap on your laptop for free.</p>
+  
+  <label>Customer Name:</label>
+  <input type="text" id="custName" value="Rahul Sharma">
+  
+  <label>Customer Mobile (For WhatsApp):</label>
+  <input type="text" id="custPhone" value="9876543210">
+  
+  <label>Bill Amount ($):</label>
+  <input type="text" id="billAmount" value="45.00">
+  
+  <button onclick="printBill()">🧾 Complete Sale & Print Bill</button>
+
+  <div class="receipt" id="receiptContent"></div>
+
+  <script>
+    function printBill() {
+      const name = document.getElementById('custName').value;
+      const phone = document.getElementById('custPhone').value;
+      const amount = document.getElementById('billAmount').value;
+      const invNo = 'INV-' + Math.floor(1000 + Math.random() * 9000);
+      const date = new Date().toLocaleDateString();
+
+      document.getElementById('receiptContent').innerText = `
+========================================
+             SUNSHINE CAFE              
+========================================
+Date: ${date}             Bill #: ${invNo}
+Customer: ${name}
+Mobile: ${phone}
+----------------------------------------
+1x Margherita Pizza              $25.00
+1x Cold Coffee                   $10.00
+1x Chocolate Brownie             $10.00
+----------------------------------------
+TOTAL AMOUNT:                    $${amount}
+========================================
+       THANK YOU! VISIT AGAIN           
+========================================
+`;
+      window.print();
+    }
+  </script>
+</body>
+</html>

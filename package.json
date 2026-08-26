@@ -1,0 +1,25 @@
+{
+  "name": "revieweasy-pos-whatsapp-system",
+  "version": "1.0.0",
+  "description": "Production POS Print Interception & WhatsApp Automation System with Category A-E Defensive Architecture",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "lab": "node virtual-pos-lab/server.js",
+    "test-sim": "node test/simulate-all-scenarios.js",
+    "test-hybrid": "node test/test-hybrid-whatsapp.js"
+  },
+  "keywords": ["pos", "print-spooler", "whatsapp-automation", "retail-tech", "google-reviews"],
+  "author": "ReviewEasy Engineering Team",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "@whiskeysockets/baileys": "^6.7.8",
+    "express": "^4.19.2",
+    "pino": "^9.3.2",
+    "qrcode": "^1.5.3",
+    "ws": "^8.18.0"
+  }
+}

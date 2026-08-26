@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReviewEasy | Merchant Terminal Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Tab Switching Logic */
+    .tab-content-pane {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+    .tab-content-pane.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo-icon">⭐</div>
+        <div>
+          <h1>ReviewEasy <span class="badge-pro" id="storeBadgeText">STORE_DEMO_01</span></h1>
+          <p class="tagline" id="storeTaglineText">Sunshine Cafe & Bistro (Local WhatsApp Edge Dispatcher)</p>
+        </div>
+      </div>
+      
+      <div class="topbar-status">
+        <div class="status-chip chip-green" id="spoolerStatusChip">
+          <span class="dot"></span> Spooler: <strong id="spoolerStatusText">Active</strong>
+        </div>
+        <div class="status-chip chip-blue" id="whatsappStatusChip">
+          <span class="dot"></span> WhatsApp: <strong id="whatsappStatusText">Connecting...</strong>
+        </div>
+        <div class="status-chip chip-cyan" id="supabaseStatusChip">
+          <span class="dot"></span> Cloud: <strong id="supabaseStatusText">Online</strong>
+        </div>
+        <div class="user-profile" id="userProfileChip" style="display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 5px 10px; border-radius: 20px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;">
+          <span>👤</span> <strong id="clientUserName">Merchant</strong>
+        </div>
+        <button class="btn-logout" onclick="clientLogout()" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">Logout</button>
+      </div>
+    </header>
+
+    <!-- Outage Simulation Alert Banner (Visible when offline) -->
+    <div id="outageBanner" class="outage-banner" style="display: none;">
+      <div class="outage-content">
+        <span class="outage-icon" style="font-size: 20px;">⚠️</span>
+        <div>
+          <strong style="color: #fbbf24;">STORE INTERNET OUTAGE DETECTED</strong>
+          <p style="font-size: 11px; color: #cbd5e1; margin-top: 2px;">Bills are being captured into local disk cache (0% data loss). WhatsApp delivery is safely queued.</p>
+        </div>
+      </div>
+      <button class="btn-sm btn-reconnect" onclick="toggleInternetOutage(false)">⚡ Check Connection</button>
+    </div>
+
+    <!-- Minimalist Navigation Tabs (Live Operations, Smart Shield, Customer Win-Back) -->
+    <div class="client-nav-tabs">
+      <button class="nav-tab-btn active" id="tabBtnOverview" onclick="switchClientTab('overview')">
+        <span>⚡</span> Live Overview
+      </button>
+      <button class="nav-tab-btn" id="tabBtnShield" onclick="switchClientTab('shield')">
+        <span>🛡️</span> Smart Review Shield
+      </button>
+      <button class="nav-tab-btn" id="tabBtnWinBack" onclick="switchClientTab('winback')">
+        <span>🎯</span> Customer Win-Back
+      </button>
+    </div>
+
+    <!-- =========================================================================
+         TAB 1: LIVE OVERVIEW (DEFAULT MINIMALIST DASHBOARD)
+         ========================================================================= -->
+    <div id="tabPaneOverview" class="tab-content-pane active">
+      
+      <!-- 3-Period Cockpit Switcher Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div>
+          <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 2px;">📊 Store Performance Overview</h3>
+          <span style="font-size: 11px; color: var(--text-muted);">Real-time dispatch telemetry, Google review redirects & shielded feedback</span>
+        </div>
+
+        <!-- 3-Tier Period Switcher Tabs -->
+        <div class="period-tabs">
+          <button class="period-tab-btn active" id="tabClientToday" onclick="switchClientPeriod('today')">
+            <span>⚡</span> Today
+          </button>
+          <button class="period-tab-btn" id="tabClientMonth" onclick="switchClientPeriod('month')">
+            <span>📅</span> Last 30 Days
+          </button>
+          <button class="period-tab-btn" id="tabClientAllTime" onclick="switchClientPeriod('alltime')">
+            <span>⭐</span> All-Time
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Hero Metric Cards (Today / 30 Days / All-Time) -->
+      <section class="metrics-grid">
+        <!-- 1. Receipts Intercepted -->
+        <div class="metric-card">
+          <div class="metric-icon bg-indigo">🖨️</div>
+          <div class="metric-info">
+            <span class="metric-label" id="lbl_totalPrints">Today Invoices</span>
+            <span class="metric-value" id="m_totalPrints">0</span>
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">₹<span id="m_totalSales">0</span> Sales</span>
+          </div>
+        </div>
+
+        <!-- 2. WhatsApp Delivered -->
+        <div class="metric-card">
+          <div class="metric-icon bg-green">💬</div>
+          <div class="metric-info">
+            <span class="metric-label" id="lbl_whatsAppDelivered">Today Sent</span>
+            <span class="metric-value" id="m_whatsAppDelivered" style="color: #059669;">0</span>
+            <span style="font-size: 10px; color: #059669; font-weight: 600;"><span id="m_reachRate">100</span>% Delivery</span>
+          </div>
+        </div>
+
+        <!-- 3. Google 5-Star Reviews -->
+        <div class="metric-card">
+          <div class="metric-icon bg-emerald">⭐</div>
+          <div class="metric-info">
+            <span class="metric-label" id="lbl_positiveReviews">Today Google 5★</span>
+            <span class="metric-value" id="m_positiveReviewsRedirected" style="color: #059669;">0</span>
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">Redirected to Maps</span>
+          </div>
+        </div>
+
+        <!-- 4. Review Shield Complaints -->
+        <div class="metric-card">
+          <div class="metric-icon bg-rose">🛡️</div>
+          <div class="metric-info">
+            <span class="metric-label" id="lbl_negativeReviews">Today Review Shield</span>
+            <span class="metric-value" id="m_negativeReviewsShielded" style="color: #e11d48;">0</span>
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">Shielded Privately</span>
+          </div>
+        </div>
+
+        <!-- Hidden counters preserved for socket telemetry binding -->
+        <span id="m_validInvoices" style="display:none;">0</span>
+        <span id="m_kotsBlocked" style="display:none;">0</span>
+        <span id="m_dummyFiltered" style="display:none;">0</span>
+        <span id="m_duplicatesSuppressed" style="display:none;">0</span>
+      </section>
+
+      <!-- 2-Column Split: WhatsApp Companion Card + Live Stream Feed -->
+      <div class="content-two-split">
+        
+        <!-- Left Column: Modern WhatsApp Engine Card -->
+        <div class="panel qr-panel">
+          <div class="panel-header">
+            <h2>📱 Store WhatsApp Engine</h2>
+            <span class="badge-pro" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">
+              Edge Socket
+            </span>
+          </div>
+
+          <!-- Pairing Mode Selector -->
+          <div style="display: flex; gap: 4px; margin-bottom: 12px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 8px; width: 100%;">
+            <button class="btn-sm" id="tabQrBtn" onclick="switchPairTab('QR')" style="flex: 1; font-size: 11px; background: var(--primary); color: white;">📷 Scan QR</button>
+            <button class="btn-sm" id="tabCodeBtn" onclick="switchPairTab('CODE')" style="flex: 1; font-size: 11px; background: transparent; color: var(--text-muted);">🔢 Pairing Code</button>
+          </div>
+
+          <div class="qr-container">
+            <!-- Mode 1: Camera QR Scan -->
+            <div id="qrModeBox" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+              <div id="qrPlaceholder" class="qr-box">
+                <img id="qrImage" src="" alt="WhatsApp Pairing QR" style="display: none;">
+                <div id="qrLoading" class="qr-spinner-box">
+                  <span class="spinner"></span>
+                  <p style="font-size: 11px; font-weight: 600;">Generating QR Code...</p>
+                </div>
+                <div id="qrConnected" class="qr-connected-box" style="display: none;">
+                  <div class="connected-icon">✅</div>
+                  <h4>WhatsApp Connected</h4>
+                  <p>Store phone actively linked.<br>Messages dispatch locally from this PC.</p>
+                  <span class="session-path" id="sessionPathDisplay" style="font-size: 9px; color: var(--text-sub); font-family: monospace; margin-top: 6px;">Session: C:\ProgramData\ReviewEasy\auth</span>
+                </div>
+              </div>
+
+              <p style="font-size: 11px; color: var(--text-sub); text-align: center; margin-top: 8px;">
+                Open WhatsApp on phone -> <strong>Linked Devices</strong> -> <strong>Link a device</strong>
+              </p>
+            </div>
+
+            <!-- Mode 2: 8-Digit Pairing Code -->
+            <div id="codeModeBox" style="width: 100%; display: none; flex-direction: column; gap: 8px;">
+              <label style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Enter Store WhatsApp Number (+91):</label>
+              <div style="display: flex; gap: 6px;">
+                <input type="text" id="pairingPhoneInput" placeholder="9840012345" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: white; padding: 8px 10px; border-radius: 8px; font-size: 12px; outline: none;">
+                <button class="btn-sm btn-primary" onclick="requestPairingCode()">Get Code</button>
+              </div>
+
+              <div id="pairingCodeDisplay" style="display: none; background: rgba(56, 189, 248, 0.1); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
+                <span style="font-size: 10px; color: var(--text-muted);">ENTER CODE IN WHATSAPP:</span>
+                <div id="pairingCodeText" style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 3px; margin-top: 4px;">
+                  ---- ----
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; width: 100%; margin-top: 6px;">
+              <button class="btn-sm btn-secondary" style="flex: 1;" id="btnPairSimulated" onclick="simulatePairing()">⚡ 1-Click Scan</button>
+              <button class="btn-sm btn-outline" style="flex: 1;" onclick="resetWhatsAppSession()">🔄 Reset QR</button>
+            </div>
+
+            <!-- Today's Daily Quota Bar -->
+            <div style="width: 100%; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Daily Dispatch Quota</span>
+                <strong id="quotaDailyText" style="color: #38bdf8;">0 / 50 Sent</strong>
+              </div>
+              <div style="width: 100%; height: 6px; background: rgba(0, 0, 0, 0.4); border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color);">
+                <div id="quotaProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #38bdf8); transition: width 0.3s ease;"></div>
+              </div>
+              <div style="font-size: 10px; color: #34d399; margin-top: 4px;" id="quotaRemainingText">50 messages remaining today</div>
+            </div>
+
+            <!-- Hidden background state elements preserved for real-time telemetry -->
+            <div style="display: none;">
+              <span id="quotaCurrentSlotBadge"></span>
+              <span id="slotMorningCount"></span><span id="slotMorningStatus"></span>
+              <span id="slotAfternoonCount"></span><span id="slotAfternoonStatus"></span>
+              <span id="slotEveningCount"></span><span id="slotEveningStatus"></span>
+              <span id="updaterStatusChip"></span>
+              <input type="text" id="clientSecretInput">
+              <span id="secretStatusBadge"></span>
+              <input type="text" id="cfg_storeCode">
+              <input type="text" id="cfg_storeName">
+              <input type="text" id="cfg_storePhone">
+              <input type="text" id="cfg_reviewUrl">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right Column: Live Intercepted Receipts Feed -->
+        <div class="panel feed-panel">
+          <div class="panel-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h2>📋 Live Intercepted Receipts & Reviews</h2>
+              <span class="pulse-indicator"></span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-sm" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);" onclick="triggerOwnerDigestNow()">🌙 Send Owner Digest</button>
+              <button class="btn-sm btn-secondary" onclick="clearHistory()">Clear Feed</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="tx-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Invoice #</th>
+                  <th>Customer Name</th>
+                  <th>Mobile Phone</th>
+                  <th>Amount</th>
+                  <th>WhatsApp Status</th>
+                </tr>
+              </thead>
+              <tbody id="txTableBody">
+                <!-- Live Transactions Rendered Here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 2: SMART REVIEW SHIELD
+         ========================================================================= -->
+    <div id="tabPaneShield" class="tab-content-pane">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>🛡️ Smart Review Shield — Customer Resolution Inbox</h2>
+            <p class="panel-subtitle">Deflected 1–3 star complaints intercepted privately before reaching Google Maps</p>
+          </div>
+          <button class="btn-sm btn-primary" onclick="openReviewShieldSimulator()">🚀 Test Review Shield Form</button>
+        </div>
+
+        <div class="table-container">
+          <table class="tx-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Customer</th>
+                <th>Mobile</th>
+                <th>Bill / Total</th>
+                <th>Rating</th>
+                <th>Category</th>
+                <th>Customer Note</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="feedbackTableBody">
+              <!-- Rendered dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- =========================================================================
+         TAB 3: CUSTOMER WIN-BACK CRM
+         ========================================================================= -->
+    <div id="tabPaneWinBack" class="tab-content-pane">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>🎯 Lapsed Customer Win-Back Radar & Retention CRM</h2>
+            <p class="panel-subtitle">Identifies loyal customers unseen for 30–60 days and re-engages them automatically</p>
+          </div>
+          <button class="btn-sm btn-primary" onclick="runBatchWinBackScan()">
+            🚀 Auto-Scan & Dispatch Win-Backs (30–60d)
+          </button>
+        </div>
+
+        <!-- 4 ROI KPI Tiles -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">LAPSED (30–60D)</div>
+            <div id="wb_lapsedCount" style="font-size: 18px; font-weight: 800; color: #fbbf24; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">WIN-BACKS SENT</div>
+            <div id="wb_sentCount" style="font-size: 18px; font-weight: 800; color: #38bdf8; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">CUSTOMERS RECOVERED</div>
+            <div id="wb_recoveredCount" style="font-size: 18px; font-weight: 800; color: #34d399; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 10px; color: #34d399; font-weight: 700;">RECOVERED REVENUE</div>
+            <div id="wb_recoveredRevenue" style="font-size: 18px; font-weight: 800; color: #34d399; margin-top: 4px;">₹0.00</div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="tx-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Mobile</th>
+                <th>Visits</th>
+                <th>Total Spend</th>
+                <th>Last Visit</th>
+                <th>Days Inactive</th>
+                <th>Segment</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="winBackTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Tab Navigation Handler (Only Essential Merchant Tabs)
+    function switchClientTab(tabName) {
+      const tabs = ['overview', 'shield', 'winback'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const pane = document.getElementById(`tabPane${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (btn && pane) {
+          btn.classList.toggle('active', t === tabName);
+          pane.classList.toggle('active', t === tabName);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

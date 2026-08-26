@@ -1,0 +1,8 @@
+node_modules
+.git
+data/sessions
+data/flyers
+test
+virtual-pos-lab
+.gemini
+*.log
