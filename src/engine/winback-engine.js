@@ -12,10 +12,18 @@ export class WinBackEngine {
   }
 
   /**
-   * Warm, relationship-first Win-Back message (NO discount / voucher mention)
+   * Warm, relationship-first Win-Back message with custom template support
    */
-  generateWinBackMessage(customerName, storeName, googleMapUrl = '') {
+  generateWinBackMessage(customerName, storeName, googleMapUrl = '', customTemplate = null) {
     const cleanName = customerName && customerName !== 'Valued Customer' ? customerName : 'there';
+
+    if (customTemplate && customTemplate.trim()) {
+      return customTemplate
+        .replace(/{{name}}/gi, cleanName)
+        .replace(/{{customerName}}/gi, cleanName)
+        .replace(/{{storeName}}/gi, storeName)
+        .replace(/{{googleMapUrl}}/gi, googleMapUrl || 'Visit us in-store');
+    }
 
     return `Hi ${cleanName}! ✨ We noticed it’s been a while since your last visit to ${storeName}.
 
@@ -28,13 +36,14 @@ Hope to see you again soon!
   }
 
   /**
-   * Dispatch Win-Back to a specific lapsed customer
+   * Dispatch Win-Back to a specific customer with optional custom message
    */
-  async dispatchToCustomer(storeCode, customerPhone) {
+  async dispatchToCustomer(storeCode, customerPhone, customMessage = null) {
     const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
     const store = storage.getStoreByCode(code) || {
       storeName: storage.getConfig().storeName || 'Sunshine Cafe & Bistro',
-      googleReviewUrl: storage.getConfig().googleReviewUrl
+      googleReviewUrl: storage.getConfig().googleReviewUrl,
+      customWinBackTemplate: storage.getConfig().customWinBackTemplate
     };
 
     const cleanPhone = (customerPhone || '').replace(/\D/g, '').slice(-10);
@@ -45,7 +54,12 @@ Hope to see you again soon!
       throw new Error(`Customer with phone +91 ${cleanPhone} not found in store history.`);
     }
 
-    const message = this.generateWinBackMessage(customer.name, store.storeName, store.googleReviewUrl);
+    const message = customMessage || this.generateWinBackMessage(
+      customer.name,
+      store.storeName,
+      store.googleReviewUrl,
+      store.customWinBackTemplate
+    );
 
     let sendResult = { success: false, mode: 'DISCONNECTED' };
     if (this.localBaileys && this.localBaileys.status === 'CONNECTED') {

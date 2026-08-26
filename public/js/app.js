@@ -957,18 +957,84 @@ function openReviewShieldSimulator() {
 // -------------------------------------------------------------
 // Lapsed Customer Win-Back Radar & Retention CRM Functions
 // -------------------------------------------------------------
+let allWinBackCustomers = [];
+let activeSegmentFilter = 'ALL';
+let activeSelectedCustomer = null;
+let currentWinBackTemplate = '';
+
 async function fetchWinBackData() {
   try {
     const storeCode = currentConfig.storeCode || 'STORE_DEMO_01';
-    const res = await fetch(`/api/winback/analytics?storeCode=${storeCode}`);
-    const data = await res.json();
-    if (data.success && data.analytics) {
-      renderWinBackKPIs(data.analytics);
-      renderWinBackTable(data.analytics.lapsedCustomers || []);
+    const [analyticsRes, customersRes, templateRes] = await Promise.all([
+      fetch(`/api/winback/analytics?storeCode=${storeCode}`),
+      fetch(`/api/winback/customers?storeCode=${storeCode}`),
+      fetch(`/api/winback/template?storeCode=${storeCode}`)
+    ]);
+
+    const aData = await analyticsRes.json();
+    const cData = await customersRes.json();
+    const tData = await templateRes.json();
+
+    if (aData.success && aData.analytics) {
+      renderWinBackKPIs(aData.analytics);
+    }
+
+    if (cData.success && cData.customers) {
+      allWinBackCustomers = cData.customers;
+      updateSegmentCounts(allWinBackCustomers);
+      renderFilteredWinBackTable();
+    }
+
+    if (tData.success && tData.template) {
+      currentWinBackTemplate = tData.template;
+      const input = document.getElementById('wbTemplateInput');
+      if (input && !input.value) {
+        input.value = currentWinBackTemplate;
+      }
+      updateTemplateLivePreview();
     }
   } catch (err) {
-    console.error('Error fetching win-back analytics:', err);
+    console.error('Error fetching win-back data:', err);
   }
+}
+
+function updateSegmentCounts(customers) {
+  const cntAll = document.getElementById('cnt_all');
+  const cntLapsed = document.getElementById('cnt_lapsed');
+  const cntRegular = document.getElementById('cnt_regular');
+  const cntDormant = document.getElementById('cnt_dormant');
+
+  const lapsed = customers.filter(c => c.segment === 'LAPSED').length;
+  const regular = customers.filter(c => c.segment === 'REGULAR' || c.segment === 'ACTIVE').length;
+  const dormant = customers.filter(c => c.segment === 'DORMANT').length;
+
+  if (cntAll) cntAll.innerText = customers.length;
+  if (cntLapsed) cntLapsed.innerText = lapsed;
+  if (cntRegular) cntRegular.innerText = regular;
+  if (cntDormant) cntDormant.innerText = dormant;
+}
+
+function filterWinBackSegment(segment) {
+  activeSegmentFilter = segment;
+  const group = document.getElementById('segmentFilterGroup');
+  if (group) {
+    group.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(`btnFilter${segment.charAt(0) + segment.slice(1).toLowerCase()}`);
+    if (activeBtn) activeBtn.classList.add('active');
+  }
+  renderFilteredWinBackTable();
+}
+
+function renderFilteredWinBackTable() {
+  let list = allWinBackCustomers;
+  if (activeSegmentFilter === 'LAPSED') {
+    list = allWinBackCustomers.filter(c => c.segment === 'LAPSED');
+  } else if (activeSegmentFilter === 'REGULAR') {
+    list = allWinBackCustomers.filter(c => c.segment === 'REGULAR' || c.segment === 'ACTIVE');
+  } else if (activeSegmentFilter === 'DORMANT') {
+    list = allWinBackCustomers.filter(c => c.segment === 'DORMANT');
+  }
+  renderWinBackTable(list);
 }
 
 function renderWinBackKPIs(a) {
@@ -988,7 +1054,7 @@ function renderWinBackTable(customers) {
   if (!tbody) return;
 
   if (!customers || customers.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 20px;">No lapsed customers in the 30–60 day window right now. High customer loyalty! 🌟</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 24px;">No customers matching this segment filter right now.</td></tr>`;
     return;
   }
 
@@ -996,30 +1062,31 @@ function renderWinBackTable(customers) {
     const lastDate = new Date(c.lastVisit).toLocaleDateString();
     
     // Segment badge
-    const segBadge = c.segment === 'LAPSED'
-      ? `<span class="badge-status" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 10px;">⚠️ LAPSED (30–60D)</span>`
-      : `<span class="badge-status" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 10px;">${c.segment}</span>`;
+    let segBadge = `<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: #059669; font-size: 10px; font-weight: 700;">🟢 ACTIVE REGULAR</span>`;
+    if (c.segment === 'LAPSED') {
+      segBadge = `<span class="badge-status" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-size: 10px; font-weight: 700;">🟡 LAPSED (30–60D)</span>`;
+    } else if (c.segment === 'DORMANT') {
+      segBadge = `<span class="badge-status" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; font-size: 10px; font-weight: 700;">🔴 DORMANT (>60D)</span>`;
+    }
 
     // Status badge
-    let statusBadge = `<span style="color: #94a3b8; font-size: 10px;">Eligible</span>`;
-    let actionBtn = `<button class="btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border: none; font-size: 10px; padding: 4px 8px; border-radius: 6px; cursor: pointer;" onclick="dispatchSingleWinBack('${c.phone}')">🎯 Send Invite</button>`;
-
+    let statusBadge = `<span style="color: #64748b; font-size: 11px;">Eligible</span>`;
     if (c.winBackStatus === 'RECOVERED') {
-      statusBadge = `<span style="color: #34d399; font-weight: 700; font-size: 10px;">💰 RECOVERED!</span>`;
-      actionBtn = `<span style="color: #34d399; font-size: 11px;">✅ Re-Visited</span>`;
+      statusBadge = `<span style="color: #059669; font-weight: 700; font-size: 11px;">💰 RECOVERED!</span>`;
     } else if (c.winBackStatus === 'DISPATCHED_RECENTLY') {
-      statusBadge = `<span style="color: #38bdf8; font-size: 10px;">💬 Sent (Awaiting Visit)</span>`;
-      actionBtn = `<button class="btn-sm" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid var(--border-color); font-size: 10px; padding: 4px 8px; border-radius: 6px;" onclick="dispatchSingleWinBack('${c.phone}')">Resend</button>`;
+      statusBadge = `<span style="color: #0284c7; font-size: 11px; font-weight: 600;">💬 DM Sent</span>`;
     }
+
+    const actionBtn = `<button class="btn-sm" style="background: #0284c7; color: white; border: none; font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-weight: 600;" onclick="openWinBackDmModal('${c.phone}')">💬 Direct DM</button>`;
 
     return `
       <tr>
-        <td><strong style="color: #ffffff;">${c.name}</strong></td>
-        <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">${c.formattedPhone || c.phone}</td>
-        <td><span style="font-weight: 700; color: #38bdf8;">${c.totalVisits}</span></td>
-        <td style="font-weight: 700; color: #f8fafc;">₹${c.totalSpend.toFixed(2)}</td>
-        <td style="color: #94a3b8; font-size: 11px;">${lastDate}</td>
-        <td><strong style="color: #f59e0b;">${c.daysSinceLastVisit} days</strong></td>
+        <td><strong style="color: #0f172a;">${c.name}</strong></td>
+        <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #334155;">${c.formattedPhone || c.phone}</td>
+        <td><span style="font-weight: 700; color: #0284c7;">${c.totalVisits}</span></td>
+        <td style="font-weight: 700; color: #0f172a;">₹${(c.totalSpend || 0).toFixed(2)}</td>
+        <td style="color: #64748b; font-size: 11px;">${lastDate}</td>
+        <td><strong style="color: ${c.daysSinceLastVisit > 30 ? '#d97706' : '#059669'};">${c.daysSinceLastVisit} days</strong></td>
         <td>${segBadge}</td>
         <td>${statusBadge}</td>
         <td>${actionBtn}</td>
@@ -1028,21 +1095,154 @@ function renderWinBackTable(customers) {
   }).join('');
 }
 
-async function dispatchSingleWinBack(phone) {
+// -------------------------------------------------------------
+// Template Customizer Functions
+// -------------------------------------------------------------
+function toggleTemplateEditor() {
+  const box = document.getElementById('templateEditorBox');
+  if (!box) return;
+  const isHidden = box.style.display === 'none';
+  box.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    const input = document.getElementById('wbTemplateInput');
+    if (input) {
+      if (!input.value) input.value = currentWinBackTemplate;
+      input.oninput = updateTemplateLivePreview;
+      updateTemplateLivePreview();
+    }
+  }
+}
+
+function insertWbTag(tag) {
+  const input = document.getElementById('wbTemplateInput');
+  if (!input) return;
+  input.value += tag;
+  updateTemplateLivePreview();
+}
+
+function updateTemplateLivePreview() {
+  const input = document.getElementById('wbTemplateInput');
+  const preview = document.getElementById('wbTemplateLivePreview');
+  if (!input || !preview) return;
+
+  const raw = input.value || currentWinBackTemplate || '';
+  const rendered = raw
+    .replace(/{{name}}/gi, '<strong>Rahul</strong>')
+    .replace(/{{customerName}}/gi, '<strong>Rahul</strong>')
+    .replace(/{{storeName}}/gi, '<strong>Sunshine Cafe & Bistro</strong>')
+    .replace(/{{googleMapUrl}}/gi, '<a href="#" style="color: #0284c7;">https://g.page/sunshine-cafe</a>');
+
+  preview.innerHTML = rendered || '<em>Type your message template on the left to preview...</em>';
+}
+
+async function saveWinBackTemplate() {
+  const input = document.getElementById('wbTemplateInput');
+  if (!input) return;
+  const tpl = input.value.trim();
   const storeCode = currentConfig.storeCode || 'STORE_DEMO_01';
+
+  try {
+    const res = await fetch('/api/winback/template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeCode, template: tpl })
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentWinBackTemplate = tpl;
+      alert('🎉 Win-Back WhatsApp Message Template saved successfully!');
+    }
+  } catch (err) {
+    alert('Error saving template: ' + err.message);
+  }
+}
+
+function resetWinBackTemplateDefault() {
+  const defaultTpl = `Hi {{name}}! ✨ We noticed it’s been a while since your last visit to {{storeName}}.\n\nWe’ve refreshed our seasonal specialties and ambiance, and our entire team would love to welcome you back! ☕🍰\n\nHope to see you again soon!\n📍 Directions & Location: {{googleMapUrl}}\n\n(Reply STOP to unsubscribe)`;
+  const input = document.getElementById('wbTemplateInput');
+  if (input) {
+    input.value = defaultTpl;
+    updateTemplateLivePreview();
+  }
+}
+
+// -------------------------------------------------------------
+// Direct 1-to-1 DM Modal & Inspection Functions
+// -------------------------------------------------------------
+function openWinBackDmModal(phone) {
+  const customer = allWinBackCustomers.find(c => c.phone === phone);
+  if (!customer) return;
+
+  activeSelectedCustomer = customer;
+  const modal = document.getElementById('winBackDmModal');
+  const title = document.getElementById('modalCustomerTitle');
+  const visits = document.getElementById('modalVisits');
+  const spend = document.getElementById('modalSpend');
+  const inactive = document.getElementById('modalInactive');
+  const msgInput = document.getElementById('modalDmMessageInput');
+
+  if (title) title.innerText = `💬 WhatsApp DM: ${customer.name} (+91 ${customer.phone})`;
+  if (visits) visits.innerText = `${customer.totalVisits} Orders`;
+  if (spend) spend.innerText = `₹${(customer.totalSpend || 0).toFixed(2)}`;
+  if (inactive) inactive.innerText = `${customer.daysSinceLastVisit} days ago`;
+
+  const storeName = currentConfig.storeName || 'Sunshine Cafe & Bistro';
+  const mapUrl = currentConfig.googleReviewUrl || 'https://g.page/sunshine-cafe';
+  const tpl = currentWinBackTemplate || `Hi {{name}}! ✨ We noticed it’s been a while since your last visit to {{storeName}}.\n\nWe’ve refreshed our seasonal specialties and ambiance, and our entire team would love to welcome you back! ☕🍰\n\nHope to see you again soon!\n📍 Directions & Location: {{googleMapUrl}}\n\n(Reply STOP to unsubscribe)`;
+
+  const personalizedMessage = tpl
+    .replace(/{{name}}/gi, customer.name)
+    .replace(/{{customerName}}/gi, customer.name)
+    .replace(/{{storeName}}/gi, storeName)
+    .replace(/{{googleMapUrl}}/gi, mapUrl);
+
+  if (msgInput) msgInput.value = personalizedMessage;
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeWinBackDmModal() {
+  const modal = document.getElementById('winBackDmModal');
+  if (modal) modal.style.display = 'none';
+  activeSelectedCustomer = null;
+}
+
+async function sendModalCustomDm() {
+  if (!activeSelectedCustomer) return;
+  const msgInput = document.getElementById('modalDmMessageInput');
+  const btn = document.getElementById('btnSendModalDm');
+  const storeCode = currentConfig.storeCode || 'STORE_DEMO_01';
+  const customMessage = msgInput ? msgInput.value.trim() : null;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Dispatching WhatsApp...';
+  }
+
   try {
     const res = await fetch('/api/winback/dispatch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ storeCode, customerPhone: phone })
+      body: JSON.stringify({
+        storeCode,
+        customerPhone: activeSelectedCustomer.phone,
+        customMessage
+      })
     });
     const data = await res.json();
     if (data.success) {
-      alert(`🎯 Win-Back Invitation sent to ${data.customer.name} (+91 ${phone})!\n\nMessage: "${data.messagePreview.slice(0, 80)}..."`);
+      alert(`🚀 WhatsApp DM successfully dispatched to ${activeSelectedCustomer.name} (+91 ${activeSelectedCustomer.phone})!`);
+      closeWinBackDmModal();
       fetchWinBackData();
+    } else {
+      alert('Could not dispatch DM: ' + (data.error || 'Check WhatsApp connection'));
     }
   } catch (err) {
-    alert('Failed to dispatch win-back: ' + err.message);
+    alert('Error sending DM: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = '🚀 Send WhatsApp DM Now';
+    }
   }
 }
 

@@ -373,8 +373,39 @@ app.get('/api/winback/directory', (req, res) => {
 });
 
 app.get('/api/winback/analytics', (req, res) => {
-  const storeCode = req.query.store || null;
+  const storeCode = req.query.store || req.query.storeCode || null;
   res.json({ success: true, analytics: storage.getWinBackAnalytics(storeCode) });
+});
+
+app.get('/api/winback/customers', (req, res) => {
+  const storeCode = req.query.store || req.query.storeCode || null;
+  res.json({ success: true, customers: storage.getCustomerDirectory(storeCode) });
+});
+
+app.get('/api/winback/template', (req, res) => {
+  const storeCode = (req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  const store = storage.getStoreByCode(storeCode) || storage.getConfig();
+  const defaultTpl = `Hi {{name}}! ✨ We noticed it’s been a while since your last visit to {{storeName}}.\n\nWe’ve refreshed our seasonal specialties and ambiance, and our entire team would love to welcome you back! ☕🍰\n\nHope to see you again soon!\n📍 Directions & Location: {{googleMapUrl}}\n\n(Reply STOP to unsubscribe)`;
+  
+  res.json({
+    success: true,
+    template: store.customWinBackTemplate || defaultTpl,
+    isCustom: !!store.customWinBackTemplate
+  });
+});
+
+app.post('/api/winback/template', (req, res) => {
+  try {
+    const { storeCode, template } = req.body;
+    const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    
+    storage.updateStore(code, { customWinBackTemplate: template });
+    storage.updateConfig({ customWinBackTemplate: template });
+    
+    res.json({ success: true, message: 'Win-Back WhatsApp template updated successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // HTML Page Route Handlers
