@@ -679,18 +679,29 @@ class ResilientStorage {
   // -------------------------------------------------------------
   // Smart Review Shield & Private Feedback Methods
   // -------------------------------------------------------------
+  sanitize(str) {
+    if (typeof str !== 'string') return str;
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
+  }
+
   addFeedback(feedback) {
     const record = {
       id: feedback.id || `FB_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`,
       storeCode: (feedback.storeCode || this.state.config.storeCode || 'STORE_DEMO_01').toUpperCase(),
       billId: feedback.billId || 'N/A',
-      invoiceNo: feedback.invoiceNo || 'N/A',
-      customerName: feedback.customerName || 'Valued Customer',
+      invoiceNo: this.sanitize(feedback.invoiceNo || 'N/A'),
+      customerName: this.sanitize(feedback.customerName || 'Valued Customer'),
       customerPhone: feedback.customerPhone || 'N/A',
       rating: Number(feedback.rating) || 5,
       action: Number(feedback.rating) >= 4 ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK',
-      category: feedback.category || 'General Experience',
-      comment: feedback.comment || '',
+      category: this.sanitize(feedback.category || 'General Experience'),
+      comment: this.sanitize(feedback.comment || ''),
       requestCallback: !!feedback.requestCallback,
       status: Number(feedback.rating) < 4 ? 'OPEN' : 'RESOLVED',
       resolutionNotes: '',
