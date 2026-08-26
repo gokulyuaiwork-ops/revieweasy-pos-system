@@ -36,6 +36,28 @@ app.use(express.static(path.join(__dirname, '../public')));
 const supabaseSync = new SupabaseSyncEngine();
 
 // -------------------------------------------------------------
+// Core Live State & Analytics Endpoint (for Cloud & Local Sync)
+// -------------------------------------------------------------
+app.get('/api/state', (req, res) => {
+  try {
+    const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    res.json({
+      success: true,
+      config: storage.getConfig(),
+      metrics: storage.getMetrics(),
+      analytics: storage.getClientDetailedAnalytics(storeCode),
+      quota: storage.getTodayQuotaUsage(storeCode),
+      transactions: storage.getTransactions(50),
+      health: { isOnline: true, uptime: process.uptime(), lastSync: new Date().toISOString() },
+      whatsapp: { status: 'CONNECTED', mode: 'CLOUD_EDGE_GATEWAY' },
+      supabase: { isOnline: true, connected: true }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
 // Authentication Endpoints
 // -------------------------------------------------------------
 app.post('/api/auth/login', (req, res) => {

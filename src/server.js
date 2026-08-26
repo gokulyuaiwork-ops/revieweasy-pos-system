@@ -97,6 +97,34 @@ wss.on('connection', (ws) => {
       }
     }
   }));
+// -------------------------------------------------------------
+// Core Live State & Telemetry Polling Endpoint
+// -------------------------------------------------------------
+app.get('/api/state', (req, res) => {
+  try {
+    const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    res.json({
+      success: true,
+      config: storage.getConfig(),
+      metrics: storage.getMetrics(),
+      analytics: storage.getClientDetailedAnalytics(storeCode),
+      quota: storage.getTodayQuotaUsage(storeCode),
+      transactions: storage.getTransactions(50),
+      health: resilience.getHealthSummary(),
+      whatsapp: {
+        status: localBaileys.status,
+        qrDataUrl: localBaileys.qrDataUrl,
+        pairingCode: localBaileys.pairingCode
+      },
+      supabase: {
+        isOnline: supabaseSync.isOnline,
+        pendingCount: supabaseSync.pendingSyncCount,
+        lastSync: supabaseSync.lastSyncTimestamp
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // -------------------------------------------------------------
