@@ -459,7 +459,30 @@ app.get('/api/state', async (req, res) => {
       }
     }
 
-    const storeFeedbacks = storage.getFeedback(storeCode);
+    let storeFeedbacks = storage.getFeedback(storeCode);
+    if (supabaseSync.client) {
+      try {
+        const { data, error } = await supabaseSync.client
+          .from('review_dispatches')
+          .select('*')
+          .eq('store_code', storeCode);
+        if (!error && data && data.length > 0) {
+          storeFeedbacks = data.map(r => ({
+            id: r.id,
+            storeCode: r.store_code,
+            customerPhone: r.customer_phone,
+            rating: r.rating_given || (r.dispatch_status === 'GOOGLE_REDIRECT' ? 5 : 2),
+            action: r.dispatch_status || 'GOOGLE_REDIRECT',
+            category: r.dispatch_status === 'GOOGLE_REDIRECT' ? 'Satisfied Customer' : 'General Feedback',
+            comment: r.message_text,
+            timestamp: r.created_at || new Date().toISOString()
+          }));
+        }
+      } catch (e) {
+        console.warn('Supabase feedback fetch note:', e.message);
+      }
+    }
+
     const todayFeedbacks = storeFeedbacks.filter(f => new Date(f.timestamp).getTime() >= startOfToday);
     const monthFeedbacks = storeFeedbacks.filter(f => new Date(f.timestamp).getTime() >= thirtyDaysAgo);
 

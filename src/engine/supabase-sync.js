@@ -268,11 +268,13 @@ export class SupabaseSyncEngine {
     try {
       await this.client.from('review_dispatches').insert({
         store_code: fb.storeCode || 'STORE_DEMO_01',
+        bill_id: fb.billId || null,
         customer_phone: fb.customerPhone || '9876543210',
-        message_body: `Feedback: ${fb.rating}★ - ${fb.category}: ${fb.comment}`,
-        status: fb.action || 'PRIVATE_FEEDBACK',
-        status_reason: fb.comment || '',
-        dispatched_via: 'SMART_REVIEW_SHIELD'
+        customer_name: fb.customerName || 'Valued Customer',
+        message_text: fb.comment || `Feedback: ${fb.rating}★ (${fb.action})`,
+        dispatch_status: fb.action || 'GOOGLE_REDIRECT',
+        rating_given: parseInt(fb.rating, 10) || 5,
+        review_link_clicked: true
       });
       return true;
     } catch (e) {
@@ -281,16 +283,69 @@ export class SupabaseSyncEngine {
     }
   }
 
+  /**
+   * Bi-Directional: Pull customer ratings & feedbacks from Supabase Cloud into local database
+   */
+  async pullCloudFeedbacks(storeCode = null) {
+    const isConnected = await this.checkConnectivity();
+    if (!isConnected || !this.client) return;
+
+    try {
+      const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+      const { data, error } = await this.client
+        .from('review_dispatches')
+        .select('*')
+        .eq('store_code', code)
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        let newCount = 0;
+        for (const r of data) {
+          const exists = storage.state.privateFeedback.some(f => f.id === r.id || (f.customerPhone === r.customer_phone && Math.abs(new Date(f.timestamp).getTime() - new Date(r.created_at).getTime()) < 5000));
+          if (!exists) {
+            const isPositive = (r.rating_given && r.rating_given >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
+            storage.state.privateFeedback.unshift({
+              id: r.id || `FB_${Date.now()}`,
+              billId: r.bill_id || null,
+              storeCode: r.store_code,
+              invoiceNo: 'INV-4920',
+              customerName: r.customer_name || 'Customer',
+              customerPhone: r.customer_phone || '9876543210',
+              rating: r.rating_given || (isPositive ? 5 : 2),
+              action: r.dispatch_status || (isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK'),
+              category: isPositive ? 'Satisfied Customer' : 'General Feedback',
+              comment: r.message_text || 'Customer submitted review on mobile',
+              requestCallback: false,
+              status: 'OPEN',
+              timestamp: r.created_at || new Date().toISOString()
+            });
+            newCount++;
+          }
+        }
+        if (newCount > 0) {
+          storage.save();
+          console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s) from cloud into local store!`);
+          this.broadcast('FEEDBACK_RECEIVED', {});
+          this.broadcast('METRICS_UPDATED', storage.getMetrics());
+        }
+      }
+    } catch (e) {
+      console.warn('[Supabase Sync] Feedback pull note:', e.message);
+    }
+  }
+
   startPeriodicSyncWorker() {
     // Initial sync
     setTimeout(() => {
       this.pullCloudBills();
+      this.pullCloudFeedbacks();
       this.flushOfflineSyncQueue();
     }, 2000);
 
     setInterval(() => {
       this.flushOfflineSyncQueue();
       this.pullCloudBills();
-    }, 15000);
+      this.pullCloudFeedbacks();
+    }, 5000);
   }
 }

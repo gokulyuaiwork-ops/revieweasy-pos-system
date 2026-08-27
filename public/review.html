@@ -560,16 +560,12 @@
           comment: 'Customer rated 4-5 stars and was routed to Google.'
         });
 
-        if (navigator.sendBeacon) {
-          navigator.sendBeacon('/api/feedback', new Blob([payload], { type: 'application/json' }));
-        } else {
-          fetch('/api/feedback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: payload,
-            keepalive: true
-          }).catch(() => {});
-        }
+        fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true
+        }).catch(() => {});
       } catch (err) {
         console.warn('Error sending positive rating:', err);
       }
