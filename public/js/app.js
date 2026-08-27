@@ -2,6 +2,16 @@ let ws = null;
 let currentConfig = {};
 let isInternetOffline = false;
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const PRESET_SCENARIOS = {
   STANDARD_INVOICE: `========================================
            SUNSHINE CAFE & BISTRO       
@@ -430,10 +440,10 @@ function renderTransactions(txList) {
     return `
       <tr>
         <td style="color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 11px;">${timeStr}</td>
-        <td><strong style="color: #0284c7; font-family: 'JetBrains Mono', monospace;">${tx.invoiceNo || 'N/A'}</strong>${syncBadge}</td>
-        <td style="font-weight: 600; color: #0f172a;">${tx.customerName || 'Valued Customer'}</td>
-        <td style="font-family: 'JetBrains Mono', monospace; color: #334155;">${tx.formattedPhone || tx.customerPhone || '—'}</td>
-        <td style="font-weight: 700; color: #0f172a;">₹${tx.totalAmount || '0.00'}</td>
+        <td><strong style="color: #0284c7; font-family: 'JetBrains Mono', monospace;">${escapeHtml(tx.invoiceNo || 'N/A')}</strong>${syncBadge}</td>
+        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(tx.customerName || 'Valued Customer')}</td>
+        <td style="font-family: 'JetBrains Mono', monospace; color: #334155;">${escapeHtml(tx.formattedPhone || tx.customerPhone || '—')}</td>
+        <td style="font-weight: 700; color: #0f172a;">₹${escapeHtml(tx.totalAmount || '0.00')}</td>
         <td>
           <span class="badge-status ${statusClass}">${formatStatus(tx.status)}</span>
         </td>
@@ -882,13 +892,13 @@ function renderFeedbackTable(feedbacks) {
     return `
       <tr>
         <td style="color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 11px;">${timeStr}</td>
-        <td><strong style="color: #ffffff;">${fb.customerName || 'Customer'}</strong></td>
-        <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">${fb.customerPhone || '—'}</td>
-        <td style="font-size: 11px;"><strong style="color: #38bdf8;">#${fb.invoiceNo || 'N/A'}</strong></td>
+        <td><strong style="color: #ffffff;">${escapeHtml(fb.customerName || 'Customer')}</strong></td>
+        <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">${escapeHtml(fb.customerPhone || '—')}</td>
+        <td style="font-size: 11px;"><strong style="color: #38bdf8;">#${escapeHtml(fb.invoiceNo || 'N/A')}</strong></td>
         <td>${ratingBadge}</td>
-        <td><span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #cbd5e1;">${fb.category || 'General'}</span></td>
+        <td><span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #cbd5e1;">${escapeHtml(fb.category || 'General')}</span></td>
         <td style="max-width: 200px; font-size: 11px; color: #e2e8f0; line-height: 1.3;">
-          ${fb.comment || '<em style="color: #64748b;">No comments left</em>'}
+          ${escapeHtml(fb.comment || 'No comments left')}
           <br>${callbackText}
         </td>
         <td>${statusBadge}</td>
@@ -1081,8 +1091,8 @@ function renderWinBackTable(customers) {
 
     return `
       <tr>
-        <td><strong style="color: #0f172a;">${c.name}</strong></td>
-        <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #334155;">${c.formattedPhone || c.phone}</td>
+        <td><strong style="color: #0f172a;">${escapeHtml(c.name || 'Valued Customer')}</strong></td>
+        <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #334155;">${escapeHtml(c.formattedPhone || c.phone)}</td>
         <td><span style="font-weight: 700; color: #0284c7;">${c.totalVisits}</span></td>
         <td style="font-weight: 700; color: #0f172a;">₹${(c.totalSpend || 0).toFixed(2)}</td>
         <td style="color: #64748b; font-size: 11px;">${lastDate}</td>

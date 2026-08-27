@@ -204,9 +204,65 @@ export class SupabaseSyncEngine {
     this.broadcast('CLOUD_SYNC_STATUS', { pending: 0, isOnline: true, lastSync: this.lastSyncTimestamp, batchSynced: syncedCount });
   }
 
+  /**
+   * Bi-Directional: Pull bills from Supabase Cloud into local database
+   */
+  async pullCloudBills(storeCode = null) {
+    const isConnected = await this.checkConnectivity();
+    if (!isConnected || !this.client) return;
+
+    const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    try {
+      const { data: cloudBills, error } = await this.client
+        .from('bills')
+        .select('*')
+        .eq('store_code', code)
+        .order('created_at', { ascending: false });
+
+      if (!error && cloudBills && cloudBills.length > 0) {
+        let newCount = 0;
+        for (const b of cloudBills) {
+          const exists = storage.state.transactions.find(t => t.invoiceNo === b.invoice_no);
+          if (!exists) {
+            storage.state.transactions.unshift({
+              id: b.id || `TX_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+              storeCode: b.store_code,
+              invoiceNo: b.invoice_no,
+              customerName: b.customer_name || 'Valued Customer',
+              customerPhone: b.customer_phone || 'N/A',
+              formattedPhone: b.customer_phone ? (b.customer_phone.startsWith('+') ? b.customer_phone : `+91 ${b.customer_phone}`) : 'N/A',
+              totalAmount: (b.total_amount || 0).toFixed(2),
+              status: b.status || 'DELIVERED',
+              source: b.source || 'PRINT_SPOOLER',
+              rawText: b.raw_text || '',
+              timestamp: b.created_at || b.local_created_at || new Date().toISOString(),
+              synced: 1,
+              syncStatus: 'SYNCED_TO_SUPABASE'
+            });
+            newCount++;
+          }
+        }
+        if (newCount > 0) {
+          storage.save();
+          console.log(`[Supabase Sync] 📥 Pulled ${newCount} cloud bills into local database!`);
+          this.broadcast('TRANSACTION_UPDATED', {});
+        }
+      }
+    } catch (e) {
+      console.warn('[Supabase Sync] Pull error note:', e.message);
+    }
+  }
+
   startPeriodicSyncWorker() {
+    // Initial sync
+    setTimeout(() => {
+      this.pullCloudBills();
+      this.flushOfflineSyncQueue();
+    }, 2000);
+
     setInterval(() => {
       this.flushOfflineSyncQueue();
-    }, 15000); // Check every 15s
+      this.pullCloudBills();
+    }, 15000);
   }
 }

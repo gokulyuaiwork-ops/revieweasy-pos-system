@@ -80,7 +80,7 @@ async function getStoreBills(storeCode) {
           status: b.status || 'DELIVERED',
           source: b.source || 'PRINT_SPOOLER',
           rawText: b.raw_text || '',
-          timestamp: b.created_at || b.local_created_at || new Date().toISOString()
+          timestamp: b.local_created_at || b.created_at || new Date().toISOString()
         }));
       }
     } catch (err) {
