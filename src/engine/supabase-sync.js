@@ -266,9 +266,10 @@ export class SupabaseSyncEngine {
   async syncFeedbackToCloud(fb) {
     if (!this.client) return false;
     try {
-      await this.client.from('review_dispatches').insert({
+      const isUuid = fb.billId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fb.billId);
+      const res = await this.client.from('review_dispatches').insert({
         store_code: fb.storeCode || 'STORE_DEMO_01',
-        bill_id: fb.billId || null,
+        bill_id: isUuid ? fb.billId : null,
         customer_phone: fb.customerPhone || '9876543210',
         customer_name: fb.customerName || 'Valued Customer',
         message_text: fb.comment || `Feedback: ${fb.rating}★ (${fb.action})`,
@@ -276,6 +277,10 @@ export class SupabaseSyncEngine {
         rating_given: parseInt(fb.rating, 10) || 5,
         review_link_clicked: true
       });
+      if (res.error) {
+        console.warn('[Supabase Sync] Feedback insert error:', res.error);
+        return false;
+      }
       return true;
     } catch (e) {
       console.warn('[Supabase Sync] Feedback log note:', e.message);
