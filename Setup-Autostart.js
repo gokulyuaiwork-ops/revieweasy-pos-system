@@ -95,26 +95,42 @@ try {
 // -------------------------------------------------------------
 console.log('\n[5/5] Installing Layer 4: Desktop 1-Click Dashboard Shortcut...');
 try {
-  // Method A: Native Windows Internet Shortcut
-  const urlContent = `[InternetShortcut]\r\nURL=http://localhost:3000/index.html\r\nIconIndex=0\r\nIconFile=${process.env.SystemRoot || 'C:\\Windows'}\\system32\\SHELL32.dll\r\n`;
-  fs.writeFileSync(desktopUrl, urlContent);
+  const candidateDesktops = [
+    path.join(os.homedir(), 'Desktop'),
+    path.join(os.homedir(), 'OneDrive', 'Desktop'),
+    path.join(process.env.USERPROFILE || '', 'OneDrive - Personal', 'Desktop'),
+    path.join(process.env.USERPROFILE || '', 'OneDrive', 'Desktop')
+  ];
+  const activeDesktops = [...new Set(candidateDesktops.filter(d => d && fs.existsSync(d)))];
 
-  // Method B: LNK Shortcut via cmd launcher
   const vbsDeskMaker = path.join(os.tmpdir(), 'make_desktop_shortcut.vbs');
-  const vbsDeskScript = `
-    Set ws = CreateObject("WScript.Shell")
-    Set s = ws.CreateShortcut("${desktopLnk.replace(/\\/g, '\\\\')}")
-    s.TargetPath = "cmd.exe"
-    s.Arguments = "/c start http://localhost:3000/index.html"
-    s.Description = "Open ReviewEasy POS Dashboard"
-    s.IconLocation = "shell32.dll,13"
-    s.Save
-  `;
-  fs.writeFileSync(vbsDeskMaker, vbsDeskScript);
+  let vbsScripts = `Set ws = CreateObject("WScript.Shell")\n`;
+
+  activeDesktops.forEach((deskPath, idx) => {
+    const urlFile = path.join(deskPath, 'ReviewEasy POS Dashboard.url');
+    const lnkFile = path.join(deskPath, 'ReviewEasy POS Dashboard.lnk');
+
+    // Method A: Native Internet Shortcut
+    const urlContent = `[InternetShortcut]\r\nURL=http://localhost:3000/index.html\r\nIconIndex=0\r\nIconFile=${process.env.SystemRoot || 'C:\\Windows'}\\system32\\SHELL32.dll\r\n`;
+    try { fs.writeFileSync(urlFile, urlContent); } catch (e) {}
+
+    // Method B: LNK Shortcut via cmd launcher
+    vbsScripts += `
+      Set s${idx} = ws.CreateShortcut("${lnkFile.replace(/\\/g, '\\\\')}")
+      s${idx}.TargetPath = "cmd.exe"
+      s${idx}.Arguments = "/c start http://localhost:3000/index.html"
+      s${idx}.Description = "Open ReviewEasy POS Dashboard"
+      s${idx}.IconLocation = "shell32.dll,13"
+      s${idx}.Save
+    `;
+  });
+
+  fs.writeFileSync(vbsDeskMaker, vbsScripts);
   execSync(`wscript.exe "${vbsDeskMaker}"`);
   try { fs.unlinkSync(vbsDeskMaker); } catch (e) {}
 
-  console.log('  ✅ [PASS] Desktop shortcut "ReviewEasy POS Dashboard" created on your Desktop!');
+  console.log(`  ✅ [PASS] Desktop shortcut "ReviewEasy POS Dashboard" installed to ${activeDesktops.length} desktop location(s):`);
+  activeDesktops.forEach(d => console.log(`     • ${d}`));
 } catch (err) {
   console.warn('  ⚠️  [WARN] Desktop shortcut note:', err.message);
 }

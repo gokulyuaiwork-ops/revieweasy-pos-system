@@ -45,14 +45,19 @@ try {
 }
 
 // 4. Check Desktop Shortcuts
-const desktopDir = path.join(os.homedir(), 'Desktop');
-const desktopLnk = path.join(desktopDir, 'ReviewEasy POS Dashboard.lnk');
-const desktopUrl = path.join(desktopDir, 'ReviewEasy POS Dashboard.url');
 console.log('\n[4/6] Desktop Dashboard Shortcut:');
-if (fs.existsSync(desktopLnk) || fs.existsSync(desktopUrl)) {
-  console.log(`  ✅ [PASS] Desktop shortcut exists on ${desktopDir}`);
+const candidateDesktops = [
+  path.join(os.homedir(), 'Desktop'),
+  path.join(os.homedir(), 'OneDrive', 'Desktop'),
+  path.join(process.env.USERPROFILE || '', 'OneDrive - Personal', 'Desktop'),
+  path.join(process.env.USERPROFILE || '', 'OneDrive', 'Desktop')
+];
+const foundDesktops = candidateDesktops.filter(d => d && fs.existsSync(d) && (fs.existsSync(path.join(d, 'ReviewEasy POS Dashboard.lnk')) || fs.existsSync(path.join(d, 'ReviewEasy POS Dashboard.url'))));
+if (foundDesktops.length > 0) {
+  console.log(`  ✅ [PASS] Desktop shortcut verified and visible on ${foundDesktops.length} desktop location(s):`);
+  foundDesktops.forEach(d => console.log(`     • ${d}`));
 } else {
-  console.log('  ❌ [FAIL] Desktop shortcut not found.');
+  console.log('  ❌ [FAIL] Desktop shortcut not found on any active desktop folder.');
 }
 
 // 5. Check Local Server Port 3000
