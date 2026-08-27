@@ -460,7 +460,7 @@ function renderTransactions(txList) {
     const timeStr = new Date(tx.timestamp).toLocaleTimeString();
     const statusClass = `status-${tx.status}`;
     const syncBadge = tx.synced === 1
-      ? `<span style="color: #059669; font-size: 11px; margin-left: 4px;" title="Synced to Supabase Cloud">☁️</span>`
+      ? `<span style="color: #059669; font-size: 11px; margin-left: 4px;" title="Synced to Cloud">☁️</span>`
       : `<span style="color: #d97706; font-size: 11px; margin-left: 4px;" title="Offline Disk Cache">💾</span>`;
 
     return `
@@ -592,7 +592,7 @@ function renderWhatsAppStatus(wsData) {
       <div class="connected-icon" style="font-size: 32px;">☁️</div>
       <h4 style="color: #0284c7; font-weight: 700; margin: 4px 0;">Cloud SaaS Portal</h4>
       <p style="font-size: 11px; color: #64748b; line-height: 1.5;">Cloud Hub Active. Local POS Terminal (<code>localhost:3000</code>) on your billing counter dispatches messages to WhatsApp.</p>
-      <span class="session-path" style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 6px;">Sync: pos.revieweasy.in ➔ Supabase</span>
+      <span class="session-path" style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 6px;">Sync: pos.revieweasy.in ➔ Cloud</span>
     `;
     const statusText = document.getElementById('whatsappStatusText');
     const statusChip = document.getElementById('whatsappStatusChip');
@@ -633,7 +633,7 @@ function renderSupabaseStatus(sbData) {
     document.getElementById('btnOutageToggle').className = 'btn-sm btn-reconnect w-full';
   } else {
     isInternetOffline = false;
-    statusText.innerText = 'Online (Supabase)';
+    statusText.innerText = 'Online';
     statusChip.className = 'status-chip chip-cyan';
     banner.style.display = 'none';
     document.getElementById('btnOutageToggle').innerText = '🔌 Simulate Internet Disconnect';
