@@ -473,13 +473,25 @@ app.get('/api/review-info/:billId', (req, res) => {
     googleReviewUrl: storage.getConfig().googleReviewUrl || "https://g.page/review"
   };
 
-  const bill = storage.state.transactions.find(t => t.id === billId) || {
+  const bill = storage.state.transactions.find(t => t.id === billId || t.invoiceNo === billId) || {
     id: billId,
-    invoiceNo: 'INV-4920',
+    invoiceNo: billId.startsWith('INV-') ? billId : 'INV-4920',
     totalAmount: '714.00',
     customerName: 'Valued Customer',
     customerPhone: '9876543210'
   };
+
+  // Update Supabase link clicked status
+  if (supabaseSync && supabaseSync.client && bill.customerPhone) {
+    try {
+      supabaseSync.client
+        .from('review_dispatches')
+        .update({ review_link_clicked: true })
+        .eq('store_code', storeCode)
+        .eq('customer_phone', bill.customerPhone)
+        .then(() => {});
+    } catch (e) {}
+  }
 
   res.json({
     success: true,
@@ -501,6 +513,7 @@ app.get('/api/review-info/:billId', (req, res) => {
 app.post('/api/feedback', async (req, res) => {
   try {
     const feedback = storage.addFeedback(req.body);
+    supabaseSync.syncFeedbackToCloud(feedback);
     broadcast('FEEDBACK_RECEIVED', feedback);
     broadcast('METRICS_UPDATED', storage.getMetrics());
 

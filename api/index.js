@@ -314,7 +314,7 @@ app.post('/api/admin/flyer/preview', async (req, res) => {
 // -------------------------------------------------------------
 // Smart Review Shield & Customer Gatekeeper Endpoints
 // -------------------------------------------------------------
-app.get('/api/review-info/:billId', (req, res) => {
+app.get('/api/review-info/:billId', async (req, res) => {
   const { billId } = req.params;
   const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
   const store = storage.getStoreByCode(storeCode) || {
@@ -323,12 +323,53 @@ app.get('/api/review-info/:billId', (req, res) => {
     googleReviewUrl: storage.getConfig().googleReviewUrl || 'https://g.page/review'
   };
 
-  const bill = storage.state.transactions.find(t => t.id === billId) || {
-    id: billId,
-    invoiceNo: 'INV-4920',
-    totalAmount: '450.00',
-    customerName: 'Valued Customer'
-  };
+  let bill = storage.state.transactions.find(t => t.id === billId || t.invoiceNo === billId);
+
+  // If on Cloud, fetch from Supabase if not found locally
+  if (!bill && supabaseSync && supabaseSync.client) {
+    try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(billId);
+      let query = supabaseSync.client.from('bills').select('*');
+      if (isUuid) {
+        query = query.or(`id.eq.${billId},invoice_no.eq.${billId}`);
+      } else {
+        query = query.eq('invoice_no', billId);
+      }
+      const { data } = await query.limit(1);
+      if (data && data.length > 0) {
+        const b = data[0];
+        bill = {
+          id: b.id,
+          invoiceNo: b.invoice_no,
+          totalAmount: (b.total_amount || 0).toFixed(2),
+          customerName: b.customer_name || 'Valued Customer',
+          customerPhone: b.customer_phone || '9876543210'
+        };
+      }
+    } catch (e) {}
+  }
+
+  if (!bill) {
+    bill = {
+      id: billId,
+      invoiceNo: billId.startsWith('INV-') ? billId : 'INV-4920',
+      totalAmount: '450.00',
+      customerName: 'Valued Customer',
+      customerPhone: '9876543210'
+    };
+  }
+
+  // Update Supabase link clicked status
+  if (supabaseSync && supabaseSync.client && bill.customerPhone) {
+    try {
+      supabaseSync.client
+        .from('review_dispatches')
+        .update({ review_link_clicked: true })
+        .eq('store_code', storeCode)
+        .eq('customer_phone', bill.customerPhone)
+        .then(() => {});
+    } catch (e) {}
+  }
 
   res.json({ success: true, store, bill });
 });
