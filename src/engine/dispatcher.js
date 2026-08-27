@@ -73,6 +73,11 @@ export class WhatsAppDispatcher {
       syncStatus: 'QUEUED_LOCAL'
     });
 
+    // Immediately push transaction to Supabase Cloud Database (Category C)
+    if (this.supabaseSync) {
+      this.supabaseSync.syncBillToCloud(tx).catch(e => console.warn('[Supabase Sync] Note:', e.message));
+    }
+
     if (!parsedJob.success) {
       this.broadcast('TRANSACTION_UPDATED', tx);
       return tx;

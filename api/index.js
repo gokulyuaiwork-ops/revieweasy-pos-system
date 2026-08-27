@@ -2,24 +2,21 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-
 import { storage } from '../src/engine/storage.js';
 import { SupabaseSyncEngine } from '../src/engine/supabase-sync.js';
-import { WinBackEngine } from '../src/engine/winback-engine.js';
-import { parseReceiptItems, generateInvoicePdfBuffer } from '../src/engine/invoice-generator.js';
 import { PersonalizedImageGenerator } from '../src/engine/personalized-image-generator.js';
-import { BUSINESS_CATEGORIES, getCategoryTemplate, formatWhatsAppMessage } from '../src/engine/business-templates.js';
+import { generateInvoicePdfBuffer } from '../src/engine/invoice-generator.js';
+import { parseReceiptItems } from '../src/engine/parser.js';
+import { WinBackEngine } from '../src/engine/winback-engine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const winBackEngine = new WinBackEngine();
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use(express.json({ limit: '25mb' }));
-app.use(express.urlencoded({ limit: '25mb', extended: true }));
-
-// CORS Middleware
+// CORS setup for cloud API access
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -34,28 +31,99 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '../public')));
 
 const supabaseSync = new SupabaseSyncEngine();
+const winBackEngine = new WinBackEngine();
 
-// -------------------------------------------------------------
-// Core Live State & Analytics Endpoint (for Cloud & Local Sync)
-// -------------------------------------------------------------
-app.get('/api/state', (req, res) => {
-  try {
-    const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-    res.json({
-      success: true,
-      config: storage.getConfig(),
-      metrics: storage.getMetrics(),
-      analytics: storage.getClientDetailedAnalytics(storeCode),
-      quota: storage.getTodayQuotaUsage(storeCode),
-      transactions: storage.getTransactions(50),
-      health: { isOnline: true, uptime: process.uptime(), lastSync: new Date().toISOString() },
-      whatsapp: { status: 'CONNECTED', mode: 'CLOUD_EDGE_GATEWAY' },
-      supabase: { isOnline: true, connected: true }
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+// Helper to fetch bills for a store from Supabase or fallback to storage
+async function getStoreBills(storeCode) {
+  const code = (storeCode || 'STORE_DEMO_01').toUpperCase();
+  let bills = [];
+
+  if (supabaseSync.client) {
+    try {
+      const { data, error } = await supabaseSync.client
+        .from('bills')
+        .select('*')
+        .eq('store_code', code)
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        bills = data.map(b => ({
+          id: b.id || b.invoice_no,
+          storeCode: b.store_code,
+          invoiceNo: b.invoice_no,
+          customerName: b.customer_name || 'Valued Customer',
+          customerPhone: b.customer_phone || 'N/A',
+          formattedPhone: b.customer_phone ? (b.customer_phone.startsWith('+') ? b.customer_phone : `+91 ${b.customer_phone}`) : 'N/A',
+          totalAmount: (b.total_amount || 0).toFixed(2),
+          status: b.status || 'DELIVERED',
+          source: b.source || 'PRINT_SPOOLER',
+          rawText: b.raw_text || '',
+          timestamp: b.created_at || b.local_created_at || new Date().toISOString()
+        }));
+      }
+    } catch (err) {
+      console.warn('[Cloud Bills] Supabase query note:', err.message);
+    }
   }
-});
+
+  if (bills.length === 0) {
+    bills = storage.getTransactions(100).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === code);
+  }
+
+  return bills;
+}
+
+// Helper to build customer RFM directory from bills
+function buildCustomerDirectoryFromBills(bills) {
+  const customerMap = {};
+  const now = Date.now();
+
+  for (const b of bills) {
+    const phone = (b.customerPhone || '').replace(/\D/g, '').slice(-10);
+    if (!phone || phone.length < 10) continue;
+
+    const billDate = new Date(b.timestamp).getTime();
+    const amount = parseFloat(b.totalAmount) || 0;
+
+    if (!customerMap[phone]) {
+      customerMap[phone] = {
+        name: b.customerName || 'Valued Customer',
+        phone: phone,
+        formattedPhone: `+91 ${phone}`,
+        totalVisits: 0,
+        totalSpend: 0,
+        lastVisit: new Date(billDate).toISOString(),
+        firstVisit: new Date(billDate).toISOString(),
+        lastVisitTimestamp: billDate
+      };
+    }
+
+    customerMap[phone].totalVisits++;
+    customerMap[phone].totalSpend += amount;
+
+    if (billDate > customerMap[phone].lastVisitTimestamp) {
+      customerMap[phone].lastVisitTimestamp = billDate;
+      customerMap[phone].lastVisit = new Date(billDate).toISOString();
+      if (b.customerName && b.customerName !== 'Valued Customer') {
+        customerMap[phone].name = b.customerName;
+      }
+    }
+  }
+
+  return Object.values(customerMap).map(c => {
+    const daysSinceLastVisit = Math.floor((now - c.lastVisitTimestamp) / (24 * 60 * 60 * 1000));
+    let segment = 'REGULAR';
+    if (daysSinceLastVisit > 60) segment = 'DORMANT';
+    else if (daysSinceLastVisit >= 30) segment = 'LAPSED';
+
+    return {
+      ...c,
+      daysSinceLastVisit,
+      segment,
+      winBackStatus: 'ELIGIBLE'
+    };
+  });
+}
 
 // -------------------------------------------------------------
 // Authentication Endpoints
@@ -329,81 +397,148 @@ app.get('/api/bill/:billId/pdf', (req, res) => {
 });
 
 // -------------------------------------------------------------
-// System State & Client Telemetry Endpoints
+// Live System State & Telemetry Endpoints (Live Cloud Sync)
 // -------------------------------------------------------------
 app.get('/api/state', async (req, res) => {
-  const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  let txList = storage.getTransactions(50).filter(t => (t.storeCode || '').toUpperCase() === storeCode);
-  let analytics = storage.getClientDetailedAnalytics(storeCode);
+  try {
+    const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    const bills = await getStoreBills(storeCode);
 
-  // If Supabase is available, sync live bills from Supabase
-  if (supabaseSync.client) {
-    try {
-      const { data: cloudBills } = await supabaseSync.client
-        .from('bills')
-        .select('*')
-        .eq('store_code', storeCode)
-        .order('captured_at', { ascending: false })
-        .limit(50);
+    // Compute dynamic 3-Period analytics from bills
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
 
-      if (cloudBills && cloudBills.length > 0) {
-        txList = cloudBills.map(b => ({
-          id: b.local_bill_id,
-          storeCode: b.store_code,
-          invoiceNo: b.invoice_number,
-          customerName: b.customer_name,
-          customerPhone: b.customer_phone,
-          formattedPhone: `+91 ${b.customer_phone.slice(0, 5)} ${b.customer_phone.slice(5)}`,
-          totalAmount: b.total_amount,
-          source: b.source,
-          isRaster: b.is_raster,
-          status: 'DELIVERED',
-          timestamp: b.captured_at,
-          synced: 1
-        }));
+    let todaySent = 0, todayBills = 0, todaySales = 0;
+    let monthSent = 0, monthBills = 0, monthSales = 0;
+    let allTimeSent = 0, allTimeBills = 0, allTimeSales = 0;
+
+    for (const t of bills) {
+      const tTime = new Date(t.timestamp).getTime();
+      const amt = parseFloat(t.totalAmount) || 0;
+      const isDelivered = t.status === 'DELIVERED';
+
+      allTimeBills++;
+      allTimeSales += amt;
+      if (isDelivered) allTimeSent++;
+
+      if (tTime >= thirtyDaysAgo) {
+        monthBills++;
+        monthSales += amt;
+        if (isDelivered) monthSent++;
       }
-    } catch (e) {
-      console.warn('[Cloud State] Supabase fetch fallback:', e.message);
+
+      if (tTime >= startOfToday) {
+        todayBills++;
+        todaySales += amt;
+        if (isDelivered) todaySent++;
+      }
+    }
+
+    const analytics = {
+      today: { sent: todaySent, bills: todayBills, sales: Math.round(todaySales), googleFiveStar: todaySent, reviewShield: 0 },
+      lastMonth: { sent: monthSent, bills: monthBills, sales: Math.round(monthSales), googleFiveStar: monthSent, reviewShield: 0 },
+      allTime: { sent: allTimeSent, bills: allTimeBills, sales: Math.round(allTimeSales), googleFiveStar: allTimeSent, reviewShield: 0 }
+    };
+
+    const metrics = {
+      validInvoicesProcessed: allTimeBills,
+      deliveredCount: allTimeSent,
+      fiveStarGoogleReviews: allTimeSent,
+      negativeReviewsShielded: 0,
+      revenueRecovered: 0
+    };
+
+    res.json({
+      success: true,
+      config: storage.getConfig(),
+      metrics: metrics,
+      analytics: analytics,
+      quota: storage.getTodayQuotaUsage(storeCode),
+      transactions: bills,
+      health: { isOnline: true, uptime: process.uptime(), lastSync: new Date().toISOString() },
+      whatsapp: { status: 'CONNECTED', mode: 'CLOUD_EDGE_GATEWAY' },
+      supabase: { isOnline: true, connected: true }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/client/analytics/:storeCode?', async (req, res) => {
+  const storeCode = (req.params.storeCode || req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  const bills = await getStoreBills(storeCode);
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+
+  let todaySent = 0, todayBills = 0, todaySales = 0;
+  let monthSent = 0, monthBills = 0, monthSales = 0;
+  let allTimeSent = 0, allTimeBills = 0, allTimeSales = 0;
+
+  for (const t of bills) {
+    const tTime = new Date(t.timestamp).getTime();
+    const amt = parseFloat(t.totalAmount) || 0;
+    const isDelivered = t.status === 'DELIVERED';
+
+    allTimeBills++;
+    allTimeSales += amt;
+    if (isDelivered) allTimeSent++;
+
+    if (tTime >= thirtyDaysAgo) {
+      monthBills++;
+      monthSales += amt;
+      if (isDelivered) monthSent++;
+    }
+
+    if (tTime >= startOfToday) {
+      todayBills++;
+      todaySales += amt;
+      if (isDelivered) todaySent++;
     }
   }
 
-  res.json({
-    config: storage.getConfig(),
-    metrics: storage.getMetrics(),
-    analytics: analytics,
-    quota: storage.getTodayQuotaUsage(storeCode),
-    transactions: txList,
-    health: { status: 'OPTIMAL', platform: 'Cloud SaaS Portal' },
-    whatsapp: { status: 'CONNECTED', mode: 'CLOUD_HOSTED' },
-    supabase: {
-      isOnline: true,
-      isSimulatedOffline: false,
-      pendingCount: 0,
-      lastSync: new Date().toISOString()
-    }
-  });
-});
+  const analytics = {
+    today: { sent: todaySent, bills: todayBills, sales: Math.round(todaySales), googleFiveStar: todaySent, reviewShield: 0 },
+    lastMonth: { sent: monthSent, bills: monthBills, sales: Math.round(monthSales), googleFiveStar: monthSent, reviewShield: 0 },
+    allTime: { sent: allTimeSent, bills: allTimeBills, sales: Math.round(allTimeSales), googleFiveStar: allTimeSent, reviewShield: 0 }
+  };
 
-app.get('/api/client/analytics/:storeCode?', (req, res) => {
-  const storeCode = req.params.storeCode || req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01';
-  const analytics = storage.getClientDetailedAnalytics(storeCode);
   res.json({ success: true, storeCode, analytics });
 });
 
-// Win-Back Radar Endpoints
-app.get('/api/winback/directory', (req, res) => {
-  const storeCode = req.query.store || null;
-  res.json({ success: true, directory: storage.getCustomerDirectory(storeCode) });
+// Win-Back Radar Endpoints (Unified Supabase Ingestion)
+app.get('/api/winback/directory', async (req, res) => {
+  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  const bills = await getStoreBills(storeCode);
+  const directory = buildCustomerDirectoryFromBills(bills);
+  res.json({ success: true, directory });
 });
 
-app.get('/api/winback/analytics', (req, res) => {
-  const storeCode = req.query.store || req.query.storeCode || null;
-  res.json({ success: true, analytics: storage.getWinBackAnalytics(storeCode) });
+app.get('/api/winback/customers', async (req, res) => {
+  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  const bills = await getStoreBills(storeCode);
+  const customers = buildCustomerDirectoryFromBills(bills);
+  res.json({ success: true, customers });
 });
 
-app.get('/api/winback/customers', (req, res) => {
-  const storeCode = req.query.store || req.query.storeCode || null;
-  res.json({ success: true, customers: storage.getCustomerDirectory(storeCode) });
+app.get('/api/winback/analytics', async (req, res) => {
+  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  const bills = await getStoreBills(storeCode);
+  const customers = buildCustomerDirectoryFromBills(bills);
+
+  const lapsed = customers.filter(c => c.segment === 'LAPSED').length;
+  res.json({
+    success: true,
+    analytics: {
+      lapsedCount: lapsed,
+      winBacksSent: 0,
+      customersRecovered: 0,
+      recoveryRate: 0,
+      totalRecoveredRevenue: 0
+    }
+  });
 });
 
 app.get('/api/winback/template', (req, res) => {
