@@ -199,6 +199,11 @@ function connectWebSocket() {
   };
 }
 
+// Periodic state polling ensures live numbers on cloud and local
+setInterval(() => {
+  fetchState();
+}, 4000);
+
 let clientPeriod = 'today'; // 'today' | 'month' | 'alltime'
 let clientAnalytics = null;
 

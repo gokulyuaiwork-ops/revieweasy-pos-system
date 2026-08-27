@@ -35,6 +35,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const supabaseSync = new SupabaseSyncEngine();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -460,23 +461,26 @@ app.get('/api/state', async (req, res) => {
     }
 
     let storeFeedbacks = storage.getFeedback(storeCode);
-    if (supabaseSync.client) {
+    if (supabaseSync && supabaseSync.client) {
       try {
         const { data, error } = await supabaseSync.client
           .from('review_dispatches')
           .select('*')
           .eq('store_code', storeCode);
         if (!error && data && data.length > 0) {
-          storeFeedbacks = data.map(r => ({
-            id: r.id,
-            storeCode: r.store_code,
-            customerPhone: r.customer_phone,
-            rating: r.rating_given || (r.dispatch_status === 'GOOGLE_REDIRECT' ? 5 : 2),
-            action: r.dispatch_status || 'GOOGLE_REDIRECT',
-            category: r.dispatch_status === 'GOOGLE_REDIRECT' ? 'Satisfied Customer' : 'General Feedback',
-            comment: r.message_text,
-            timestamp: r.created_at || new Date().toISOString()
-          }));
+          storeFeedbacks = data.map(r => {
+            const isPositive = (r.rating_given && r.rating_given >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
+            return {
+              id: r.id,
+              storeCode: r.store_code,
+              customerPhone: r.customer_phone,
+              rating: r.rating_given || (isPositive ? 5 : 2),
+              action: isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK',
+              category: isPositive ? 'Satisfied Customer' : 'General Feedback',
+              comment: r.message_text,
+              timestamp: r.created_at || new Date().toISOString()
+            };
+          });
         }
       } catch (e) {
         console.warn('Supabase feedback fetch note:', e.message);
