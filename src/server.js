@@ -106,10 +106,13 @@ wss.on('connection', (ws) => {
 app.get('/api/state', async (req, res) => {
   try {
     const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-    if (supabaseSync && typeof supabaseSync.pullCloudFeedbacks === 'function') {
-      try {
-        await supabaseSync.pullCloudFeedbacks(storeCode);
-      } catch (e) {}
+    if (supabaseSync) {
+      if (typeof supabaseSync.pullCloudFeedbacks === 'function') {
+        try { await supabaseSync.pullCloudFeedbacks(storeCode); } catch (e) {}
+      }
+      if (typeof supabaseSync.pullCloudBills === 'function') {
+        try { await supabaseSync.pullCloudBills(storeCode); } catch (e) {}
+      }
     }
     res.json({
       success: true,
