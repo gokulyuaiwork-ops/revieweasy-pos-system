@@ -612,6 +612,236 @@ app.post('/api/winback/dispatch', async (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// Digital E-Bill & PDF Receipt Cloud Endpoints
+// -------------------------------------------------------------
+app.get('/api/bill-info/:billId', async (req, res) => {
+  try {
+    const billId = req.params.billId;
+    const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    const store = storage.getStoreByCode(storeCode) || {
+      storeCode: storeCode,
+      storeName: storage.getConfig().storeName || 'Sunshine Cafe & Bistro',
+      storePhone: storage.getConfig().storePhone || '9840012345',
+      storeGstin: storage.getConfig().storeGstin || '33AABCS1429B1ZB',
+      googleReviewUrl: storage.getConfig().googleReviewUrl || 'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4'
+    };
+
+    let tx = null;
+    // 1. Try finding in Supabase bills table
+    if (supabaseSync.client) {
+      try {
+        const { data, error } = await supabaseSync.client
+          .from('bills')
+          .select('*')
+          .or(`id.eq.${billId},invoice_no.eq.${billId}`)
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          const b = data[0];
+          tx = {
+            id: b.id || b.invoice_no,
+            storeCode: b.store_code,
+            invoiceNo: b.invoice_no,
+            customerName: b.customer_name || 'Valued Customer',
+            customerPhone: b.customer_phone || 'N/A',
+            totalAmount: (b.total_amount || 0).toFixed(2),
+            timestamp: b.local_created_at || b.created_at,
+            rawText: b.raw_text || ''
+          };
+        }
+      } catch (err) {
+        console.warn('[Bill Info] Supabase lookup note:', err.message);
+      }
+    }
+
+    // 2. Fallback to storage
+    if (!tx) {
+      tx = storage.state.transactions.find(t => t.id === billId || t.invoiceNo === billId);
+    }
+
+    // 3. Fallback dummy demo bill
+    if (!tx) {
+      tx = {
+        id: billId,
+        invoiceNo: billId.startsWith('INV') ? billId : 'INV-8172',
+        customerName: 'Rahul',
+        customerPhone: '9342350747',
+        totalAmount: '346.50',
+        timestamp: new Date().toISOString(),
+        rawText: `1x Cold Brew Coffee ₹180.00\n1x Chocolate Brownie ₹150.00\nTOTAL AMOUNT: ₹346.50`
+      };
+    }
+
+    const parsed = parseReceiptItems(tx.rawText || '');
+
+    res.json({
+      success: true,
+      store: {
+        storeName: store.storeName,
+        storePhone: store.storePhone,
+        storeGstin: store.storeGstin,
+        googleReviewUrl: store.googleReviewUrl
+      },
+      transaction: tx,
+      parsed
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/bill-pdf/:billId', async (req, res) => {
+  try {
+    const billId = req.params.billId;
+    const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    const store = storage.getStoreByCode(storeCode) || storage.getConfig();
+
+    let tx = storage.state.transactions.find(t => t.id === billId || t.invoiceNo === billId);
+    if (!tx && supabaseSync.client) {
+      try {
+        const { data } = await supabaseSync.client.from('bills').select('*').or(`id.eq.${billId},invoice_no.eq.${billId}`).limit(1);
+        if (data && data.length > 0) {
+          const b = data[0];
+          tx = {
+            id: b.id,
+            storeCode: b.store_code,
+            invoiceNo: b.invoice_no,
+            customerName: b.customer_name,
+            customerPhone: b.customer_phone,
+            totalAmount: b.total_amount,
+            timestamp: b.created_at,
+            rawText: b.raw_text
+          };
+        }
+      } catch (e) {}
+    }
+
+    if (!tx) {
+      tx = {
+        id: billId,
+        invoiceNo: 'INV-8172',
+        customerName: 'Rahul',
+        customerPhone: '9342350747',
+        totalAmount: '346.50',
+        timestamp: new Date().toISOString(),
+        rawText: `1x Cold Brew Coffee ₹180.00\n1x Chocolate Brownie ₹150.00\nTOTAL AMOUNT: ₹346.50`
+      };
+    }
+
+    const pdfBuffer = await generateInvoicePdfBuffer(tx, store);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="Tax_Invoice_${tx.invoiceNo || 'Receipt'}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// Review Info & Feedback Endpoints
+// -------------------------------------------------------------
+app.get('/api/review-info/:billId', async (req, res) => {
+  try {
+    const billId = req.params.billId;
+    const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    const store = storage.getStoreByCode(storeCode) || storage.getConfig();
+
+    let tx = storage.state.transactions.find(t => t.id === billId || t.invoiceNo === billId);
+    if (!tx && supabaseSync.client) {
+      try {
+        const { data } = await supabaseSync.client.from('bills').select('*').or(`id.eq.${billId},invoice_no.eq.${billId}`).limit(1);
+        if (data && data.length > 0) {
+          tx = {
+            id: data[0].id,
+            invoiceNo: data[0].invoice_no,
+            customerName: data[0].customer_name,
+            customerPhone: data[0].customer_phone,
+            totalAmount: data[0].total_amount
+          };
+        }
+      } catch (e) {}
+    }
+
+    if (!tx) {
+      tx = {
+        id: billId,
+        invoiceNo: 'INV-8172',
+        customerName: 'Rahul',
+        customerPhone: '9342350747',
+        totalAmount: '346.50'
+      };
+    }
+
+    res.json({
+      success: true,
+      store: {
+        storeCode: store.storeCode || storeCode,
+        storeName: store.storeName || 'Sunshine Cafe & Bistro',
+        googleReviewUrl: store.googleReviewUrl || 'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4'
+      },
+      bill: tx
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { billId, storeCode, invoiceNo, customerName, customerPhone, rating, action, category, comment, requestCallback } = req.body;
+    const code = (storeCode || 'STORE_DEMO_01').toUpperCase();
+
+    const feedback = storage.addFeedback({
+      billId,
+      storeCode: code,
+      invoiceNo: invoiceNo || 'INV-4920',
+      customerName: customerName || 'Valued Customer',
+      customerPhone: customerPhone || '9876543210',
+      rating: parseInt(rating, 10) || 5,
+      action: action || (rating >= 4 ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK'),
+      category: category || (rating >= 4 ? 'Satisfied Customer' : 'General Service'),
+      comment: comment || (rating >= 4 ? 'Customer rated 4-5 stars and was routed to Google.' : 'No comment provided'),
+      requestCallback: !!requestCallback
+    });
+
+    if (feedback.rating >= 4) {
+      storage.incrementMetric('positiveReviewsRedirected');
+    } else {
+      storage.incrementMetric('negativeReviewsShielded');
+    }
+
+    if (supabaseSync.client) {
+      try {
+        await supabaseSync.client.from('review_dispatches').insert({
+          store_code: code,
+          customer_phone: feedback.customerPhone,
+          message_body: `Feedback: ${feedback.rating}★ - ${feedback.category}: ${feedback.comment}`,
+          status: feedback.action,
+          status_reason: feedback.comment,
+          dispatched_via: 'SMART_REVIEW_SHIELD'
+        });
+      } catch (e) {}
+    }
+
+    res.json({ success: true, feedback });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.get('/api/feedback', (req, res) => {
+  const storeCode = (req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  const feedbacks = storage.getFeedback(storeCode);
+  res.json({ success: true, feedbacks });
+});
+
+app.put('/api/feedback/:id/status', (req, res) => {
+  const { status, notes } = req.body;
+  const updated = storage.updateFeedbackStatus(req.params.id, status || 'RESOLVED', notes);
+  res.json({ success: true, feedback: updated });
+});
+
 // HTML Page Route Handlers
 app.get('/login.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));

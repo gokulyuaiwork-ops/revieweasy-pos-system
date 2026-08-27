@@ -952,6 +952,61 @@ class ResilientStorage {
       recentDispatches: storeDispatches.slice(0, 50)
     };
   }
+
+  // -------------------------------------------------------------
+  // Smart Review Shield & Private Feedback Methods
+  // -------------------------------------------------------------
+  addFeedback(feedbackData) {
+    this.state.privateFeedback = this.state.privateFeedback || [];
+    const record = {
+      id: feedbackData.id || `FB_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`,
+      billId: feedbackData.billId || null,
+      storeCode: (feedbackData.storeCode || this.state.config.storeCode || 'STORE_DEMO_01').toUpperCase(),
+      invoiceNo: feedbackData.invoiceNo || 'INV-4920',
+      customerName: feedbackData.customerName || 'Valued Customer',
+      customerPhone: feedbackData.customerPhone || '9876543210',
+      rating: parseInt(feedbackData.rating, 10) || 5,
+      action: feedbackData.action || (feedbackData.rating >= 4 ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK'),
+      category: feedbackData.category || (feedbackData.rating >= 4 ? 'Satisfied Customer' : 'General Service'),
+      comment: feedbackData.comment || '',
+      requestCallback: !!feedbackData.requestCallback,
+      status: feedbackData.status || 'OPEN',
+      notes: feedbackData.notes || '',
+      timestamp: feedbackData.timestamp || new Date().toISOString()
+    };
+
+    this.state.privateFeedback.unshift(record);
+    if (this.state.privateFeedback.length > 500) {
+      this.state.privateFeedback.pop();
+    }
+
+    if (record.rating >= 4) {
+      this.incrementMetric('positiveReviewsRedirected');
+    } else {
+      this.incrementMetric('negativeReviewsShielded');
+    }
+
+    this.save();
+    return record;
+  }
+
+  getFeedback(storeCode = null) {
+    this.state.privateFeedback = this.state.privateFeedback || [];
+    if (!storeCode) return this.state.privateFeedback;
+    const code = storeCode.toUpperCase();
+    return this.state.privateFeedback.filter(f => (f.storeCode || '').toUpperCase() === code);
+  }
+
+  updateFeedbackStatus(id, status = 'RESOLVED', notes = '') {
+    this.state.privateFeedback = this.state.privateFeedback || [];
+    const item = this.state.privateFeedback.find(f => f.id === id);
+    if (!item) return null;
+    item.status = status;
+    if (notes) item.notes = notes;
+    item.updatedAt = new Date().toISOString();
+    this.save();
+    return item;
+  }
 }
 
 export const storage = new ResilientStorage();
