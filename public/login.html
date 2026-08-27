@@ -222,6 +222,19 @@
   </div>
 
   <script>
+    // Auto-redirect if already logged in
+    window.addEventListener('DOMContentLoaded', () => {
+      const userJson = localStorage.getItem('revieweasy_user');
+      if (userJson) {
+        try {
+          const user = JSON.parse(userJson);
+          if (user && user.id) {
+            window.location.href = user.role === 'ADMIN' ? '/admin.html' : '/index.html';
+          }
+        } catch (e) {}
+      }
+    });
+
     function fillCredentials(email, password) {
       document.getElementById('email').value = email;
       document.getElementById('password').value = password;
