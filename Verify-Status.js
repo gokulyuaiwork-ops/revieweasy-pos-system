@@ -71,7 +71,7 @@ http.get('http://localhost:3000/api/state', (res) => {
       console.log('  ✅ [PASS] Background service is LIVE and responding HTTP 200!');
       console.log(`     • Store Name: ${data.config?.storeName || 'ReviewEasy'}`);
       console.log(`     • WhatsApp  : ${data.whatsapp?.status || 'Active'}`);
-      console.log(`     • Cloud Sync: ${data.supabase?.isOnline ? 'Online (Supabase)' : 'Connecting'}`);
+      console.log(`     • Cloud Sync: ${data.supabase?.isOnline ? 'Online (Cloud)' : 'Connecting'}`);
 
       // 6. Check Windows Spooler Directory
       console.log('\n[6/6] Thermal Printer Spooler Monitor:');
