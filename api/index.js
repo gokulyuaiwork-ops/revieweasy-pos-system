@@ -432,6 +432,7 @@ app.get('/api/feedback', async (req, res) => {
     }
   }
   
+  feedbacks = feedbacks.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   res.json({ success: true, feedbacks });
 });
 

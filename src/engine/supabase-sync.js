@@ -345,6 +345,7 @@ export class SupabaseSyncEngine {
           }
         }
         if (newCount > 0) {
+          storage.state.privateFeedback.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
           storage.save();
           console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s)/complaint(s) from cloud into local store!`);
           this.broadcast('FEEDBACK_RECEIVED', {});

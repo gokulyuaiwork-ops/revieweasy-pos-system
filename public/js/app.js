@@ -893,7 +893,10 @@ function renderFeedbackTable(feedbacks) {
     return;
   }
 
-  tbody.innerHTML = feedbacks.map(fb => {
+  // Always ensure newest feedback is at the top (Strict Descending Order)
+  const sortedFeedbacks = feedbacks.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  tbody.innerHTML = sortedFeedbacks.map(fb => {
     const timeStr = new Date(fb.timestamp).toLocaleTimeString();
     const isShielded = fb.action === 'PRIVATE_FEEDBACK';
     
