@@ -97,6 +97,8 @@ wss.on('connection', (ws) => {
       }
     }
   }));
+});
+
 // -------------------------------------------------------------
 // Core Live State & Telemetry Polling Endpoint
 // -------------------------------------------------------------
@@ -109,7 +111,7 @@ app.get('/api/state', (req, res) => {
       metrics: storage.getMetrics(),
       analytics: storage.getClientDetailedAnalytics(storeCode),
       quota: storage.getTodayQuotaUsage(storeCode),
-      transactions: storage.getTransactions(50),
+      transactions: storage.getTransactions(50).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode),
       health: resilience.getHealthSummary(),
       whatsapp: {
         status: localBaileys.status,
