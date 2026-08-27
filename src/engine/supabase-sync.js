@@ -17,13 +17,17 @@ export class SupabaseSyncEngine {
 
   initClient() {
     const config = storage.getConfig();
-    if (config.supabaseUrl && config.supabaseAnonKey) {
+    const url = process.env.SUPABASE_URL || config.supabaseUrl || 'https://fzjjztbobwtuywohwmfe.supabase.co';
+    const anonKey = process.env.SUPABASE_ANON_KEY || config.supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6amp6dGJvYnd0dXl3b2h3bWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3ODUxNDcsImV4cCI6MjEwMjM2MTE0N30.XVIo0uTuFd7p66DaufjLXu1PqGJuLVkEEfY5a32kQ28';
+
+    if (url && anonKey) {
       try {
-        this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
-          auth: { persistSession: false },
-          realtime: { transport: WebSocket }
-        });
-        console.log('[Supabase Sync] ✅ Client connected to live cloud endpoint:', config.supabaseUrl);
+        const options = { auth: { persistSession: false } };
+        if (typeof WebSocket !== 'undefined') {
+          options.realtime = { transport: WebSocket };
+        }
+        this.client = createClient(url, anonKey, options);
+        console.log('[Supabase Sync] ✅ Client connected to live cloud endpoint:', url);
       } catch (err) {
         console.warn('[Supabase Sync] Client init warning:', err.message);
       }
