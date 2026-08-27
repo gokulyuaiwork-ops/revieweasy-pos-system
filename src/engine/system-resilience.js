@@ -15,6 +15,20 @@ export class SystemResilienceEngine {
   }
 
   /**
+   * Check real-time internet connectivity
+   */
+  async checkInternet() {
+    return new Promise((resolve) => {
+      const req = https.request('https://www.google.com', { method: 'HEAD', timeout: 3000 }, (res) => {
+        resolve(res.statusCode >= 200 && res.statusCode < 400);
+      });
+      req.on('error', () => resolve(false));
+      req.on('timeout', () => { req.destroy(); resolve(false); });
+      req.end();
+    });
+  }
+
+  /**
    * Category C1: SNTP / HTTP Date-Header Time Drift Correction (Dead CMOS Battery Fix)
    */
   async syncSystemClockOffset() {

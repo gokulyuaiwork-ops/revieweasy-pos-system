@@ -749,6 +749,39 @@ app.post('/api/clear-history', (req, res) => {
   res.json({ success: true });
 });
 
+// Smart Auto-Start Browser Launcher on Internet Ready
+async function launchDashboardOnInternetReady(maxAttempts = 30) {
+  let attempts = 0;
+  const checkAndOpen = async () => {
+    attempts++;
+    const isOnline = await resilience.checkInternet();
+    if (isOnline) {
+      console.log(`[Auto-Start] 🌐 Internet Active! Opening http://localhost:${PORT}/index.html automatically...`);
+      import('child_process').then(cp => {
+        if (process.platform === 'win32') {
+          cp.exec(`start http://localhost:${PORT}/index.html`);
+        } else if (process.platform === 'darwin') {
+          cp.exec(`open http://localhost:${PORT}/index.html`);
+        } else {
+          cp.exec(`xdg-open http://localhost:${PORT}/index.html`);
+        }
+      });
+      return;
+    }
+
+    if (attempts < maxAttempts) {
+      setTimeout(checkAndOpen, 3000);
+    } else {
+      import('child_process').then(cp => {
+        if (process.platform === 'win32') cp.exec(`start http://localhost:${PORT}/index.html`);
+      });
+    }
+  };
+
+  // Give Windows 2.5s on startup before initial internet check
+  setTimeout(checkAndOpen, 2500);
+}
+
 // Start Server
 server.listen(PORT, () => {
   console.log(`\n========================================================`);
@@ -758,4 +791,7 @@ server.listen(PORT, () => {
   console.log(`🏪 Client Dashboard    : http://localhost:${PORT}/index.html`);
   console.log(`🖨️  Raw TCP Interceptor : 0.0.0.0:9100`);
   console.log(`========================================================\n`);
+
+  // Activate automated dashboard launcher upon internet connection
+  launchDashboardOnInternetReady();
 });
