@@ -79,14 +79,15 @@ autoUpdater.startScheduler(12);
 // WebSocket Connection Handler
 wss.on('connection', (ws) => {
   console.log('[WebSocket] Client connected to live telemetry feed');
+  const storeCode = (storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
   ws.send(JSON.stringify({
     type: 'INITIAL_STATE',
     data: {
       config: storage.getConfig(),
       metrics: storage.getMetrics(),
-      analytics: storage.getClientDetailedAnalytics(storage.getConfig().storeCode),
-      quota: storage.getTodayQuotaUsage(),
-      transactions: storage.getTransactions(50),
+      analytics: storage.getClientDetailedAnalytics(storeCode),
+      quota: storage.getTodayQuotaUsage(storeCode),
+      transactions: storage.getTransactions(50).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode),
       health: resilience.getHealthSummary(),
       whatsapp: localBaileys.getStatus(),
       supabase: {

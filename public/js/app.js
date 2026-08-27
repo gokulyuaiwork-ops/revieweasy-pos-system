@@ -202,6 +202,19 @@ function connectWebSocket() {
 let clientPeriod = 'today'; // 'today' | 'month' | 'alltime'
 let clientAnalytics = null;
 
+function getActiveStoreCode() {
+  const userJson = localStorage.getItem('revieweasy_user');
+  if (userJson) {
+    try {
+      const user = JSON.parse(userJson);
+      if (user && (user.storeCode || (user.store && user.store.storeCode))) {
+        return (user.storeCode || user.store.storeCode).toUpperCase();
+      }
+    } catch (e) {}
+  }
+  return (currentConfig && currentConfig.storeCode ? currentConfig.storeCode : 'STORE_DEMO_01').toUpperCase();
+}
+
 function handleSocketMessage(msg) {
   const { type, data } = msg;
 
@@ -215,7 +228,11 @@ function handleSocketMessage(msg) {
     }
     renderConfig(data.config);
     renderQuota(data.quota);
-    renderTransactions(data.transactions);
+
+    const storeCode = getActiveStoreCode();
+    const storeTxs = (data.transactions || []).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode);
+    renderTransactions(storeTxs);
+
     renderHealth(data.health);
     renderWhatsAppStatus(data.whatsapp);
     renderSupabaseStatus(data.supabase);
@@ -260,8 +277,8 @@ function handleSocketMessage(msg) {
 
 async function fetchState() {
   try {
-    const storeCode = currentConfig.storeCode || 'STORE_DEMO_01';
-    const res = await fetch(`/api/state?store=${storeCode}`);
+    const storeCode = getActiveStoreCode();
+    const res = await fetch(`/api/state?store=${encodeURIComponent(storeCode)}`);
     const state = await res.json();
     
     if (state.analytics) {
@@ -425,12 +442,15 @@ function renderTransactions(txList) {
   const tbody = document.getElementById('txTableBody');
   if (!tbody || !txList) return;
 
-  if (txList.length === 0) {
+  const storeCode = getActiveStoreCode();
+  const filteredList = txList.filter(tx => (tx.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode);
+
+  if (filteredList.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 32px 16px; font-weight: 500;">No print jobs intercepted yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = txList.map(tx => {
+  tbody.innerHTML = filteredList.map(tx => {
     const timeStr = new Date(tx.timestamp).toLocaleTimeString();
     const statusClass = `status-${tx.status}`;
     const syncBadge = tx.synced === 1
