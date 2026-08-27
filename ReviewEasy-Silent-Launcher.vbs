@@ -4,10 +4,9 @@ Set fso = CreateObject("Scripting.FileSystemObject")
 strScriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
 WshShell.CurrentDirectory = strScriptDir
 
-batPath = strScriptDir & "\Run-Background-Service.bat"
-
-' Run bat file via cmd.exe with hidden window (0) and async non-blocking (False)
-WshShell.Run "cmd.exe /c """ & batPath & """", 0, False
+' Run node server in background with 0 (hidden window) and False (non-blocking)
+strCommand = "cmd.exe /c cd /d """ & strScriptDir & """ && node src\server.js"
+WshShell.Run strCommand, 0, False
 
 Set WshShell = Nothing
 Set fso = Nothing
