@@ -254,10 +254,24 @@ export class WhatsAppDispatcher {
 
     if (flyerImageBuffer && Buffer.isBuffer(flyerImageBuffer)) {
       hasImageAttachment = true;
+      const overlayConfig = store?.flyerOverlayConfig || config.flyerOverlayConfig;
+      let finalFlyerBuffer = flyerImageBuffer;
+
+      try {
+        finalFlyerBuffer = await PersonalizedImageGenerator.generatePersonalizedFlyer(
+          flyerImageBuffer,
+          tx.customerName,
+          overlayConfig
+        );
+      } catch (err) {
+        console.error('[WhatsApp Dispatcher] Error generating personalized flyer:', err.message);
+        finalFlyerBuffer = flyerImageBuffer;
+      }
+
       messagePayload = {
         text: messagePreviewText,
         caption: messagePreviewText,
-        image: flyerImageBuffer,
+        image: finalFlyerBuffer,
         mimetype: 'image/jpeg'
       };
     }
