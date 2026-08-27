@@ -249,11 +249,10 @@ export class WhatsAppDispatcher {
       }
     }
 
-    // Ensure clean formatted text message is primary
+    let hasImageAttachment = false;
     let messagePayload = { text: messagePreviewText };
 
     if (flyerImageBuffer && Buffer.isBuffer(flyerImageBuffer)) {
-      // Validate that buffer is standard image (JPEG/PNG)
       hasImageAttachment = true;
       messagePayload = {
         text: messagePreviewText,
