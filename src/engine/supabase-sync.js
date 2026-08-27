@@ -267,14 +267,20 @@ export class SupabaseSyncEngine {
     if (!this.client) return false;
     try {
       const isUuid = fb.billId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fb.billId);
+      const isPositive = (Number(fb.rating) >= 4) || fb.action === 'GOOGLE_REDIRECT';
+      const action = isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK';
+      const messageText = isPositive
+        ? (fb.comment || '5-Star Google Review Redirect')
+        : `Shielded Complaint (${fb.rating}★) - ${fb.category || 'General'}: ${fb.comment || 'No comment'}`;
+
       const res = await this.client.from('review_dispatches').insert({
-        store_code: fb.storeCode || 'STORE_DEMO_01',
+        store_code: (fb.storeCode || 'STORE_DEMO_01').toUpperCase(),
         bill_id: isUuid ? fb.billId : null,
         customer_phone: fb.customerPhone || '9876543210',
         customer_name: fb.customerName || 'Valued Customer',
-        message_text: fb.comment || `Feedback: ${fb.rating}★ (${fb.action})`,
-        dispatch_status: fb.action || 'GOOGLE_REDIRECT',
-        rating_given: parseInt(fb.rating, 10) || 5,
+        message_text: messageText,
+        dispatch_status: action,
+        rating_given: parseInt(fb.rating, 10) || (isPositive ? 5 : 2),
         review_link_clicked: true
       });
       if (res.error) {
@@ -309,18 +315,29 @@ export class SupabaseSyncEngine {
           const exists = storage.state.privateFeedback.some(f => f.id === r.id || (f.customerPhone === r.customer_phone && Math.abs(new Date(f.timestamp).getTime() - new Date(r.created_at).getTime()) < 5000));
           if (!exists) {
             const isPositive = (r.rating_given && r.rating_given >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
+            let category = isPositive ? 'Satisfied Customer' : 'General Grievance';
+            let comment = r.message_text || '';
+            if (comment.includes(' - ') && comment.includes(': ')) {
+              const parts = comment.split(' - ');
+              if (parts.length > 1) {
+                const subParts = parts[1].split(': ');
+                category = subParts[0] || category;
+                comment = subParts.slice(1).join(': ') || comment;
+              }
+            }
+
             storage.state.privateFeedback.unshift({
-              id: r.id || `FB_${Date.now()}`,
+              id: r.id || `FB_${Date.now()}_${Math.floor(Math.random()*1000)}`,
               billId: r.bill_id || null,
               storeCode: r.store_code,
               invoiceNo: 'INV-4920',
               customerName: r.customer_name || 'Customer',
               customerPhone: r.customer_phone || '9876543210',
               rating: r.rating_given || (isPositive ? 5 : 2),
-              action: r.dispatch_status || (isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK'),
-              category: isPositive ? 'Satisfied Customer' : 'General Feedback',
-              comment: r.message_text || 'Customer submitted review on mobile',
-              requestCallback: false,
+              action: isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK',
+              category: category,
+              comment: comment,
+              requestCallback: !isPositive,
               status: 'OPEN',
               timestamp: r.created_at || new Date().toISOString()
             });
@@ -329,7 +346,7 @@ export class SupabaseSyncEngine {
         }
         if (newCount > 0) {
           storage.save();
-          console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s) from cloud into local store!`);
+          console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s)/complaint(s) from cloud into local store!`);
           this.broadcast('FEEDBACK_RECEIVED', {});
           this.broadcast('METRICS_UPDATED', storage.getMetrics());
         }

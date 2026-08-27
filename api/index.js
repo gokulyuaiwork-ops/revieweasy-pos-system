@@ -386,9 +386,53 @@ app.post('/api/feedback', async (req, res) => {
   }
 });
 
-app.get('/api/feedback', (req, res) => {
+app.get('/api/feedback', async (req, res) => {
   const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  res.json({ success: true, feedbacks: storage.getFeedback(storeCode) });
+  let feedbacks = storage.getFeedback(storeCode);
+  
+  if (supabaseSync && supabaseSync.client) {
+    try {
+      const { data, error } = await supabaseSync.client
+        .from('review_dispatches')
+        .select('*')
+        .eq('store_code', storeCode)
+        .order('created_at', { ascending: false });
+      
+      if (!error && data && data.length > 0) {
+        feedbacks = data.map(r => {
+          const isPositive = (r.rating_given && r.rating_given >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
+          let category = isPositive ? 'Satisfied Customer' : 'Customer Grievance';
+          let comment = r.message_text || '';
+          if (comment.includes(' - ') && comment.includes(': ')) {
+            const parts = comment.split(' - ');
+            if (parts.length > 1) {
+              const sub = parts[1].split(': ');
+              category = sub[0] || category;
+              comment = sub.slice(1).join(': ') || comment;
+            }
+          }
+          return {
+            id: r.id,
+            storeCode: r.store_code,
+            customerPhone: r.customer_phone || '9876543210',
+            customerName: r.customer_name || 'Valued Customer',
+            invoiceNo: 'INV-4920',
+            rating: r.rating_given || (isPositive ? 5 : 2),
+            action: r.dispatch_status || (isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK'),
+            category: category,
+            comment: comment,
+            requestCallback: !isPositive,
+            status: 'OPEN',
+            timestamp: r.created_at || new Date().toISOString()
+          };
+        });
+      }
+    } catch (e) {
+      console.warn('Supabase feedback get error:', e.message);
+    }
+  }
+  
+  res.json({ success: true, feedbacks });
 });
 
 app.put('/api/feedback/:id/status', (req, res) => {

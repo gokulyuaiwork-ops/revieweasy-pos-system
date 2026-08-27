@@ -479,6 +479,12 @@
         if (btn) btn.classList.toggle('active', key === tabName);
         if (pane) pane.classList.toggle('active', key === tabName);
       });
+
+      if (tabName === 'shield' && typeof fetchFeedbacks === 'function') {
+        fetchFeedbacks();
+      } else if (tabName === 'winback' && typeof fetchWinBackData === 'function') {
+        fetchWinBackData();
+      }
     }
   </script>
 </body>

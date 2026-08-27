@@ -550,7 +550,7 @@ app.post('/api/feedback', async (req, res) => {
 });
 
 app.get('/api/feedback', (req, res) => {
-  const storeCode = req.query.storeCode || null;
+  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
   const feedbacks = storage.getFeedback(storeCode);
   res.json({ success: true, feedbacks });
 });

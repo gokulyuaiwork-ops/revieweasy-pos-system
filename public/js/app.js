@@ -202,6 +202,7 @@ function connectWebSocket() {
 // Periodic state polling ensures live numbers on cloud and local
 setInterval(() => {
   fetchState();
+  fetchFeedbacks();
 }, 4000);
 
 let clientPeriod = 'today'; // 'today' | 'month' | 'alltime'
@@ -872,7 +873,8 @@ async function clearHistory() {
 // -------------------------------------------------------------
 async function fetchFeedbacks() {
   try {
-    const res = await fetch('/api/feedback');
+    const storeCode = getActiveStoreCode();
+    const res = await fetch(`/api/feedback?store=${encodeURIComponent(storeCode)}`);
     const data = await res.json();
     if (data.success) {
       renderFeedbackTable(data.feedbacks || []);
