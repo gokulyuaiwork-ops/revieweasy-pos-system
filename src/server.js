@@ -103,9 +103,14 @@ wss.on('connection', (ws) => {
 // -------------------------------------------------------------
 // Core Live State & Telemetry Polling Endpoint
 // -------------------------------------------------------------
-app.get('/api/state', (req, res) => {
+app.get('/api/state', async (req, res) => {
   try {
     const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    if (supabaseSync && typeof supabaseSync.pullCloudFeedbacks === 'function') {
+      try {
+        await supabaseSync.pullCloudFeedbacks(storeCode);
+      } catch (e) {}
+    }
     res.json({
       success: true,
       config: storage.getConfig(),
@@ -549,8 +554,13 @@ app.post('/api/feedback', async (req, res) => {
   }
 });
 
-app.get('/api/feedback', (req, res) => {
+app.get('/api/feedback', async (req, res) => {
   const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  if (supabaseSync && typeof supabaseSync.pullCloudFeedbacks === 'function') {
+    try {
+      await supabaseSync.pullCloudFeedbacks(storeCode);
+    } catch (e) {}
+  }
   const feedbacks = storage.getFeedback(storeCode);
   res.json({ success: true, feedbacks });
 });
