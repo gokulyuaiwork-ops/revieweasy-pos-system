@@ -469,7 +469,7 @@ class ResilientStorage {
       let dummyFiltered = 0;
 
       for (const t of txList) {
-        if (['VALID_INVOICE', 'SCHEDULED_DISPATCH', 'DELIVERED', 'QUEUED_QUIET_HOURS'].includes(t.status)) {
+        if (!['IGNORED_KOT', 'DUPLICATE_SUPPRESSED', 'ANONYMOUS_WALKIN'].includes(t.status)) {
           totalBills++;
           totalSales += parseFloat(t.totalAmount) || 0;
         }
