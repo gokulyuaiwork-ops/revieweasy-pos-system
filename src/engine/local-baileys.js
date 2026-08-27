@@ -234,13 +234,14 @@ export class LocalBaileysEngine {
     if (this.socket && this.status === 'CONNECTED') {
       try {
         let result;
-        if (isImage) {
+        if (isImage && Buffer.isBuffer(messagePayload.image)) {
+          // If JPEG or PNG
           result = await this.socket.sendMessage(jid, {
             image: messagePayload.image,
             caption: messagePayload.caption || '',
             mimetype: messagePayload.mimetype || 'image/jpeg'
           });
-        } else if (isDocument) {
+        } else if (isDocument && Buffer.isBuffer(messagePayload.document)) {
           result = await this.socket.sendMessage(jid, {
             document: messagePayload.document,
             mimetype: messagePayload.mimetype || 'application/pdf',
@@ -248,22 +249,22 @@ export class LocalBaileysEngine {
             caption: messagePayload.caption || ''
           });
         } else {
-          const text = typeof messagePayload === 'string' ? messagePayload : (messagePayload.text || '');
+          const text = typeof messagePayload === 'string' ? messagePayload : (messagePayload.text || messagePayload.caption || '');
           result = await this.socket.sendMessage(jid, { text });
         }
+        console.log(`[Local Baileys] ✅ Message successfully delivered over live socket to ${jid}`);
         return { success: true, result, mode: 'LIVE_BAILEYS_SOCKET' };
       } catch (err) {
-        console.warn(`[Local Baileys] Live send error (${err.message}). Logged to local session.`);
+        console.error(`[Local Baileys] ❌ Live send error to ${jid}:`, err.message);
+        return { success: false, error: err.message, mode: 'SOCKET_ERROR' };
       }
     }
 
     return {
-      success: true,
+      success: false,
       jid,
-      isImage: !!isImage,
-      isDocument: !!isDocument,
-      mode: 'LOCAL_EDGE_DISPATCHER',
-      sentAt: new Date().toISOString()
+      mode: 'DISCONNECTED',
+      reason: 'WhatsApp socket is not connected. Scan QR in dashboard.'
     };
   }
 

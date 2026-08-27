@@ -154,6 +154,13 @@ export class SupabaseSyncEngine {
     }
 
     try {
+      if (tx.invoiceNo) {
+        await this.client
+          .from('bills')
+          .update({ status: status })
+          .eq('invoice_no', tx.invoiceNo);
+      }
+
       await this.client
         .from('review_dispatches')
         .insert({
@@ -165,7 +172,7 @@ export class SupabaseSyncEngine {
           dispatched_via: 'LOCAL_BAILEYS_WEBSOCKET',
           dispatched_at: status === 'DELIVERED' ? new Date().toISOString() : null
         });
-      console.log(`[Supabase Sync] ✅ Dispatch status '${status}' for ${tx.customerPhone} synced to Supabase.`);
+      console.log(`[Supabase Sync] ✅ Dispatch status '${status}' for #${tx.invoiceNo} (${tx.customerPhone}) synced to Supabase.`);
       return { success: true };
     } catch (err) {
       console.warn(`[Supabase Sync] Dispatch status sync warning:`, err.message);

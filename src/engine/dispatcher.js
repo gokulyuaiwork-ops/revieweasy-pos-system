@@ -249,39 +249,18 @@ export class WhatsAppDispatcher {
       }
     }
 
-    let hasImageAttachment = false;
-    let messagePayload;
+    // Ensure clean formatted text message is primary
+    let messagePayload = { text: messagePreviewText };
 
-    if (flyerImageBuffer) {
+    if (flyerImageBuffer && Buffer.isBuffer(flyerImageBuffer)) {
+      // Validate that buffer is standard image (JPEG/PNG)
       hasImageAttachment = true;
-
-      // Category D: Dynamic Customer Name Personalization on Brand Flyer
-      const overlayConfig = store?.flyerOverlayConfig || config.flyerOverlayConfig;
-      let finalFlyerBuffer = flyerImageBuffer;
-      let flyerMimeType = 'image/jpeg';
-
-      if (overlayConfig && overlayConfig.enabled !== false && tx.customerName) {
-        try {
-          finalFlyerBuffer = PersonalizedImageGenerator.generatePersonalizedFlyer(
-            flyerImageBuffer,
-            tx.customerName,
-            overlayConfig
-          );
-          flyerMimeType = 'image/svg+xml';
-        } catch (err) {
-          console.error('[WhatsApp Dispatcher] Error personalizing flyer image:', err.message);
-          finalFlyerBuffer = flyerImageBuffer;
-        }
-      }
-
       messagePayload = {
-        image: finalFlyerBuffer,
-        mimetype: flyerMimeType,
-        caption: messagePreviewText
+        text: messagePreviewText,
+        caption: messagePreviewText,
+        image: flyerImageBuffer,
+        mimetype: 'image/jpeg'
       };
-    } else {
-      // Fallback text only if no flyer image exists
-      messagePayload = messagePreviewText;
     }
 
     // 1. Send locally from PC via Baileys Multi-Device Engine
