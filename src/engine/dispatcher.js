@@ -19,6 +19,20 @@ export class WhatsAppDispatcher {
     this.lastDispatchedTimestamp = 0;
     this.rateLimitTimer = null;
     this.startPeriodicQueueWorker();
+    setTimeout(() => this.recoverPendingDispatches(), 3000);
+  }
+
+  /**
+   * Automatically recover and process any dispatches that were left in SCHEDULED_DISPATCH
+   */
+  async recoverPendingDispatches() {
+    const pending = storage.state.transactions.filter(t => t.status === 'SCHEDULED_DISPATCH');
+    if (pending.length > 0) {
+      console.log(`[WhatsApp Dispatcher] 🔄 Recovering ${pending.length} pending dispatch(es) from queue...`);
+      for (const tx of pending) {
+        this.enqueueForPacedDispatch(tx.id);
+      }
+    }
   }
 
   setEngines(localBaileys, supabaseSync) {
