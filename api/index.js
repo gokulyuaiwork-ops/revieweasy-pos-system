@@ -333,10 +333,12 @@ app.get('/api/review-info/:billId', (req, res) => {
   res.json({ success: true, store, bill });
 });
 
-app.post('/api/feedback', (req, res) => {
+app.post('/api/feedback', async (req, res) => {
   try {
     const fb = storage.addFeedback(req.body);
-    supabaseSync.syncFeedbackToCloud(fb);
+    if (supabaseSync && typeof supabaseSync.syncFeedbackToCloud === 'function') {
+      await supabaseSync.syncFeedbackToCloud(fb);
+    }
     res.json({ success: true, feedback: fb });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -344,13 +346,13 @@ app.post('/api/feedback', (req, res) => {
 });
 
 app.get('/api/feedback', (req, res) => {
-  const storeCode = req.query.store || null;
-  res.json({ success: true, feedback: storage.getFeedback(storeCode) });
+  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  res.json({ success: true, feedbacks: storage.getFeedback(storeCode) });
 });
 
 app.put('/api/feedback/:id/status', (req, res) => {
   const { status, notes } = req.body;
-  const fb = storage.updateFeedbackStatus(req.params.id, status, notes);
+  const fb = storage.updateFeedbackStatus(req.params.id, status || 'RESOLVED', notes);
   if (!fb) return res.status(404).json({ error: 'Feedback not found' });
   res.json({ success: true, feedback: fb });
 });

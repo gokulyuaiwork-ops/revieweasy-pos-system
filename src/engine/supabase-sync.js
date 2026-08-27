@@ -260,6 +260,27 @@ export class SupabaseSyncEngine {
     }
   }
 
+  /**
+   * Push feedback event to Supabase Cloud
+   */
+  async syncFeedbackToCloud(fb) {
+    if (!this.client) return false;
+    try {
+      await this.client.from('review_dispatches').insert({
+        store_code: fb.storeCode || 'STORE_DEMO_01',
+        customer_phone: fb.customerPhone || '9876543210',
+        message_body: `Feedback: ${fb.rating}★ - ${fb.category}: ${fb.comment}`,
+        status: fb.action || 'PRIVATE_FEEDBACK',
+        status_reason: fb.comment || '',
+        dispatched_via: 'SMART_REVIEW_SHIELD'
+      });
+      return true;
+    } catch (e) {
+      console.warn('[Supabase Sync] Feedback log note:', e.message);
+      return false;
+    }
+  }
+
   startPeriodicSyncWorker() {
     // Initial sync
     setTimeout(() => {
