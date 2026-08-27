@@ -889,7 +889,7 @@ function renderFeedbackTable(feedbacks) {
   if (!tbody) return;
 
   if (!feedbacks || feedbacks.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 20px;">No private complaints or shielded feedback yet. 100% customer satisfaction! 🎉</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #0f172a; padding: 24px; font-weight: 600;">No private complaints or shielded feedback yet. 100% customer satisfaction! 🎉</td></tr>`;
     return;
   }
 
@@ -898,41 +898,41 @@ function renderFeedbackTable(feedbacks) {
     const isShielded = fb.action === 'PRIVATE_FEEDBACK';
     
     // Star rating display
-    const starEmoji = '⭐'.repeat(fb.rating);
+    const starEmoji = '⭐'.repeat(fb.rating || 5);
     const ratingBadge = isShielded
-      ? `<span style="color: #f43f5e; font-weight: 700;">${starEmoji} (${fb.rating}/5)</span>`
-      : `<span style="color: #10b981; font-weight: 700;">${starEmoji} (${fb.rating}/5)</span>`;
+      ? `<span style="color: #e11d48; font-weight: 800;">${starEmoji} (${fb.rating}/5)</span>`
+      : `<span style="color: #059669; font-weight: 800;">${starEmoji} (${fb.rating}/5)</span>`;
 
     const statusBadge = fb.status === 'OPEN'
-      ? `<span class="badge-status" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e; font-size: 10px;">⚠️ OPEN (Needs Attention)</span>`
-      : `<span class="badge-status" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 10px;">✅ RESOLVED</span>`;
+      ? `<span class="badge-status" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 10px; font-weight: 800;">⚠️ OPEN (NEEDS ATTENTION)</span>`
+      : `<span class="badge-status" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 10px; font-weight: 800;">✅ RESOLVED</span>`;
 
-    const callbackText = fb.requestCallback ? `<span style="color: #fbbf24; font-size: 10px; font-weight: 700;">📞 Call Requested</span>` : ``;
+    const callbackText = fb.requestCallback ? `<span style="color: #d97706; font-size: 11px; font-weight: 800; display: inline-block; margin-top: 3px;">📞 Call Requested</span>` : ``;
 
     const cleanPhone = (fb.customerPhone || '').replace(/\D/g, '');
-    const waLink = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(`Hi ${fb.customerName}, this is the manager from ${currentConfig.storeName || 'the store'}. We received your feedback regarding ${fb.category} on invoice #${fb.invoiceNo} and wanted to personally reach out.`)}`;
+    const waLink = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(`Hi ${fb.customerName || 'Customer'}, this is the manager from ${currentConfig.storeName || 'the store'}. We received your feedback regarding ${fb.category} on invoice #${fb.invoiceNo} and wanted to personally reach out.`)}`;
 
     const actionBtn = fb.status === 'OPEN'
-      ? `<button class="btn-sm" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 10px; padding: 4px 8px;" onclick="resolveFeedback('${fb.id}')">Mark Resolved</button>`
-      : `<button class="btn-sm" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid var(--border-color); font-size: 10px; padding: 4px 8px;" onclick="reopenFeedback('${fb.id}')">Reopen</button>`;
+      ? `<button class="btn-sm" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px; padding: 5px 10px; font-weight: 700; cursor: pointer; border-radius: 6px;" onclick="resolveFeedback('${fb.id}')">Mark Resolved</button>`
+      : `<button class="btn-sm" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 11px; padding: 5px 10px; font-weight: 700; cursor: pointer; border-radius: 6px;" onclick="reopenFeedback('${fb.id}')">Reopen</button>`;
 
     return `
       <tr>
-        <td style="color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 11px;">${timeStr}</td>
-        <td><strong style="color: #ffffff;">${escapeHtml(fb.customerName || 'Customer')}</strong></td>
-        <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">${escapeHtml(fb.customerPhone || '—')}</td>
-        <td style="font-size: 11px;"><strong style="color: #38bdf8;">#${escapeHtml(fb.invoiceNo || 'N/A')}</strong></td>
+        <td style="color: #0f172a; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;">${timeStr}</td>
+        <td><strong style="color: #0f172a; font-size: 13px; font-weight: 800;">${escapeHtml(fb.customerName || 'Customer')}</strong></td>
+        <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #0f172a; font-weight: 700;">${escapeHtml(fb.customerPhone || '—')}</td>
+        <td style="font-size: 12px;"><strong style="color: #0284c7; font-family: 'JetBrains Mono', monospace; font-weight: 800;">#${escapeHtml(fb.invoiceNo || 'N/A')}</strong></td>
         <td>${ratingBadge}</td>
-        <td><span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #cbd5e1;">${escapeHtml(fb.category || 'General')}</span></td>
-        <td style="max-width: 200px; font-size: 11px; color: #e2e8f0; line-height: 1.3;">
+        <td><span style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 6px; font-size: 11px; color: #0f172a; font-weight: 800; display: inline-block;">${escapeHtml(fb.category || 'General')}</span></td>
+        <td style="max-width: 260px; font-size: 12px; color: #0f172a; font-weight: 600; line-height: 1.4;">
           ${escapeHtml(fb.comment || 'No comments left')}
           <br>${callbackText}
         </td>
         <td>${statusBadge}</td>
         <td>
-          <div style="display: flex; gap: 4px;">
+          <div style="display: flex; gap: 6px;">
             ${actionBtn}
-            <a href="${waLink}" target="_blank" class="btn-sm" style="background: rgba(37, 211, 102, 0.2); color: #25d366; border: 1px solid rgba(37, 211, 102, 0.4); font-size: 10px; padding: 4px 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 2px;">💬 Chat</a>
+            <a href="${waLink}" target="_blank" class="btn-sm" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 11px; padding: 5px 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; border-radius: 6px;">💬 Chat</a>
           </div>
         </td>
       </tr>
