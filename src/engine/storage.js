@@ -531,6 +531,10 @@ class ResilientStorage {
     };
   }
 
+  getClientAnalytics(storeCode = null) {
+    return this.getClientDetailedAnalytics(storeCode);
+  }
+
   getAllClientsWithAnalytics() {
     return this.state.clientStores.map(store => {
       const analytics = this.getClientDetailedAnalytics(store.storeCode);

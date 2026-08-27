@@ -85,7 +85,7 @@ wss.on('connection', (ws) => {
     data: {
       config: storage.getConfig(),
       metrics: storage.getMetrics(),
-      analytics: storage.getClientDetailedAnalytics(storeCode),
+      analytics: storage.getClientAnalytics(storeCode),
       quota: storage.getTodayQuotaUsage(storeCode),
       transactions: storage.getTransactions(50).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode),
       health: resilience.getHealthSummary(),
@@ -110,7 +110,7 @@ app.get('/api/state', (req, res) => {
       success: true,
       config: storage.getConfig(),
       metrics: storage.getMetrics(),
-      analytics: storage.getClientDetailedAnalytics(storeCode),
+      analytics: storage.getClientAnalytics(storeCode),
       quota: storage.getTodayQuotaUsage(storeCode),
       transactions: storage.getTransactions(50).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode),
       health: resilience.getHealthSummary(),
@@ -241,7 +241,7 @@ app.get('/api/admin/analytics/summary', (req, res) => {
     let totalAllTimeSales = 0;
 
     allStores.forEach(s => {
-      const a = storage.getClientDetailedAnalytics(s.storeCode);
+      const a = storage.getClientAnalytics(s.storeCode);
       totalTodaySent += a.today.sent;
       totalTodayBills += a.today.bills;
       totalTodaySales += a.today.sales;

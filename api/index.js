@@ -457,10 +457,35 @@ app.get('/api/state', async (req, res) => {
       }
     }
 
+    const storeFeedbacks = storage.getFeedback(storeCode);
+    const todayFeedbacks = storeFeedbacks.filter(f => new Date(f.timestamp).getTime() >= startOfToday);
+    const monthFeedbacks = storeFeedbacks.filter(f => new Date(f.timestamp).getTime() >= thirtyDaysAgo);
+
     const analytics = {
-      today: { sent: todaySent, bills: todayBills, sales: Math.round(todaySales), googleFiveStar: todaySent, reviewShield: 0 },
-      lastMonth: { sent: monthSent, bills: monthBills, sales: Math.round(monthSales), googleFiveStar: monthSent, reviewShield: 0 },
-      allTime: { sent: allTimeSent, bills: allTimeBills, sales: Math.round(allTimeSales), googleFiveStar: allTimeSent, reviewShield: 0 }
+      today: {
+        sent: todaySent,
+        bills: todayBills,
+        sales: Math.round(todaySales),
+        positiveRedirects: todayFeedbacks.filter(f => f.action === 'GOOGLE_REDIRECT').length,
+        shieldedGrievances: todayFeedbacks.filter(f => f.action === 'PRIVATE_FEEDBACK').length,
+        reachRate: todayBills > 0 ? Math.round((todaySent / todayBills) * 100) : 0
+      },
+      lastMonth: {
+        sent: monthSent,
+        bills: monthBills,
+        sales: Math.round(monthSales),
+        positiveRedirects: monthFeedbacks.filter(f => f.action === 'GOOGLE_REDIRECT').length,
+        shieldedGrievances: monthFeedbacks.filter(f => f.action === 'PRIVATE_FEEDBACK').length,
+        reachRate: monthBills > 0 ? Math.round((monthSent / monthBills) * 100) : 0
+      },
+      allTime: {
+        sent: allTimeSent,
+        bills: allTimeBills,
+        sales: Math.round(allTimeSales),
+        positiveRedirects: storeFeedbacks.filter(f => f.action === 'GOOGLE_REDIRECT').length,
+        shieldedGrievances: storeFeedbacks.filter(f => f.action === 'PRIVATE_FEEDBACK').length,
+        reachRate: allTimeBills > 0 ? Math.round((allTimeSent / allTimeBills) * 100) : 0
+      }
     };
 
     const metrics = {

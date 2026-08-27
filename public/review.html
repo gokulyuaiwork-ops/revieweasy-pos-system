@@ -517,18 +517,18 @@
         // 4 or 5 Stars: Show Google Review Redirect
         document.getElementById('googleActionBox').style.display = 'block';
         
-        // Log positive rating redirect
+        // Log positive rating redirect asynchronously (non-blocking)
         submitPositiveRating(val);
 
         const googleUrl = currentStore.googleReviewUrl || 'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4';
         document.getElementById('googleReviewBtn').href = googleUrl;
 
-        // Auto-navigate after short delay
+        // Auto-navigate in 750ms (under 1 second)
         setTimeout(() => {
           if (googleUrl && googleUrl.startsWith('http')) {
             window.location.href = googleUrl;
           }
-        }, 1200);
+        }, 750);
 
       } else {
         // 1, 2, or 3 Stars: Shield activated! Show private feedback form
@@ -545,26 +545,33 @@
       });
     });
 
-    // Submit Positive Rating to Server
-    async function submitPositiveRating(rating) {
+    // Submit Positive Rating to Server (Non-blocking)
+    function submitPositiveRating(rating) {
       try {
-        await fetch('/api/feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            billId,
-            storeCode: currentStore.storeCode || storeCode,
-            invoiceNo: currentBill.invoiceNo || 'INV-4920',
-            customerName: currentBill.customerName || 'Valued Customer',
-            customerPhone: currentBill.customerPhone || '9876543210',
-            rating: rating,
-            action: 'GOOGLE_REDIRECT',
-            category: 'Satisfied Customer',
-            comment: 'Customer rated 4-5 stars and was routed to Google.'
-          })
+        const payload = JSON.stringify({
+          billId,
+          storeCode: currentStore.storeCode || storeCode,
+          invoiceNo: currentBill.invoiceNo || 'INV-4920',
+          customerName: currentBill.customerName || 'Valued Customer',
+          customerPhone: currentBill.customerPhone || '9876543210',
+          rating: rating,
+          action: 'GOOGLE_REDIRECT',
+          category: 'Satisfied Customer',
+          comment: 'Customer rated 4-5 stars and was routed to Google.'
         });
+
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/feedback', new Blob([payload], { type: 'application/json' }));
+        } else {
+          fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true
+          }).catch(() => {});
+        }
       } catch (err) {
-        console.error('Error logging positive rating:', err);
+        console.warn('Error sending positive rating:', err);
       }
     }
 
