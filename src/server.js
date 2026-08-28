@@ -120,7 +120,7 @@ app.get('/api/state', async (req, res) => {
       metrics: storage.getMetrics(),
       analytics: storage.getClientAnalytics(storeCode),
       quota: storage.getTodayQuotaUsage(storeCode),
-      transactions: storage.getTransactions(50).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode),
+      transactions: storage.getTransactions(50, storeCode),
       health: resilience.getHealthSummary(),
       whatsapp: {
         status: localBaileys.status,
@@ -766,14 +766,11 @@ app.post('/api/updater/apply', async (req, res) => {
   }
 });
 
-app.post('/api/clear-history', (req, res) => {
-  storage.state.transactions = [];
-  storage.state.queue = [];
-  storage.state.privateFeedback = [];
-  storage.state.winBackDispatches = [];
-  storage.save();
-  broadcast('STATE_CLEARED', {});
-  res.json({ success: true });
+app.post('/api/clear-history', async (req, res) => {
+  const storeCode = (req.query.store || req.body?.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  storage.clearStoreFeed(storeCode);
+  broadcast('STATE_CLEARED', { storeCode });
+  res.json({ success: true, storeCode });
 });
 
 // Smart Auto-Start Browser Launcher on Internet Ready

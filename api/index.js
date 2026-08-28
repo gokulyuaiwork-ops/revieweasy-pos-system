@@ -981,6 +981,12 @@ app.put('/api/feedback/:id/status', (req, res) => {
   res.json({ success: true, feedback: updated });
 });
 
+app.post('/api/clear-history', async (req, res) => {
+  const storeCode = (req.query.store || req.body?.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  storage.clearStoreFeed(storeCode);
+  res.json({ success: true, storeCode });
+});
+
 // HTML Page Route Handlers
 app.get('/login.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));

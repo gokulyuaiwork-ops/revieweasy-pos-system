@@ -219,6 +219,7 @@ export class SupabaseSyncEngine {
     if (!isConnected || !this.client) return;
 
     const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    const clearedAt = storage.state.clearedAt && storage.state.clearedAt[code] ? storage.state.clearedAt[code] : 0;
     try {
       const { data: cloudBills, error } = await this.client
         .from('bills')
@@ -229,6 +230,8 @@ export class SupabaseSyncEngine {
       if (!error && cloudBills && cloudBills.length > 0) {
         let newCount = 0;
         for (const b of cloudBills) {
+          const billTime = new Date(b.created_at || b.local_created_at || 0).getTime();
+          if (billTime <= clearedAt) continue;
           const exists = storage.state.transactions.find(t => t.invoiceNo === b.invoice_no);
           if (!exists) {
             storage.state.transactions.unshift({
@@ -303,6 +306,7 @@ export class SupabaseSyncEngine {
 
     try {
       const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+      const clearedAt = storage.state.clearedAt && storage.state.clearedAt[code] ? storage.state.clearedAt[code] : 0;
       const { data, error } = await this.client
         .from('review_dispatches')
         .select('*')
@@ -312,6 +316,8 @@ export class SupabaseSyncEngine {
       if (!error && data && data.length > 0) {
         let newCount = 0;
         for (const r of data) {
+          const fbTime = new Date(r.created_at || 0).getTime();
+          if (fbTime <= clearedAt) continue;
           const exists = storage.state.privateFeedback.some(f => f.id === r.id || (f.customerPhone === r.customer_phone && Math.abs(new Date(f.timestamp).getTime() - new Date(r.created_at).getTime()) < 5000));
           if (!exists) {
             const isPositive = (r.rating_given && r.rating_given >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';

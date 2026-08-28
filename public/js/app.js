@@ -863,8 +863,14 @@ async function simulateUsbHop() {
 }
 
 async function clearHistory() {
-  if (confirm('Clear all transaction logs, feedback, and reset queue?')) {
-    await fetch('/api/clear-history', { method: 'POST' });
+  if (confirm('Clear all transaction logs, feedback, and reset feed for this store?')) {
+    const storeCode = getActiveStoreCode();
+    await fetch(`/api/clear-history?store=${encodeURIComponent(storeCode)}`, { method: 'POST' });
+    renderTransactions([]);
+    renderFeedbackTable([]);
+    fetchState();
+    fetchFeedbacks();
+    fetchWinBackData();
   }
 }
 

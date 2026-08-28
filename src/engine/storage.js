@@ -666,8 +666,14 @@ class ResilientStorage {
     return tx;
   }
 
-  getTransactions(limit = 50) {
-    return this.state.transactions.slice(0, limit);
+  getTransactions(limit = 50, storeCode = null) {
+    let list = this.state.transactions || [];
+    if (storeCode) {
+      const code = storeCode.toUpperCase();
+      const clearedAt = this.state.clearedAt && this.state.clearedAt[code] ? this.state.clearedAt[code] : 0;
+      list = list.filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === code && new Date(t.timestamp).getTime() > clearedAt);
+    }
+    return list.slice(0, limit);
   }
 
   enqueueJob(job) {
@@ -735,9 +741,20 @@ class ResilientStorage {
     let list = this.state.privateFeedback || [];
     if (storeCode) {
       const code = storeCode.toUpperCase();
-      list = list.filter(f => (f.storeCode || '').toUpperCase() === code);
+      const clearedAt = this.state.clearedAt && this.state.clearedAt[code] ? this.state.clearedAt[code] : 0;
+      list = list.filter(f => (f.storeCode || '').toUpperCase() === code && new Date(f.timestamp).getTime() > clearedAt);
     }
     return list.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+
+  clearStoreFeed(storeCode) {
+    const code = (storeCode || this.state.config.storeCode || 'STORE_DEMO_01').toUpperCase();
+    this.state.clearedAt = this.state.clearedAt || {};
+    this.state.clearedAt[code] = Date.now();
+    this.state.transactions = (this.state.transactions || []).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() !== code);
+    this.state.queue = (this.state.queue || []).filter(q => (q.storeCode || 'STORE_DEMO_01').toUpperCase() !== code);
+    this.state.privateFeedback = (this.state.privateFeedback || []).filter(f => (f.storeCode || 'STORE_DEMO_01').toUpperCase() !== code);
+    this.save();
   }
 
   updateFeedbackStatus(feedbackId, status, notes = '') {
