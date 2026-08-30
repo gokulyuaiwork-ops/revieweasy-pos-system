@@ -544,9 +544,6 @@ async function requestPairingCode() {
   }
 }
 
-async function resetWhatsAppSession() {
-  const loading = document.getElementById('qrLoading');
-  const img = document.getElementById('qrImage');
 async function regenerateWhatsAppQR() {
   const img = document.getElementById('qrImage');
   const loading = document.getElementById('qrLoading');
@@ -706,23 +703,7 @@ function renderHealth(health) {
   document.getElementById('spoolerStatusText').innerText = health.spoolerStatus || 'Active';
 }
 
-function checkClientAuth() {
-  const userJson = localStorage.getItem('revieweasy_user');
-  if (userJson) {
-    const user = JSON.parse(userJson);
-    const nameEl = document.getElementById('clientUserName');
-    if (nameEl) nameEl.innerText = user.name || 'Merchant';
-    if (user.storeCode) {
-      const badgeEl = document.getElementById('storeBadgeText');
-      if (badgeEl) badgeEl.innerText = user.storeCode;
-    }
-  }
-}
 
-function clientLogout() {
-  localStorage.removeItem('revieweasy_user');
-  window.location.href = '/login.html';
-}
 
 async function bindSecretKey() {
   const secretKey = document.getElementById('clientSecretInput').value.trim();
@@ -1480,12 +1461,12 @@ function checkClientAuth() {
     if (userChip) {
       userChip.innerText = user.name || user.email || 'Merchant';
     }
-    if (user.store) {
-      const badge = document.getElementById('storeBadgeText');
-      const tagline = document.getElementById('storeTaglineText');
-      if (badge) badge.innerText = user.store.storeCode || user.storeCode;
-      if (tagline) tagline.innerText = `${user.store.storeName} (Local WhatsApp Edge Dispatcher)`;
-    }
+    const storeCode = user.storeCode || (user.store && user.store.storeCode) || 'STORE_DEMO_01';
+    const storeName = (user.store && user.store.storeName) || (user.name ? user.name.split('(')[0].trim() : storeCode);
+    const badge = document.getElementById('storeBadgeText');
+    const tagline = document.getElementById('storeTaglineText');
+    if (badge) badge.innerText = storeCode;
+    if (tagline) tagline.innerText = `${storeName} (Local WhatsApp Edge Dispatcher)`;
     return user;
   } catch (e) {
     localStorage.removeItem('revieweasy_user');

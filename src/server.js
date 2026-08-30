@@ -127,7 +127,7 @@ app.get('/api/state', async (req, res) => {
     }
     res.json({
       success: true,
-      config: storage.getConfig(),
+      config: storage.getStoreByCode(storeCode) || storage.getConfig(),
       metrics: storage.getMetrics(),
       analytics: storage.getClientAnalytics(storeCode),
       quota: storage.getTodayQuotaUsage(storeCode),
