@@ -148,17 +148,104 @@ function buildCustomerDirectoryFromBills(bills) {
 }
 
 // -------------------------------------------------------------
+// Cloud State & Store Telemetry Endpoint
+// -------------------------------------------------------------
+app.get('/api/state', async (req, res) => {
+  try {
+    const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    const bills = await getStoreBills(storeCode);
+    const store = storage.getStoreByCode(storeCode) || storage.getConfig();
+
+    let whatsappStatus = 'NOT_LINKED';
+    let whatsappPhone = null;
+    if (supabaseSync && supabaseSync.client) {
+      try {
+        const { data: storeRow } = await supabaseSync.client
+          .from('stores')
+          .select('*')
+          .eq('store_code', storeCode)
+          .maybeSingle();
+
+        if (storeRow) {
+          const lastHeartbeat = storeRow.updated_at || storeRow.created_at;
+          const isRecent = lastHeartbeat && (Date.now() - new Date(lastHeartbeat).getTime() < 30 * 60 * 1000);
+          if (storeRow.whatsapp_status === 'CONNECTED' || (storeRow.whatsapp_phone && isRecent)) {
+            whatsappStatus = 'CONNECTED';
+            whatsappPhone = storeRow.whatsapp_phone || storeRow.store_phone;
+          }
+        }
+      } catch (e) {}
+    }
+
+    res.json({
+      success: true,
+      config: store || storage.getConfig(),
+      metrics: storage.getMetrics(),
+      analytics: storage.getClientAnalytics(storeCode),
+      quota: storage.getTodayQuotaUsage(storeCode),
+      transactions: bills.slice(0, 50),
+      health: { spoolerStatus: 'Cloud SaaS Mode' },
+      whatsapp: {
+        status: whatsappStatus,
+        phoneNumber: whatsappPhone,
+        mode: 'CLOUD_HOSTED'
+      },
+      supabase: {
+        isOnline: true,
+        pendingCount: 0,
+        lastSync: new Date().toISOString()
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
 // Authentication Endpoints
 // -------------------------------------------------------------
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+    return res.status(400).json({ error: 'Email/Store Code and password are required' });
   }
 
-  const user = storage.authenticateUser(email, password);
+  let user = storage.authenticateUser(email, password);
+
+  // Cloud Fallback: Check Supabase if local store cache missed
+  if (!user && supabaseSync.client) {
+    try {
+      const cleanId = String(email).trim().toUpperCase();
+      const { data: storeData } = await supabaseSync.client
+        .from('stores')
+        .select('*')
+        .or(`store_code.eq.${cleanId},store_phone.eq.${cleanId}`)
+        .limit(1);
+
+      if (storeData && storeData.length > 0) {
+        const s = storeData[0];
+        user = {
+          id: `USR_${s.store_code}`,
+          email: email,
+          name: `${s.store_name} Manager`,
+          role: 'CLIENT',
+          storeCode: s.store_code,
+          store: {
+            id: s.id,
+            storeCode: s.store_code,
+            storeName: s.store_name,
+            storePhone: s.store_phone,
+            googleReviewUrl: s.google_review_url
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('[Cloud Auth] Supabase query note:', e.message);
+    }
+  }
+
   if (!user) {
-    return res.status(401).json({ error: 'Invalid email or password' });
+    return res.status(401).json({ error: 'Invalid email/store code or password' });
   }
 
   const redirectUrl = user.role === 'ADMIN' ? '/admin.html' : '/index.html';
@@ -926,61 +1013,6 @@ app.get('/api/review-info/:billId', async (req, res) => {
   }
 });
 
-app.post('/api/feedback', async (req, res) => {
-  try {
-    const { billId, storeCode, invoiceNo, customerName, customerPhone, rating, action, category, comment, requestCallback } = req.body;
-    const code = (storeCode || 'STORE_DEMO_01').toUpperCase();
-
-    const feedback = storage.addFeedback({
-      billId,
-      storeCode: code,
-      invoiceNo: invoiceNo || 'INV-4920',
-      customerName: customerName || 'Valued Customer',
-      customerPhone: customerPhone || '9876543210',
-      rating: parseInt(rating, 10) || 5,
-      action: action || (rating >= 4 ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK'),
-      category: category || (rating >= 4 ? 'Satisfied Customer' : 'General Service'),
-      comment: comment || (rating >= 4 ? 'Customer rated 4-5 stars and was routed to Google.' : 'No comment provided'),
-      requestCallback: !!requestCallback
-    });
-
-    if (feedback.rating >= 4) {
-      storage.incrementMetric('positiveReviewsRedirected');
-    } else {
-      storage.incrementMetric('negativeReviewsShielded');
-    }
-
-    if (supabaseSync.client) {
-      try {
-        await supabaseSync.client.from('review_dispatches').insert({
-          store_code: code,
-          customer_phone: feedback.customerPhone,
-          message_body: `Feedback: ${feedback.rating}★ - ${feedback.category}: ${feedback.comment}`,
-          status: feedback.action,
-          status_reason: feedback.comment,
-          dispatched_via: 'SMART_REVIEW_SHIELD'
-        });
-      } catch (e) {}
-    }
-
-    res.json({ success: true, feedback });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-app.get('/api/feedback', (req, res) => {
-  const storeCode = (req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  const feedbacks = storage.getFeedback(storeCode);
-  res.json({ success: true, feedbacks });
-});
-
-app.put('/api/feedback/:id/status', (req, res) => {
-  const { status, notes } = req.body;
-  const updated = storage.updateFeedbackStatus(req.params.id, status || 'RESOLVED', notes);
-  res.json({ success: true, feedback: updated });
-});
-
 app.post('/api/clear-history', async (req, res) => {
   const storeCode = (req.query.store || req.body?.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
   storage.clearStoreFeed(storeCode);
@@ -1011,5 +1043,25 @@ app.get('/index.html', (req, res) => {
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));
 });
+
+// Enable running the cloud online POS server directly locally
+const isDirectRun = process.argv[1] && (
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]) ||
+  process.argv[1].endsWith('api\\index.js') ||
+  process.argv[1].endsWith('api/index.js')
+);
+
+if (isDirectRun) {
+  const PORT = process.env.CLOUD_PORT || process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`\n========================================================`);
+    console.log(`🌐 REVIEWEASY ONLINE CLOUD POS (LOCAL EMULATION) READY`);
+    console.log(`📍 Web URL              : http://localhost:${PORT}`);
+    console.log(`🔐 Unified Login Portal : http://localhost:${PORT}/login.html`);
+    console.log(`👑 SaaS Admin Portal    : http://localhost:${PORT}/admin.html`);
+    console.log(`🏪 Client Dashboard     : http://localhost:${PORT}/index.html`);
+    console.log(`========================================================\n`);
+  });
+}
 
 export default app;

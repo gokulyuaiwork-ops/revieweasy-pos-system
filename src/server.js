@@ -5,6 +5,18 @@ import fs from 'fs';
 import { WebSocketServer, WebSocket } from 'ws';
 import { fileURLToPath } from 'url';
 
+// Global Process Crash Protection for Baileys/Network edge timeouts
+process.on('unhandledRejection', (reason, promise) => {
+  console.warn('[Process Resilience] Handled async rejection:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.warn('[Process Resilience] Handled uncaught exception:', err?.message || err);
+  if (err?.code === 'EADDRINUSE') {
+    console.warn(`[Single-Instance Guard] Port already in use. Exiting redundant process to prevent WhatsApp conflicts.`);
+    process.exit(0);
+  }
+});
+
 import { storage } from './engine/storage.js';
 import { WhatsAppDispatcher } from './engine/dispatcher.js';
 import { SpoolerWatcher } from './engine/spooler-watcher.js';
@@ -59,6 +71,14 @@ const supabaseSync = new SupabaseSyncEngine(broadcast);
 const dispatcher = new WhatsAppDispatcher(broadcast, localBaileys, supabaseSync);
 dispatcher.setEngines(localBaileys, supabaseSync);
 
+// Auto-retry pending receipts and sync cloud heartbeat when WhatsApp connects
+localBaileys.onConnected(() => {
+  dispatcher.retryPendingMessages();
+  if (supabaseSync && typeof supabaseSync.syncWhatsAppStatusToCloud === 'function') {
+    supabaseSync.syncWhatsAppStatusToCloud(localBaileys.storeId, 'CONNECTED', localBaileys.phoneNumber);
+  }
+});
+
 const digestEngine = new DailyDigestEngine(broadcast, localBaileys);
 const winBackEngine = new WinBackEngine(broadcast, localBaileys);
 const autoUpdater = new AutoUpdaterEngine(broadcast, localBaileys);
@@ -66,15 +86,6 @@ const autoUpdater = new AutoUpdaterEngine(broadcast, localBaileys);
 const spoolerWatcher = new SpoolerWatcher(dispatcher, broadcast);
 const tcpProxy = new Tcp9100ProxyServer(dispatcher, broadcast);
 const resilience = new SystemResilienceEngine(broadcast);
-
-// Start background listeners
-spoolerWatcher.start();
-tcpProxy.start(9100);
-resilience.syncSystemClockOffset();
-localBaileys.initialize();
-digestEngine.startScheduler();
-winBackEngine.startScheduler();
-autoUpdater.startScheduler(12);
 
 // WebSocket Connection Handler
 wss.on('connection', (ws) => {
@@ -122,11 +133,7 @@ app.get('/api/state', async (req, res) => {
       quota: storage.getTodayQuotaUsage(storeCode),
       transactions: storage.getTransactions(50, storeCode),
       health: resilience.getHealthSummary(),
-      whatsapp: {
-        status: localBaileys.status,
-        qrDataUrl: localBaileys.qrDataUrl,
-        pairingCode: localBaileys.pairingCode
-      },
+      whatsapp: localBaileys.getStatus(storeCode),
       supabase: {
         isOnline: supabaseSync.isOnline,
         pendingCount: supabaseSync.pendingSyncCount,
@@ -141,15 +148,53 @@ app.get('/api/state', async (req, res) => {
 // -------------------------------------------------------------
 // Authentication Endpoints
 // -------------------------------------------------------------
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+    return res.status(400).json({ error: 'Email/Store Code and password are required' });
   }
 
-  const user = storage.authenticateUser(email, password);
+  let user = storage.authenticateUser(email, password);
+
+  // Cloud Fallback: Check Supabase if local store cache missed
+  if (!user && supabaseSync.client) {
+    try {
+      const cleanId = String(email).trim().toUpperCase();
+      const { data: storeData } = await supabaseSync.client
+        .from('stores')
+        .select('*')
+        .or(`store_code.eq.${cleanId},store_phone.eq.${cleanId}`)
+        .limit(1);
+
+      if (storeData && storeData.length > 0) {
+        const s = storeData[0];
+        user = {
+          id: `USR_${s.store_code}`,
+          email: email,
+          name: `${s.store_name} Manager`,
+          role: 'CLIENT',
+          storeCode: s.store_code,
+          store: {
+            id: s.id,
+            storeCode: s.store_code,
+            storeName: s.store_name,
+            storePhone: s.store_phone,
+            googleReviewUrl: s.google_review_url
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('[Server Auth] Supabase query note:', e.message);
+    }
+  }
+
   if (!user) {
-    return res.status(401).json({ error: 'Invalid email or password' });
+    return res.status(401).json({ error: 'Invalid email/store code or password' });
+  }
+
+  // Auto-switch WhatsApp engine to logging-in merchant store
+  if (user && user.storeCode) {
+    localBaileys.switchStore(user.storeCode).catch(e => console.warn('[Server] Switch store error:', e.message));
   }
 
   // Determine redirect URL based on role
@@ -160,6 +205,46 @@ app.post('/api/auth/login', (req, res) => {
     user,
     redirectUrl
   });
+});
+
+// -------------------------------------------------------------
+// WhatsApp Multi-Device & Per-Store Engine Endpoints
+// -------------------------------------------------------------
+app.get('/api/whatsapp/status', (req, res) => {
+  const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  res.json({ success: true, whatsapp: localBaileys.getStatus(storeCode) });
+});
+
+app.post('/api/whatsapp/switch-store', async (req, res) => {
+  const storeCode = (req.body?.storeCode || req.query?.store || 'STORE_DEMO_01').toUpperCase();
+  const status = await localBaileys.switchStore(storeCode);
+  res.json({ success: true, whatsapp: status });
+});
+
+app.post('/api/whatsapp/pairing-code', async (req, res) => {
+  try {
+    const { phoneNumber, storeCode } = req.body;
+    if (storeCode && storeCode.toUpperCase() !== localBaileys.storeId) {
+      await localBaileys.switchStore(storeCode.toUpperCase());
+    }
+    const result = await localBaileys.requestPairingCode(phoneNumber);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/whatsapp/reset-session', async (req, res) => {
+  try {
+    const storeCode = (req.body?.storeCode || req.query?.store || localBaileys.storeId).toUpperCase();
+    if (storeCode !== localBaileys.storeId) {
+      await localBaileys.switchStore(storeCode);
+    }
+    const result = await localBaileys.resetSession();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // -------------------------------------------------------------
@@ -806,7 +891,21 @@ async function launchDashboardOnInternetReady(maxAttempts = 30) {
   setTimeout(checkAndOpen, 2500);
 }
 
-// Start Server
+// Single-Instance Crash Guard: Protect WhatsApp session by preventing duplicate background processes
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.warn(`\n========================================================`);
+    console.warn(`⚠️  [SINGLE-INSTANCE GUARD] PORT ${PORT} IS ALREADY BOUND!`);
+    console.warn(`Another ReviewEasy Agent instance is already running in background.`);
+    console.warn(`Exiting this duplicate process to prevent WhatsApp session conflicts.`);
+    console.warn(`========================================================\n`);
+    process.exit(0);
+  } else {
+    console.error('[Server Listen Error]:', err.message);
+  }
+});
+
+// Start Server & Background Listeners
 server.listen(PORT, () => {
   console.log(`\n========================================================`);
   console.log(`🚀 REVIEWEASY HYBRID EDGE-CLOUD & AUTH SYSTEM READY`);
@@ -815,6 +914,15 @@ server.listen(PORT, () => {
   console.log(`🏪 Client Dashboard    : http://localhost:${PORT}/index.html`);
   console.log(`🖨️  Raw TCP Interceptor : 0.0.0.0:9100`);
   console.log(`========================================================\n`);
+
+  // Start background listeners only on successful master server bind
+  spoolerWatcher.start();
+  tcpProxy.start(9100);
+  resilience.syncSystemClockOffset();
+  localBaileys.initialize();
+  digestEngine.startScheduler();
+  winBackEngine.startScheduler();
+  autoUpdater.startScheduler(12);
 
   // Activate automated dashboard launcher upon internet connection
   launchDashboardOnInternetReady();

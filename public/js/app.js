@@ -547,6 +547,9 @@ async function requestPairingCode() {
 async function resetWhatsAppSession() {
   const loading = document.getElementById('qrLoading');
   const img = document.getElementById('qrImage');
+async function regenerateWhatsAppQR() {
+  const img = document.getElementById('qrImage');
+  const loading = document.getElementById('qrLoading');
   const connected = document.getElementById('qrConnected');
 
   img.style.display = 'none';
@@ -554,8 +557,13 @@ async function resetWhatsAppSession() {
   loading.style.display = 'flex';
   document.getElementById('whatsappStatusText').innerText = 'Generating Meta QR...';
 
+  const storeCode = getActiveStoreCode();
   try {
-    await fetch('/api/whatsapp/reset-session', { method: 'POST' });
+    await fetch(`/api/whatsapp/reset-session?store=${encodeURIComponent(storeCode)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeCode })
+    });
   } catch (err) {
     console.error(err);
   }
@@ -582,39 +590,91 @@ function renderWhatsAppStatus(wsData) {
   const img = document.getElementById('qrImage');
   const loading = document.getElementById('qrLoading');
   const connected = document.getElementById('qrConnected');
+  const statusText = document.getElementById('whatsappStatusText');
+  const statusChip = document.getElementById('whatsappStatusChip');
 
   const isCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+  // Cloud Mode Handling
   if (isCloud || wsData.mode === 'CLOUD_HOSTED') {
     img.style.display = 'none';
     loading.style.display = 'none';
     connected.style.display = 'flex';
-    connected.innerHTML = `
-      <div class="connected-icon" style="font-size: 32px;">☁️</div>
-      <h4 style="color: #0284c7; font-weight: 700; margin: 4px 0;">Cloud SaaS Portal</h4>
-      <p style="font-size: 11px; color: #64748b; line-height: 1.5;">Cloud Hub Active. Local POS Terminal (<code>localhost:3000</code>) on your billing counter dispatches messages to WhatsApp.</p>
-      <span class="session-path" style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 6px;">Sync: pos.revieweasy.in ➔ Cloud</span>
-    `;
-    const statusText = document.getElementById('whatsappStatusText');
-    const statusChip = document.getElementById('whatsappStatusChip');
-    if (statusText) statusText.innerText = 'Cloud SaaS (Online)';
-    if (statusChip) statusChip.className = 'status-chip chip-cyan';
+
+    if (status === 'CONNECTED') {
+      connected.innerHTML = `
+        <div class="connected-icon" style="font-size: 36px; color: #10b981;">✅</div>
+        <h4 style="color: #059669; font-weight: 800; margin: 4px 0;">Local POS WhatsApp Active</h4>
+        <p style="font-size: 11px; color: #475569; line-height: 1.5;">Billing counter agent paired: <strong style="color: #0f172a;">${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'Linked'}</strong></p>
+        <span class="session-path" style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 6px;">🟢 Real-Time Cloud Dispatch Ready</span>
+      `;
+      if (statusText) statusText.innerText = 'Agent Connected';
+      if (statusChip) statusChip.className = 'status-chip chip-green';
+    } else {
+      connected.innerHTML = `
+        <div class="connected-icon" style="font-size: 36px; color: #f59e0b;">📱</div>
+        <h4 style="color: #d97706; font-weight: 800; margin: 4px 0;">WhatsApp Agent Not Linked</h4>
+        <p style="font-size: 11px; color: #64748b; line-height: 1.5;">To dispatch WhatsApp receipts, open <code>localhost:3000</code> on your billing PC and scan the QR code.</p>
+        <span class="session-path" style="font-size: 10px; color: #d97706; font-weight: 600; margin-top: 6px;">🟡 Billing Counter Agent: Offline</span>
+      `;
+      if (statusText) statusText.innerText = 'Agent Not Linked';
+      if (statusChip) statusChip.className = 'status-chip chip-amber';
+    }
     return;
   }
 
+  // Local POS Terminal Mode (Edge)
   if (status === 'CONNECTED') {
     img.style.display = 'none';
     loading.style.display = 'none';
     connected.style.display = 'flex';
-    document.getElementById('whatsappStatusText').innerText = 'Connected (Edge)';
-    document.getElementById('whatsappStatusChip').className = 'status-chip chip-green';
+    connected.innerHTML = `
+      <div class="connected-icon" style="font-size: 36px; color: #10b981;">✅</div>
+      <h4 style="color: #059669; font-weight: 800; margin: 4px 0;">WhatsApp Connected</h4>
+      <p style="font-size: 12px; color: #0f172a; font-weight: 700; margin: 2px 0;">${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'Store Phone Paired'}</p>
+      <p style="font-size: 11px; color: #64748b; line-height: 1.4;">Store phone actively linked. Invoices dispatch automatically from this PC.</p>
+      <button onclick="resetWhatsAppSession()" class="btn-sm btn-secondary" style="font-size: 10.5px; padding: 4px 10px; margin-top: 8px; color: #e11d48; border-color: #fecdd3; background: #fff1f2; font-weight: 700; cursor: pointer;">Unlink / Change Number</button>
+    `;
+    if (statusText) statusText.innerText = 'Connected (Edge)';
+    if (statusChip) statusChip.className = 'status-chip chip-green';
+  } else if (status === 'RECONNECTING') {
+    img.style.display = 'none';
+    loading.style.display = 'none';
+    connected.style.display = 'flex';
+    connected.innerHTML = `
+      <div class="connected-icon" style="font-size: 32px;">🔄</div>
+      <h4 style="color: #d97706; font-weight: 800; margin: 4px 0;">Reconnecting WhatsApp...</h4>
+      <p style="font-size: 11px; color: #64748b; line-height: 1.5;">Auto-recovering live socket for <strong>${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'linked phone'}</strong>.<br><em>Sleep/Wake recovery in progress.</em></p>
+      <span class="session-path" style="font-size: 10px; color: #0284c7; font-weight: 600; margin-top: 6px;">Preserved credentials active</span>
+    `;
+    if (statusText) statusText.innerText = 'Reconnecting...';
+    if (statusChip) statusChip.className = 'status-chip chip-amber';
   } else if (status === 'QR_READY' && wsData.qrDataUrl) {
     renderWhatsAppQR(wsData.qrDataUrl);
+  } else if (status === 'NOT_LINKED') {
+    img.style.display = 'none';
+    loading.style.display = 'none';
+    connected.style.display = 'flex';
+    connected.innerHTML = `
+      <div class="connected-icon" style="font-size: 36px; color: #f59e0b;">📱</div>
+      <h4 style="color: #d97706; font-weight: 800; margin: 4px 0;">WhatsApp Not Linked</h4>
+      <p style="font-size: 11px; color: #64748b; line-height: 1.4;">Click below to generate a QR code and pair this store's WhatsApp.</p>
+      <button onclick="regenerateWhatsAppQR()" class="btn-sm btn-primary" style="font-size: 11px; padding: 6px 12px; margin-top: 8px; font-weight: 700; cursor: pointer;">📱 Generate QR Code</button>
+    `;
+    if (statusText) statusText.innerText = 'Not Linked';
+    if (statusChip) statusChip.className = 'status-chip chip-amber';
   } else {
     img.style.display = 'none';
     loading.style.display = 'flex';
     connected.style.display = 'none';
-    document.getElementById('whatsappStatusText').innerText = 'Generating QR...';
-    document.getElementById('whatsappStatusChip').className = 'status-chip chip-blue';
+    if (statusText) statusText.innerText = 'Generating QR...';
+    if (statusChip) statusChip.className = 'status-chip chip-blue';
+  }
+}
+
+async function resetWhatsAppSession() {
+  if (confirm('Unlink this WhatsApp number and generate a new QR code?')) {
+    await regenerateWhatsAppQR();
   }
 }
 

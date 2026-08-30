@@ -7,62 +7,178 @@ import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore
+  makeCacheableSignalKeyStore,
+  Browsers
 } from '@whiskeysockets/baileys';
 import { storage } from './storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SESSIONS_DIR = path.resolve(__dirname, '../../data/sessions');
 
-if (!fs.existsSync(SESSIONS_DIR)) {
-  fs.mkdirSync(SESSIONS_DIR, { recursive: true });
+// Canonical Sessions Directory
+const LOCAL_SESSIONS_DIR = path.resolve(__dirname, '../../data/sessions');
+const FALLBACK_SESSIONS_DIR = 'C:/ReviewEasy/data/sessions';
+
+function getSessionsDir() {
+  if (!fs.existsSync(LOCAL_SESSIONS_DIR)) {
+    try { fs.mkdirSync(LOCAL_SESSIONS_DIR, { recursive: true }); } catch (e) {}
+  }
+  return LOCAL_SESSIONS_DIR;
 }
 
 export class LocalBaileysEngine {
   constructor(broadcastCallback) {
     this.broadcast = broadcastCallback || (() => { });
     this.socket = null;
-    this.status = 'DISCONNECTED'; // DISCONNECTED, GENERATING_QR, QR_READY, CONNECTED
+    this.status = 'DISCONNECTED'; // DISCONNECTED, RECONNECTING, GENERATING_QR, QR_READY, CONNECTED
     this.rawQr = null;
     this.qrDataUrl = null;
     this.pairingCode = null;
     this.storeId = 'STORE_DEMO_01';
-    this.authFolder = path.join(SESSIONS_DIR, `session_${this.storeId}`);
+    this.phoneNumber = null;
+    this.userName = null;
+    this.authFolder = path.join(getSessionsDir(), `session_${this.storeId}`);
+    this.isInitializing = false;
     this.isReconnecting = false;
     this.reconnectTimer = null;
     this.reconnectAttempts = 0;
     this.watchdogTimer = null;
+    this.onConnectedCallback = null;
+
+    // Sync any preserved sessions from fallback location if needed
+    this.syncSessionDirectories(this.storeId);
     this.startSocketWatchdog();
+  }
+
+  /**
+   * Keep session directories in sync across E:\ workspace and C:\ReviewEasy installation
+   */
+  syncSessionDirectories(storeCode) {
+    try {
+      const localStoreDir = path.join(getSessionsDir(), `session_${storeCode}`);
+      const fallbackStoreDir = path.join(FALLBACK_SESSIONS_DIR, `session_${storeCode}`);
+
+      // If fallback has creds and local doesn't, copy from fallback to local
+      if (fs.existsSync(path.join(fallbackStoreDir, 'creds.json')) && !fs.existsSync(path.join(localStoreDir, 'creds.json'))) {
+        if (!fs.existsSync(localStoreDir)) fs.mkdirSync(localStoreDir, { recursive: true });
+        const files = fs.readdirSync(fallbackStoreDir);
+        for (const f of files) {
+          fs.copyFileSync(path.join(fallbackStoreDir, f), path.join(localStoreDir, f));
+        }
+        console.log(`[Local Baileys] 📦 Restored ${files.length} session auth keys from fallback cache for ${storeCode}`);
+      }
+      // If local has creds and fallback doesn't, copy from local to fallback
+      else if (fs.existsSync(path.join(localStoreDir, 'creds.json')) && !fs.existsSync(path.join(fallbackStoreDir, 'creds.json'))) {
+        if (fs.existsSync('C:/ReviewEasy/data')) {
+          if (!fs.existsSync(fallbackStoreDir)) fs.mkdirSync(fallbackStoreDir, { recursive: true });
+          const files = fs.readdirSync(localStoreDir);
+          for (const f of files) {
+            fs.copyFileSync(path.join(localStoreDir, f), path.join(fallbackStoreDir, f));
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[Local Baileys] Session sync note:', e.message);
+    }
+  }
+
+  onConnected(callback) {
+    this.onConnectedCallback = callback;
+  }
+
+  hasSavedCredentials(storeCode) {
+    const code = (storeCode || this.storeId || 'STORE_DEMO_01').toUpperCase();
+    const folder = path.join(getSessionsDir(), `session_${code}`);
+    const credsFile = path.join(folder, 'creds.json');
+    if (!fs.existsSync(credsFile)) return false;
+    try {
+      const creds = JSON.parse(fs.readFileSync(credsFile, 'utf8'));
+      return !!(creds && creds.me && creds.me.id);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  getSavedPhone(storeCode) {
+    const code = (storeCode || this.storeId || 'STORE_DEMO_01').toUpperCase();
+    const folder = path.join(getSessionsDir(), `session_${code}`);
+    const credsFile = path.join(folder, 'creds.json');
+    if (!fs.existsSync(credsFile)) return null;
+    try {
+      const creds = JSON.parse(fs.readFileSync(credsFile, 'utf8'));
+      if (creds && creds.me && creds.me.id) {
+        return creds.me.id.split(':')[0] || creds.me.id.split('@')[0];
+      }
+    } catch (e) {}
+    return null;
   }
 
   startSocketWatchdog() {
     if (this.watchdogTimer) clearInterval(this.watchdogTimer);
     this.watchdogTimer = setInterval(() => {
-      if (!this.authFolder) return;
-      const credsFile = path.join(this.authFolder, 'creds.json');
-      // If store credentials exist on disk and socket dropped, proactively restore
-      if (fs.existsSync(credsFile) && this.status !== 'CONNECTED' && !this.isReconnecting) {
-        console.log('[Local Baileys Watchdog] 🩺 Preserved credentials detected on disk. Proactively restoring WhatsApp connection...');
+      if (!this.authFolder || this.isInitializing || this.isReconnecting) return;
+      
+      const hasCreds = this.hasSavedCredentials(this.storeId);
+      // Proactively restore if credentials exist and socket is resting in DISCONNECTED/RECONNECTING
+      if (hasCreds && (this.status === 'DISCONNECTED' || this.status === 'RECONNECTING')) {
+        console.log(`[Local Baileys Watchdog] 🩺 Preserved credentials detected on disk for ${this.storeId}. Restoring live WhatsApp connection...`);
         this.initialize(this.storeId);
       }
     }, 45000);
   }
 
-  async initialize(customStoreId = null) {
-    const config = storage.getConfig();
-    this.storeId = customStoreId || config.storeCode || 'STORE_DEMO_01';
-    this.authFolder = path.join(SESSIONS_DIR, `session_${this.storeId}`);
-
-    if (!fs.existsSync(this.authFolder)) {
-      fs.mkdirSync(this.authFolder, { recursive: true });
+  async switchStore(newStoreCode) {
+    const cleanCode = (newStoreCode || 'STORE_DEMO_01').toUpperCase();
+    if (this.storeId === cleanCode && (this.status === 'CONNECTED' || this.isInitializing)) {
+      return this.getStatus(cleanCode);
     }
 
-    console.log(`[Local Baileys] 🚀 Starting Multi-Device Engine (Session: ${this.authFolder})`);
-    this.status = 'GENERATING_QR';
-    this.broadcast('WHATSAPP_STATUS', { status: this.status });
+    console.log(`[Local Baileys] 🔀 Switching WhatsApp session to store: ${cleanCode}`);
+    this.storeId = cleanCode;
+    this.authFolder = path.join(getSessionsDir(), `session_${this.storeId}`);
+    this.syncSessionDirectories(this.storeId);
 
-    // Clean up previous socket if any
+    const hasCreds = this.hasSavedCredentials(cleanCode);
+    this.status = hasCreds ? 'RECONNECTING' : 'NOT_LINKED';
+    this.rawQr = null;
+    this.qrDataUrl = null;
+    this.pairingCode = null;
+    this.phoneNumber = hasCreds ? this.getSavedPhone(cleanCode) : null;
+
+    await this.initialize(cleanCode);
+    return this.getStatus(cleanCode);
+  }
+
+  async initialize(customStoreId = null) {
+    if (this.isInitializing) {
+      console.log('[Local Baileys] ⏳ Initialization already underway, ignoring duplicate request.');
+      return;
+    }
+    this.isInitializing = true;
+
+    const config = storage.getConfig();
+    this.storeId = (customStoreId || config.storeCode || this.storeId || 'STORE_DEMO_01').toUpperCase();
+    this.authFolder = path.join(getSessionsDir(), `session_${this.storeId}`);
+    this.syncSessionDirectories(this.storeId);
+
+    if (!fs.existsSync(this.authFolder)) {
+      try { fs.mkdirSync(this.authFolder, { recursive: true }); } catch (e) {}
+    }
+
+    const hasCreds = this.hasSavedCredentials(this.storeId);
+    this.phoneNumber = hasCreds ? this.getSavedPhone(this.storeId) : null;
+
+    console.log(`[Local Baileys] 🚀 Starting Multi-Device Engine for [${this.storeId}] (Auth: ${this.authFolder})`);
+
+    if (!hasCreds) {
+      this.status = 'GENERATING_QR';
+      this.broadcast('WHATSAPP_STATUS', { status: this.status, storeId: this.storeId });
+    } else {
+      this.status = 'RECONNECTING';
+      this.broadcast('WHATSAPP_STATUS', { status: this.status, storeId: this.storeId, phoneNumber: this.phoneNumber });
+    }
+
+    // Clean up previous socket cleanly if any
     if (this.socket) {
       try {
         this.socket.ev.removeAllListeners();
@@ -84,69 +200,109 @@ export class LocalBaileysEngine {
           keys: makeCacheableSignalKeyStore(state.keys, logger)
         },
         logger,
-        browser: ['ReviewEasy Edge PC', 'Chrome', '124.0.0.0'],
-        connectTimeoutMs: 30000,
-        keepAliveIntervalMs: 15000,
-        emitOwnEvents: false
+        browser: ['Google Chrome (ReviewEasy Edge PC)', 'Chrome', '122.0.0.0'],
+        connectTimeoutMs: 60000,
+        keepAliveIntervalMs: 25000,
+        defaultQueryTimeoutMs: 60000,
+        syncFullHistory: false,
+        markOnlineOnConnect: false,
+        emitOwnEvents: false,
+        retryRequestDelayMs: 2000,
+        maxMsgRetryCount: 5
       });
 
-      this.socket.ev.on('creds.update', saveCreds);
+      this.socket.ev.on('creds.update', (updatedCreds) => {
+        saveCreds(updatedCreds);
+        // Also mirror to fallback directory for redundancy
+        try {
+          const fallbackStoreDir = path.join(FALLBACK_SESSIONS_DIR, `session_${this.storeId}`);
+          if (fs.existsSync('C:/ReviewEasy/data')) {
+            if (!fs.existsSync(fallbackStoreDir)) fs.mkdirSync(fallbackStoreDir, { recursive: true });
+            const credsFile = path.join(this.authFolder, 'creds.json');
+            if (fs.existsSync(credsFile)) {
+              fs.copyFileSync(credsFile, path.join(fallbackStoreDir, 'creds.json'));
+            }
+          }
+        } catch (e) {}
+      });
 
       this.socket.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
         // REAL OFFICIAL META MULTI-DEVICE QR CODE RECEIVED
         if (qr) {
-          this.rawQr = qr;
-          this.status = 'QR_READY';
-          this.qrDataUrl = await QRCode.toDataURL(qr, {
-            errorCorrectionLevel: 'M',
-            margin: 2,
-            scale: 6,
-            color: { dark: '#000000', light: '#ffffff' }
-          });
+          // If we already have saved credentials and are just recovering from network/sleep, don't flash QR unless unlinked
+          const credsStillValid = this.hasSavedCredentials(this.storeId);
+          if (!credsStillValid || this.reconnectAttempts === 0) {
+            this.rawQr = qr;
+            this.status = 'QR_READY';
+            this.qrDataUrl = await QRCode.toDataURL(qr, {
+              errorCorrectionLevel: 'M',
+              margin: 2,
+              scale: 6,
+              color: { dark: '#000000', light: '#ffffff' }
+            });
 
-          console.log('\n==================================================================');
-          console.log('📱 [Local Baileys] REAL OFFICIAL META WHATSAPP QR GENERATED!');
-          console.log(`🔑 Raw Meta QR Prefix: ${qr.slice(0, 35)}...`);
-          console.log('👉 Scan this in WhatsApp -> Linked Devices -> Link a device');
-          console.log('==================================================================\n');
+            console.log('\n==================================================================');
+            console.log(`📱 [Local Baileys] REAL META WHATSAPP QR READY FOR [${this.storeId}]!`);
+            console.log('👉 Scan this in WhatsApp -> Linked Devices -> Link a device');
+            console.log('==================================================================\n');
 
-          this.broadcast('WHATSAPP_QR', {
-            qrDataUrl: this.qrDataUrl,
-            rawQr: this.rawQr,
-            status: 'QR_READY'
-          });
-          this.broadcast('WHATSAPP_STATUS', { status: this.status, qrDataUrl: this.qrDataUrl });
+            this.broadcast('WHATSAPP_QR', {
+              qrDataUrl: this.qrDataUrl,
+              rawQr: this.rawQr,
+              status: 'QR_READY',
+              storeId: this.storeId
+            });
+            this.broadcast('WHATSAPP_STATUS', {
+              status: this.status,
+              qrDataUrl: this.qrDataUrl,
+              storeId: this.storeId
+            });
+          }
         }
 
         // CONNECTION STATE CHANGES
         if (connection === 'close') {
           const statusCode = lastDisconnect?.error?.output?.statusCode;
-          const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+          const isLoggedOut = statusCode === DisconnectReason.loggedOut || statusCode === 401;
+          const isRestartRequired = statusCode === DisconnectReason.restartRequired || statusCode === 515;
 
-          this.status = 'DISCONNECTED';
-          console.log(`[Local Baileys] Connection closed (status: ${statusCode} / ${DisconnectReason[statusCode] || 'network'}).`);
-          this.broadcast('WHATSAPP_STATUS', { status: this.status, error: lastDisconnect?.error?.message });
-
-          if (shouldReconnect && !this.isReconnecting) {
-            this.isReconnecting = true;
-            clearTimeout(this.reconnectTimer);
-            
-            // Exponential Backoff with Random Jitter (2s -> 3.5s -> 6s -> 10s ... max 30s)
-            const baseDelay = statusCode === DisconnectReason.timedOut ? 2000 : 4000;
-            const delay = Math.min(30000, Math.round(baseDelay * Math.pow(1.4, Math.min(this.reconnectAttempts || 0, 7)) + (Math.random() * 1500)));
-            this.reconnectAttempts = (this.reconnectAttempts || 0) + 1;
-
-            console.log(`[Local Baileys] 🔄 Network recovery (Attempt #${this.reconnectAttempts}): Re-establishing WhatsApp socket in ${(delay / 1000).toFixed(1)}s...`);
-            this.reconnectTimer = setTimeout(() => {
-              this.isReconnecting = false;
-              this.initialize(this.storeId);
-            }, delay);
-          } else if (!shouldReconnect) {
-            console.log(`[Local Baileys] ⚠️ Device was unlinked/logged out from phone. Generating fresh pairing QR code.`);
+          if (isLoggedOut) {
+            this.status = 'DISCONNECTED';
+            console.log(`[Local Baileys] ⚠️ Device was unlinked/logged out from phone for [${this.storeId}]. Generating fresh pairing QR code.`);
             this.reconnectAttempts = 0;
             this.resetSession();
+          } else if (isRestartRequired) {
+            this.status = 'RECONNECTING';
+            console.log(`[Local Baileys] 🔄 Server requested quick restart (515) for [${this.storeId}]. Reconnecting immediately...`);
+            this.reconnectAttempts = 0;
+            setTimeout(() => this.initialize(this.storeId), 500);
+          } else {
+            // Transient network drop, computer sleep, WiFi reconnection
+            this.status = 'RECONNECTING';
+            console.log(`[Local Baileys] ⏳ Connection closed (${statusCode} / ${DisconnectReason[statusCode] || 'network'}). Sleep/Wake auto-recovery in progress...`);
+            this.broadcast('WHATSAPP_STATUS', {
+              status: this.status,
+              storeId: this.storeId,
+              phoneNumber: this.phoneNumber
+            });
+
+            if (!this.isReconnecting) {
+              this.isReconnecting = true;
+              clearTimeout(this.reconnectTimer);
+              
+              // Exponential Backoff with Jitter
+              const baseDelay = (statusCode === DisconnectReason.timedOut || statusCode === 408) ? 2000 : 3000;
+              const delay = Math.min(20000, Math.round(baseDelay * Math.pow(1.25, Math.min(this.reconnectAttempts || 0, 5)) + (Math.random() * 1000)));
+              this.reconnectAttempts = (this.reconnectAttempts || 0) + 1;
+
+              console.log(`[Local Baileys] 🔄 Auto-reconnection (Attempt #${this.reconnectAttempts}): Restoring live socket in ${(delay / 1000).toFixed(1)}s...`);
+              this.reconnectTimer = setTimeout(() => {
+                this.isReconnecting = false;
+                this.initialize(this.storeId);
+              }, delay);
+            }
           }
         } else if (connection === 'open') {
           this.status = 'CONNECTED';
@@ -154,15 +310,35 @@ export class LocalBaileysEngine {
           this.qrDataUrl = null;
           this.isReconnecting = false;
           this.reconnectAttempts = 0;
-          console.log(`\n🎉 [Local Baileys] SUCCESS: WhatsApp Linked! Store phone is actively paired with Local Agent.`);
-          this.broadcast('WHATSAPP_STATUS', { status: this.status });
+
+          const userJid = this.socket?.user?.id || '';
+          const cleanPhone = userJid.split(':')[0] || userJid.split('@')[0] || this.getSavedPhone(this.storeId);
+          const userName = this.socket?.user?.name || '';
+          this.phoneNumber = cleanPhone;
+          this.userName = userName;
+
+          console.log(`\n🎉 [Local Baileys] SUCCESS: WhatsApp Linked! Store phone (+${cleanPhone}) actively paired for [${this.storeId}].`);
+          this.broadcast('WHATSAPP_STATUS', {
+            status: this.status,
+            storeId: this.storeId,
+            phoneNumber: cleanPhone,
+            userName: userName
+          });
+          
+          if (this.onConnectedCallback) {
+            try {
+              this.onConnectedCallback();
+            } catch (e) { }
+          }
         }
       });
 
     } catch (err) {
       console.error('[Local Baileys] Socket initialization error:', err.message);
       this.status = 'ERROR';
-      this.broadcast('WHATSAPP_STATUS', { status: this.status, error: err.message });
+      this.broadcast('WHATSAPP_STATUS', { status: this.status, error: err.message, storeId: this.storeId });
+    } finally {
+      this.isInitializing = false;
     }
   }
 
@@ -171,7 +347,7 @@ export class LocalBaileysEngine {
    */
   async requestPairingCode(phoneNumber) {
     if (!this.socket) {
-      await this.initialize();
+      await this.initialize(this.storeId);
     }
     try {
       const cleanPhone = phoneNumber.replace(/\D/g, '');
@@ -179,7 +355,7 @@ export class LocalBaileysEngine {
       const code = await this.socket.requestPairingCode(cleanPhone);
       this.pairingCode = code;
       console.log(`[Local Baileys] 🔢 PAIRING CODE: ${code}`);
-      this.broadcast('WHATSAPP_PAIRING_CODE', { code });
+      this.broadcast('WHATSAPP_PAIRING_CODE', { code, storeId: this.storeId });
       return { success: true, code };
     } catch (err) {
       console.error('[Local Baileys] Failed to get pairing code:', err.message);
@@ -203,6 +379,10 @@ export class LocalBaileysEngine {
       if (fs.existsSync(this.authFolder)) {
         fs.rmSync(this.authFolder, { recursive: true, force: true });
       }
+      const fallbackStoreDir = path.join(FALLBACK_SESSIONS_DIR, `session_${this.storeId}`);
+      if (fs.existsSync(fallbackStoreDir)) {
+        fs.rmSync(fallbackStoreDir, { recursive: true, force: true });
+      }
     } catch (e) {
       console.warn('[Local Baileys] Note removing session files:', e.message);
     }
@@ -210,19 +390,21 @@ export class LocalBaileysEngine {
     this.rawQr = null;
     this.qrDataUrl = null;
     this.pairingCode = null;
+    this.phoneNumber = null;
+    this.userName = null;
     this.isReconnecting = false;
-    await this.initialize();
+    await this.initialize(this.storeId);
     return { success: true };
   }
 
   simulateSuccessfulPairing() {
     this.status = 'CONNECTED';
     this.qrDataUrl = null;
-    console.log('[Local Baileys] 🚀 Store phone paired! Local Multi-Device WhatsApp session ACTIVE.');
-    this.broadcast('WHATSAPP_STATUS', { status: this.status });
+    console.log(`[Local Baileys] 🚀 Store phone paired! Local Multi-Device WhatsApp session ACTIVE for [${this.storeId}].`);
+    this.broadcast('WHATSAPP_STATUS', { status: this.status, storeId: this.storeId });
   }
 
-  async sendMessage(phone, messagePayload) {
+  async sendMessage(phone, messagePayload, targetStoreCode = null) {
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
     const jid = `91${cleanPhone}@s.whatsapp.net`;
 
@@ -235,7 +417,6 @@ export class LocalBaileysEngine {
       try {
         let result;
         if (isImage && Buffer.isBuffer(messagePayload.image)) {
-          // If JPEG or PNG
           result = await this.socket.sendMessage(jid, {
             image: messagePayload.image,
             caption: messagePayload.caption || '',
@@ -268,14 +449,33 @@ export class LocalBaileysEngine {
     };
   }
 
-  getStatus() {
-    return {
-      status: this.status,
-      qrDataUrl: this.qrDataUrl,
-      rawQr: this.rawQr ? this.rawQr.slice(0, 30) + '...' : null,
-      pairingCode: this.pairingCode,
-      storeId: this.storeId,
-      sessionPath: this.authFolder
-    };
+  getStatus(requestedStoreCode = null) {
+    const reqStore = (requestedStoreCode || this.storeId || 'STORE_DEMO_01').toUpperCase();
+    const activeStore = (this.storeId || 'STORE_DEMO_01').toUpperCase();
+
+    if (reqStore === activeStore) {
+      return {
+        status: this.status,
+        qrDataUrl: this.qrDataUrl,
+        rawQr: this.rawQr ? this.rawQr.slice(0, 30) + '...' : null,
+        pairingCode: this.pairingCode,
+        storeId: this.storeId,
+        phoneNumber: this.phoneNumber || this.getSavedPhone(this.storeId),
+        userName: this.userName,
+        sessionPath: this.authFolder
+      };
+    } else {
+      const hasCreds = this.hasSavedCredentials(reqStore);
+      return {
+        status: hasCreds ? 'STANDBY' : 'NOT_LINKED',
+        qrDataUrl: null,
+        rawQr: null,
+        pairingCode: null,
+        storeId: reqStore,
+        phoneNumber: hasCreds ? this.getSavedPhone(reqStore) : null,
+        userName: null,
+        sessionPath: path.join(getSessionsDir(), `session_${reqStore}`)
+      };
+    }
   }
 }
