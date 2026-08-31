@@ -200,12 +200,12 @@ export class LocalBaileysEngine {
           keys: makeCacheableSignalKeyStore(state.keys, logger)
         },
         logger,
-        browser: ['Google Chrome (ReviewEasy Edge PC)', 'Chrome', '122.0.0.0'],
+        browser: Browsers.windows('Desktop'),
         connectTimeoutMs: 60000,
         keepAliveIntervalMs: 25000,
         defaultQueryTimeoutMs: 60000,
         syncFullHistory: false,
-        markOnlineOnConnect: false,
+        markOnlineOnConnect: true,
         emitOwnEvents: false,
         retryRequestDelayMs: 2000,
         maxMsgRetryCount: 5
@@ -394,7 +394,7 @@ export class LocalBaileysEngine {
     this.userName = null;
     this.isReconnecting = false;
     await this.initialize(this.storeId);
-    return { success: true };
+    return { success: true, whatsapp: this.getStatus(this.storeId) };
   }
 
   simulateSuccessfulPairing() {
