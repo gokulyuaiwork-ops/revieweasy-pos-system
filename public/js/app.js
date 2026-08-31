@@ -721,16 +721,21 @@ function renderSupabaseStatus(sbData) {
     isInternetOffline = true;
     statusText.innerText = `Offline (${sbData.pendingCount || 0} Queued)`;
     statusChip.className = 'status-chip chip-amber';
-    banner.style.display = 'flex';
-    document.getElementById('btnOutageToggle').innerText = '⚡ Restore Internet Connection';
-    document.getElementById('btnOutageToggle').className = 'btn-sm btn-reconnect w-full';
+    const toggleBtn = document.getElementById('btnOutageToggle');
+    if (toggleBtn) {
+      toggleBtn.innerText = '⚡ Restore Internet Connection';
+      toggleBtn.className = 'btn-sm btn-reconnect w-full';
+    }
   } else {
     isInternetOffline = false;
-    statusText.innerText = 'Online';
-    statusChip.className = 'status-chip chip-cyan';
-    banner.style.display = 'none';
-    document.getElementById('btnOutageToggle').innerText = '🔌 Simulate Internet Disconnect';
-    document.getElementById('btnOutageToggle').className = 'btn-sm btn-warning w-full';
+    if (statusText) statusText.innerText = 'Online';
+    if (statusChip) statusChip.className = 'status-chip chip-cyan';
+    if (banner) banner.style.display = 'none';
+    const toggleBtn = document.getElementById('btnOutageToggle');
+    if (toggleBtn) {
+      toggleBtn.innerText = '🔌 Simulate Internet Disconnect';
+      toggleBtn.className = 'btn-sm btn-warning w-full';
+    }
   }
 }
 

@@ -6,19 +6,18 @@
   <title>ReviewEasy | Merchant Terminal Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* Tab Switching Logic */
     .tab-content-pane {
       display: none !important;
-      animation: fadeIn 0.25s ease;
+      animation: fadeIn 0.2s ease;
     }
     .tab-content-pane.active {
       display: block !important;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
+      from { opacity: 0; transform: translateY(3px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
@@ -26,12 +25,14 @@
 <body>
   <div class="app-layout">
     
-    <!-- Top Navigation Bar -->
+    <!-- Top Navigation Header -->
     <header class="topbar">
       <div class="brand">
         <div class="logo-icon">⭐</div>
         <div>
-          <h1>ReviewEasy <span class="badge-pro" id="storeBadgeText">STORE_DEMO_01</span></h1>
+          <h1 class="brand-title">
+            ReviewEasy <span class="badge-store" id="storeBadgeText">STORE_DEMO_01</span>
+          </h1>
           <p class="tagline" id="storeTaglineText">Sunshine Cafe & Bistro (Local WhatsApp Edge Dispatcher)</p>
         </div>
       </div>
@@ -46,215 +47,210 @@
         <div class="status-chip chip-cyan" id="supabaseStatusChip">
           <span class="dot"></span> Cloud: <strong id="supabaseStatusText">Online</strong>
         </div>
-        <div class="user-profile" id="userProfileChip" style="display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 5px 10px; border-radius: 20px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;">
-          <span>👤</span> <strong id="clientUserName">Merchant</strong>
+        <div class="user-profile" id="userProfileChip">
+          <span>👤</span> <span id="clientUserName">Merchant</span>
         </div>
-        <button class="btn-logout" onclick="clientLogout()" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">Logout</button>
+        <button class="btn-logout" onclick="clientLogout()">Logout</button>
       </div>
     </header>
 
-    <!-- Outage Simulation Alert Banner (Visible when offline) -->
-    <div id="outageBanner" class="outage-banner" style="display: none;">
-      <div class="outage-content">
-        <span class="outage-icon" style="font-size: 20px;">⚠️</span>
+    <!-- Outage Alert Banner (Offline Protection) -->
+    <div id="outageBanner" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 16px; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 18px;">⚠️</span>
         <div>
-          <strong style="color: #fbbf24;">STORE INTERNET OUTAGE DETECTED</strong>
-          <p style="font-size: 11px; color: #cbd5e1; margin-top: 2px;">Bills are being captured into local disk cache (0% data loss). WhatsApp delivery is safely queued.</p>
+          <strong style="color: #b45309; font-size: 13px;">STORE INTERNET OUTAGE DETECTED</strong>
+          <p style="font-size: 11px; color: #78350f; margin-top: 1px;">Bills are being cached locally to disk (0% data loss). WhatsApp delivery will resume automatically.</p>
         </div>
       </div>
-      <button class="btn-sm btn-reconnect" onclick="toggleInternetOutage(false)">⚡ Check Connection</button>
+      <button class="btn-sm btn-secondary" onclick="toggleInternetOutage(false)">⚡ Check Connection</button>
     </div>
 
-    <!-- Minimalist Navigation Tabs (Live Operations, Smart Shield, Customer Win-Back) -->
-    <div class="client-nav-tabs">
-      <button class="nav-tab-btn active" id="tabBtnOverview" onclick="switchClientTab('overview')">
-        <span>⚡</span> Live Overview
-      </button>
-      <button class="nav-tab-btn" id="tabBtnShield" onclick="switchClientTab('shield')">
-        <span>🛡️</span> Smart Review Shield
-      </button>
-      <button class="nav-tab-btn" id="tabBtnWinBack" onclick="switchClientTab('winback')">
-        <span>🎯</span> Customer Win-Back
-      </button>
+    <!-- Navigation & Period Controls Toolbar -->
+    <div class="controls-bar">
+      <!-- 3 Clean Tabs -->
+      <div class="client-nav-tabs">
+        <button class="nav-tab-btn active" id="tabBtnOverview" onclick="switchClientTab('overview')">
+          <span>⚡</span> Live Operations
+        </button>
+        <button class="nav-tab-btn" id="tabBtnShield" onclick="switchClientTab('shield')">
+          <span>🛡️</span> Smart Review Shield
+        </button>
+        <button class="nav-tab-btn" id="tabBtnWinBack" onclick="switchClientTab('winback')">
+          <span>🎯</span> Customer Win-Back
+        </button>
+      </div>
+
+      <!-- 3-Period Switcher -->
+      <div class="period-tabs">
+        <button class="period-tab-btn active" id="tabClientToday" onclick="switchClientPeriod('today')">
+          <span>⚡</span> Today
+        </button>
+        <button class="period-tab-btn" id="tabClientMonth" onclick="switchClientPeriod('month')">
+          <span>📅</span> Last 30 Days
+        </button>
+        <button class="period-tab-btn" id="tabClientAllTime" onclick="switchClientPeriod('alltime')">
+          <span>⭐</span> All-Time
+        </button>
+      </div>
     </div>
 
     <!-- =========================================================================
-         TAB 1: LIVE OVERVIEW (DEFAULT MINIMALIST DASHBOARD)
+         TAB 1: LIVE OPERATIONS (DEFAULT DASHBOARD)
          ========================================================================= -->
     <div id="tabPaneOverview" class="tab-content-pane active">
       
-      <!-- 3-Period Cockpit Switcher Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-        <div>
-          <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 2px;">📊 Store Performance Overview</h3>
-          <span style="font-size: 11px; color: var(--text-muted);">Real-time dispatch telemetry, Google review redirects & shielded feedback</span>
-        </div>
-
-        <!-- 3-Tier Period Switcher Tabs -->
-        <div class="period-tabs">
-          <button class="period-tab-btn active" id="tabClientToday" onclick="switchClientPeriod('today')">
-            <span>⚡</span> Today
-          </button>
-          <button class="period-tab-btn" id="tabClientMonth" onclick="switchClientPeriod('month')">
-            <span>📅</span> Last 30 Days
-          </button>
-          <button class="period-tab-btn" id="tabClientAllTime" onclick="switchClientPeriod('alltime')">
-            <span>⭐</span> All-Time
-          </button>
-        </div>
-      </div>
-
-      <!-- 4 Hero Metric Cards (Today / 30 Days / All-Time) -->
+      <!-- 4 Hero Metric Cards -->
       <section class="metrics-grid">
-        <!-- 1. Receipts Intercepted -->
+        <!-- 1. Invoices -->
         <div class="metric-card">
-          <div class="metric-icon bg-indigo">🖨️</div>
+          <div class="metric-icon-box icon-blue">🖨️</div>
           <div class="metric-info">
             <span class="metric-label" id="lbl_totalPrints">Today Invoices</span>
             <span class="metric-value" id="m_totalPrints">0</span>
-            <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">Captured Bills</span><span id="m_totalSales" style="display:none;">0</span>
+            <span class="metric-sub" id="m_totalSalesWrap">Sales: ₹<span id="m_totalSales">0</span></span>
           </div>
         </div>
 
         <!-- 2. WhatsApp Delivered -->
         <div class="metric-card">
-          <div class="metric-icon bg-green">💬</div>
+          <div class="metric-icon-box icon-green">💬</div>
           <div class="metric-info">
             <span class="metric-label" id="lbl_whatsAppDelivered">Today Sent</span>
             <span class="metric-value" id="m_whatsAppDelivered" style="color: #059669;">0</span>
-            <span style="font-size: 10px; color: #059669; font-weight: 600;"><span id="m_reachRate">100</span>% Delivery</span>
+            <span class="metric-sub" style="color: #059669;">
+              <span id="m_reachRate">100</span>% Delivery Rate
+            </span>
           </div>
         </div>
 
         <!-- 3. Google 5-Star Reviews -->
         <div class="metric-card">
-          <div class="metric-icon bg-emerald">⭐</div>
+          <div class="metric-icon-box icon-amber">⭐</div>
           <div class="metric-info">
             <span class="metric-label" id="lbl_positiveReviews">Today Google 5★</span>
             <span class="metric-value" id="m_positiveReviewsRedirected" style="color: #059669;">0</span>
-            <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">Redirected to Maps</span>
+            <span class="metric-sub">Redirected to Google Maps</span>
           </div>
         </div>
 
-        <!-- 4. Review Shield Complaints -->
+        <!-- 4. Review Shield -->
         <div class="metric-card">
-          <div class="metric-icon bg-rose">🛡️</div>
+          <div class="metric-icon-box icon-rose">🛡️</div>
           <div class="metric-info">
             <span class="metric-label" id="lbl_negativeReviews">Today Review Shield</span>
             <span class="metric-value" id="m_negativeReviewsShielded" style="color: #e11d48;">0</span>
-            <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">Shielded Privately</span>
+            <span class="metric-sub">Deflected Privately</span>
           </div>
         </div>
 
-        <!-- Hidden counters preserved for socket telemetry binding -->
+        <!-- Hidden counters preserved for WebSocket bindings -->
         <span id="m_validInvoices" style="display:none;">0</span>
         <span id="m_kotsBlocked" style="display:none;">0</span>
         <span id="m_dummyFiltered" style="display:none;">0</span>
         <span id="m_duplicatesSuppressed" style="display:none;">0</span>
       </section>
 
-      <!-- 2-Column Split: WhatsApp Companion Card + Live Stream Feed -->
+      <!-- 2-Column Main Operations Grid -->
       <div class="content-two-split">
         
-        <!-- Left Column: Modern WhatsApp Engine Card -->
-        <div class="panel qr-panel">
+        <!-- Left: WhatsApp Edge Companion Card -->
+        <div class="panel">
           <div class="panel-header">
-            <h2>📱 Store WhatsApp Engine</h2>
-            <span class="badge-pro" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">
-              Edge Socket
-            </span>
+            <h2>📱 WhatsApp Edge Engine</h2>
+            <span class="badge-status status-DELIVERED" style="font-size: 10px;">Edge Socket</span>
           </div>
 
           <!-- Pairing Mode Selector -->
-          <div style="display: flex; gap: 4px; margin-bottom: 12px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 8px; width: 100%;">
-            <button class="btn-sm" id="tabQrBtn" onclick="switchPairTab('QR')" style="flex: 1; font-size: 11px; background: var(--primary); color: white;">📷 Scan QR</button>
+          <div style="display: flex; gap: 4px; margin-bottom: 12px; background: #f1f5f9; padding: 3px; border-radius: var(--radius-sm);">
+            <button class="btn-sm" id="tabQrBtn" onclick="switchPairTab('QR')" style="flex: 1; font-size: 11px; background: #ffffff; color: var(--primary); box-shadow: var(--shadow-sm);">📷 Scan QR</button>
             <button class="btn-sm" id="tabCodeBtn" onclick="switchPairTab('CODE')" style="flex: 1; font-size: 11px; background: transparent; color: var(--text-muted);">🔢 Pairing Code</button>
           </div>
 
-          <div class="qr-container">
-            <!-- Mode 1: Camera QR Scan -->
-            <div id="qrModeBox" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-              <div id="qrPlaceholder" class="qr-box">
-                <img id="qrImage" src="" alt="WhatsApp Pairing QR" style="display: none;">
-                <div id="qrLoading" class="qr-spinner-box">
-                  <span class="spinner"></span>
-                  <p style="font-size: 11px; font-weight: 600;">Generating QR Code...</p>
-                </div>
-                <div id="qrConnected" class="qr-connected-box" style="display: none;">
-                  <div class="connected-icon">✅</div>
-                  <h4>WhatsApp Connected</h4>
-                  <p>Store phone actively linked.<br>Messages dispatch locally from this PC.</p>
-                  <span class="session-path" id="sessionPathDisplay" style="font-size: 9px; color: var(--text-sub); font-family: monospace; margin-top: 6px;">Session: C:\ProgramData\ReviewEasy\auth</span>
-                </div>
+          <!-- Mode 1: QR Scan -->
+          <div id="qrModeBox" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div id="qrPlaceholder" style="width: 100%; min-height: 180px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 12px;">
+              <img id="qrImage" src="" alt="WhatsApp Pairing QR" style="display: none; max-width: 160px; border-radius: 8px;">
+              
+              <div id="qrLoading" style="display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text-sub);">
+                <div style="width: 24px; height: 24px; border: 2px solid #cbd5e1; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                <p style="font-size: 11px; font-weight: 600;">Generating QR Code...</p>
               </div>
 
-              <p style="font-size: 11px; color: var(--text-sub); text-align: center; margin-top: 8px;">
-                Open WhatsApp on phone -> <strong>Linked Devices</strong> -> <strong>Link a device</strong>
-              </p>
-            </div>
-
-            <!-- Mode 2: 8-Digit Pairing Code -->
-            <div id="codeModeBox" style="width: 100%; display: none; flex-direction: column; gap: 8px;">
-              <label style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Enter Store WhatsApp Number (+91):</label>
-              <div style="display: flex; gap: 6px;">
-                <input type="text" id="pairingPhoneInput" placeholder="9840012345" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: white; padding: 8px 10px; border-radius: 8px; font-size: 12px; outline: none;">
-                <button class="btn-sm btn-primary" onclick="requestPairingCode()">Get Code</button>
-              </div>
-
-              <div id="pairingCodeDisplay" style="display: none; background: rgba(56, 189, 248, 0.1); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
-                <span style="font-size: 10px; color: var(--text-muted);">ENTER CODE IN WHATSAPP:</span>
-                <div id="pairingCodeText" style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 3px; margin-top: 4px;">
-                  ---- ----
-                </div>
+              <!-- Connected Card -->
+              <div id="qrConnected" style="display: none; width: 100%; text-align: center; padding: 10px 0;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #ecfdf5; border: 2px solid #10b981; color: #10b981; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">✓</div>
+                <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 2px;">WhatsApp Connected</h4>
+                <p style="font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0284c7;" id="connectedPhoneText">+91 9342350747</p>
+                <p style="font-size: 11px; color: var(--text-sub); margin-top: 4px;">Invoices dispatch automatically from this PC.</p>
               </div>
             </div>
 
-            <div style="display: flex; gap: 8px; width: 100%; margin-top: 6px;">
-              <button class="btn-sm btn-secondary" style="flex: 1;" id="btnPairSimulated" onclick="simulatePairing()">⚡ 1-Click Scan</button>
-              <button class="btn-sm btn-outline" style="flex: 1;" onclick="resetWhatsAppSession()">🔄 Reset QR</button>
+            <p style="font-size: 11px; color: var(--text-sub); text-align: center; margin-top: 8px;">
+              Open WhatsApp on phone -> <strong>Linked Devices</strong> -> <strong>Link a device</strong>
+            </p>
+          </div>
+
+          <!-- Mode 2: 8-Digit Pairing Code -->
+          <div id="codeModeBox" style="width: 100%; display: none; flex-direction: column; gap: 8px;">
+            <label style="font-size: 11px; color: var(--text-muted); font-weight: 700;">Enter Store WhatsApp Number (+91):</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="pairingPhoneInput" placeholder="9840012345" style="flex: 1; background: #ffffff; border: 1px solid var(--border-color); color: #0f172a; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 12px; outline: none;">
+              <button class="btn-sm btn-primary" onclick="requestPairingCode()">Get Code</button>
             </div>
 
-            <!-- Today's Daily Quota Bar -->
-            <div style="width: 100%; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
-              <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin-bottom: 6px;">
-                <span style="color: var(--text-muted);">Daily Dispatch Quota</span>
-                <strong id="quotaDailyText" style="color: #38bdf8;">0 / 50 Sent</strong>
+            <div id="pairingCodeDisplay" style="display: none; background: #f0f9ff; border: 1px dashed #bae6fd; border-radius: var(--radius-sm); padding: 10px; text-align: center; margin-top: 4px;">
+              <span style="font-size: 10px; color: var(--text-sub); font-weight: 700;">ENTER CODE IN WHATSAPP:</span>
+              <div id="pairingCodeText" style="font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 800; color: #0284c7; letter-spacing: 2px; margin-top: 2px;">
+                ---- ----
               </div>
-              <div style="width: 100%; height: 6px; background: rgba(0, 0, 0, 0.4); border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color);">
-                <div id="quotaProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #38bdf8); transition: width 0.3s ease;"></div>
-              </div>
-              <div style="font-size: 10px; color: #34d399; margin-top: 4px;" id="quotaRemainingText">50 messages remaining today</div>
             </div>
+          </div>
 
-            <!-- Hidden background state elements preserved for real-time telemetry -->
-            <div style="display: none;">
-              <span id="quotaCurrentSlotBadge"></span>
-              <span id="slotMorningCount"></span><span id="slotMorningStatus"></span>
-              <span id="slotAfternoonCount"></span><span id="slotAfternoonStatus"></span>
-              <span id="slotEveningCount"></span><span id="slotEveningStatus"></span>
-              <span id="updaterStatusChip"></span>
-              <input type="text" id="clientSecretInput">
-              <span id="secretStatusBadge"></span>
-              <input type="text" id="cfg_storeCode">
-              <input type="text" id="cfg_storeName">
-              <input type="text" id="cfg_storePhone">
-              <input type="text" id="cfg_reviewUrl">
+          <!-- Fast Action Buttons -->
+          <div style="display: flex; gap: 6px; width: 100%; margin-top: 10px;">
+            <button class="btn-sm btn-secondary" style="flex: 1;" id="btnPairSimulated" onclick="simulatePairing()">⚡ 1-Click Scan</button>
+            <button class="btn-sm btn-secondary" style="flex: 1;" onclick="resetWhatsAppSession()">🔄 Reset QR</button>
+          </div>
+
+          <!-- Daily Quota Meter -->
+          <div class="quota-box" style="margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #334155;">
+              <span>Daily Dispatch Limit</span>
+              <strong id="quotaDailyText" style="color: #0284c7;">0 / 50 Sent</strong>
             </div>
+            <div class="quota-bar-track">
+              <div id="quotaProgressBar" class="quota-bar-fill" style="width: 0%;"></div>
+            </div>
+            <div style="font-size: 10.5px; color: var(--emerald); font-weight: 600;" id="quotaRemainingText">50 messages remaining today</div>
+          </div>
 
+          <!-- Quick Owner Digest Dispatch -->
+          <button class="btn-sm btn-purple" style="width: 100%; justify-content: center; padding: 8px;" onclick="triggerOwnerDigestNow()">
+            🌙 Send Today's Owner Digest
+          </button>
+
+          <!-- Hidden telemetry inputs -->
+          <div style="display: none;">
+            <span id="quotaCurrentSlotBadge"></span>
+            <span id="slotMorningCount"></span><span id="slotMorningStatus"></span>
+            <span id="slotAfternoonCount"></span><span id="slotAfternoonStatus"></span>
+            <span id="slotEveningCount"></span><span id="slotEveningStatus"></span>
+            <span id="updaterStatusChip"></span>
+            <span id="usbDeviceText"></span>
+            <span id="usbStatusChip"></span>
+            <span id="sessionPathDisplay"></span>
           </div>
         </div>
 
-        <!-- Right Column: Live Intercepted Receipts Feed -->
-        <div class="panel feed-panel">
+        <!-- Right: Live Intercepted Receipts Feed -->
+        <div class="panel">
           <div class="panel-header">
             <div style="display: flex; align-items: center; gap: 8px;">
               <h2>📋 Live Intercepted Receipts & Reviews</h2>
-              <span class="pulse-indicator"></span>
+              <span class="pulse-dot" title="Live real-time feed active"></span>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn-sm" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);" onclick="triggerOwnerDigestNow()">🌙 Send Owner Digest</button>
-              <button class="btn-sm btn-secondary" onclick="clearHistory()">Clear Feed</button>
-            </div>
+            <button class="btn-sm btn-secondary" onclick="clearHistory()">Clear Feed</button>
           </div>
 
           <div class="table-container">
@@ -270,7 +266,7 @@
                 </tr>
               </thead>
               <tbody id="txTableBody">
-                <!-- Live Transactions Rendered Here -->
+                <!-- Rendered dynamically -->
               </tbody>
             </table>
           </div>
@@ -299,7 +295,7 @@
                 <th>Time</th>
                 <th>Customer</th>
                 <th>Mobile</th>
-                <th>Bill / Total</th>
+                <th>Bill #</th>
                 <th>Rating</th>
                 <th>Category</th>
                 <th>Customer Note</th>
@@ -308,7 +304,7 @@
               </tr>
             </thead>
             <tbody id="feedbackTableBody">
-              <!-- Rendered dynamically via JS -->
+              <!-- Rendered dynamically -->
             </tbody>
           </table>
         </div>
@@ -320,83 +316,76 @@
          ========================================================================= -->
     <div id="tabPaneWinBack" class="tab-content-pane">
       <section class="panel">
-        <div class="panel-header" style="flex-wrap: wrap; gap: 12px;">
+        <div class="panel-header" style="flex-wrap: wrap; gap: 10px;">
           <div>
             <h2>🎯 Lapsed Customer Win-Back Radar & Retention CRM</h2>
             <p class="panel-subtitle">Segment live customers, customize WhatsApp messaging, and send direct 1-to-1 DMs</p>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn-sm" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.3);" onclick="toggleTemplateEditor()">
-              ✍️ Edit Message Template
-            </button>
-            <button class="btn-sm btn-primary" onclick="runBatchWinBackScan()">
-              🚀 Auto-Scan & Dispatch (30–60d)
-            </button>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-sm btn-secondary" onclick="toggleTemplateEditor()">✍️ Edit Message Template</button>
+            <button class="btn-sm btn-primary" onclick="runBatchWinBackScan()">🚀 Auto-Scan & Dispatch (30–60d)</button>
           </div>
         </div>
 
-        <!-- 4 ROI KPI Tiles -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
-          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; text-align: center; box-shadow: var(--shadow-sm);">
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">LAPSED (30–60D)</div>
-            <div id="wb_lapsedCount" style="font-size: 20px; font-weight: 800; color: #d97706; margin-top: 4px;">0</div>
+        <!-- 4 ROI KPI Summary Tiles -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+            <div style="font-size: 10.5px; color: var(--text-sub); font-weight: 700;">LAPSED (30–60D)</div>
+            <div id="wb_lapsedCount" style="font-size: 18px; font-weight: 800; color: #d97706; margin-top: 2px;">0</div>
           </div>
-          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; text-align: center; box-shadow: var(--shadow-sm);">
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">WIN-BACKS SENT</div>
-            <div id="wb_sentCount" style="font-size: 20px; font-weight: 800; color: #0284c7; margin-top: 4px;">0</div>
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+            <div style="font-size: 10.5px; color: var(--text-sub); font-weight: 700;">WIN-BACKS SENT</div>
+            <div id="wb_sentCount" style="font-size: 18px; font-weight: 800; color: #0284c7; margin-top: 2px;">0</div>
           </div>
-          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; text-align: center; box-shadow: var(--shadow-sm);">
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">CUSTOMERS RECOVERED</div>
-            <div id="wb_recoveredCount" style="font-size: 20px; font-weight: 800; color: #059669; margin-top: 4px;">0</div>
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+            <div style="font-size: 10.5px; color: var(--text-sub); font-weight: 700;">CUSTOMERS RECOVERED</div>
+            <div id="wb_recoveredCount" style="font-size: 18px; font-weight: 800; color: #059669; margin-top: 2px;">0</div>
           </div>
-          <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 14px; text-align: center;">
-            <div style="font-size: 11px; color: #059669; font-weight: 700;">RECOVERED REVENUE</div>
-            <div id="wb_recoveredRevenue" style="font-size: 20px; font-weight: 800; color: #059669; margin-top: 4px;">₹0.00</div>
+          <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-md); padding: 12px; text-align: center;">
+            <div style="font-size: 10.5px; color: #059669; font-weight: 700;">RECOVERED REVENUE</div>
+            <div id="wb_recoveredRevenue" style="font-size: 18px; font-weight: 800; color: #059669; margin-top: 2px;">₹0.00</div>
           </div>
         </div>
 
-        <!-- Collapsible Win-Back Template Customizer & Live Phone Mockup -->
-        <div id="templateEditorBox" style="display: none; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 14px; padding: 18px; margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0;">💬 Customize Win-Back WhatsApp Message</h3>
-            <span style="font-size: 11px; color: var(--text-muted);">Placeholders: <code>{{name}}</code>, <code>{{storeName}}</code>, <code>{{googleMapUrl}}</code></span>
+        <!-- Collapsible Win-Back Template Customizer -->
+        <div id="templateEditorBox" style="display: none; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 0;">💬 Customize Win-Back WhatsApp Message</h3>
+            <span style="font-size: 11px; color: var(--text-sub);">Variables: <code>{{name}}</code>, <code>{{storeName}}</code>, <code>{{googleMapUrl}}</code></span>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px;">
-            <!-- Left: Textarea & Variables -->
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px;">
             <div>
-              <textarea id="wbTemplateInput" rows="7" style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-size: 12px; font-family: inherit; resize: vertical; outline: none; background: white; color: #0f172a; line-height: 1.5;"></textarea>
+              <textarea id="wbTemplateInput" rows="6" style="width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 9px; font-size: 12px; font-family: inherit; resize: vertical; outline: none; background: white; color: #0f172a; line-height: 1.45;"></textarea>
               
-              <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+              <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px;">
                 <button class="btn-sm" style="background: #e2e8f0; color: #334155; border: none; font-size: 10px; padding: 3px 8px; border-radius: 4px;" onclick="insertWbTag('{{name}}')">+ Customer Name</button>
                 <button class="btn-sm" style="background: #e2e8f0; color: #334155; border: none; font-size: 10px; padding: 3px 8px; border-radius: 4px;" onclick="insertWbTag('{{storeName}}')">+ Store Name</button>
                 <button class="btn-sm" style="background: #e2e8f0; color: #334155; border: none; font-size: 10px; padding: 3px 8px; border-radius: 4px;" onclick="insertWbTag('{{googleMapUrl}}')">+ Location Link</button>
               </div>
 
-              <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <div style="display: flex; gap: 6px; margin-top: 10px;">
                 <button class="btn-sm btn-primary" onclick="saveWinBackTemplate()">💾 Save Template</button>
                 <button class="btn-sm btn-secondary" onclick="resetWinBackTemplateDefault()">🔄 Reset to Default</button>
               </div>
             </div>
 
-            <!-- Right: Live WhatsApp Phone Preview -->
-            <div style="background: #e5ddd5; border-radius: 12px; padding: 14px; border: 1px solid #cbd5e1; display: flex; flex-direction: column;">
-              <div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase;">📱 Live WhatsApp Preview</div>
-              <div style="background: #ffffff; border-radius: 8px; padding: 12px; font-size: 12px; color: #111827; box-shadow: 0 1px 2px rgba(0,0,0,0.1); flex: 1; white-space: pre-wrap; line-height: 1.45;" id="wbTemplateLivePreview">
-                <!-- Live Preview generated here -->
-              </div>
+            <!-- Live WhatsApp Phone Preview -->
+            <div style="background: #e5ddd5; border-radius: var(--radius-md); padding: 12px; border: 1px solid #cbd5e1; display: flex; flex-direction: column;">
+              <div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase;">📱 Live WhatsApp Preview</div>
+              <div style="background: #ffffff; border-radius: 8px; padding: 10px; font-size: 11.5px; color: #111827; box-shadow: 0 1px 2px rgba(0,0,0,0.1); flex: 1; white-space: pre-wrap; line-height: 1.4;" id="wbTemplateLivePreview"></div>
             </div>
           </div>
         </div>
 
         <!-- Segment Filter Pills -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; gap: 6px;" id="segmentFilterGroup">
-            <button class="btn-sm active" id="btnFilterAll" onclick="filterWinBackSegment('ALL')" style="font-size: 11px; padding: 5px 12px; border-radius: 20px;">👥 All Lapsed (30+ Days) (<span id="cnt_all">0</span>)</button>
-            <button class="btn-sm" id="btnFilterLapsed" onclick="filterWinBackSegment('LAPSED')" style="font-size: 11px; padding: 5px 12px; border-radius: 20px; background: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3);">🟡 Lapsed 30–60d (<span id="cnt_lapsed">0</span>)</button>
-            <button class="btn-sm" id="btnFilterDormant" onclick="filterWinBackSegment('DORMANT')" style="font-size: 11px; padding: 5px 12px; border-radius: 20px; background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3);">🔴 Dormant >60d (<span id="cnt_dormant">0</span>)</button>
+            <button class="btn-sm active" id="btnFilterAll" onclick="filterWinBackSegment('ALL')" style="font-size: 11px; padding: 4px 11px; border-radius: 20px;">👥 All Lapsed (30+ Days) (<span id="cnt_all">0</span>)</button>
+            <button class="btn-sm btn-secondary" id="btnFilterLapsed" onclick="filterWinBackSegment('LAPSED')" style="font-size: 11px; padding: 4px 11px; border-radius: 20px; color: #d97706;">🟡 Lapsed 30–60d (<span id="cnt_lapsed">0</span>)</button>
+            <button class="btn-sm btn-secondary" id="btnFilterDormant" onclick="filterWinBackSegment('DORMANT')" style="font-size: 11px; padding: 4px 11px; border-radius: 20px; color: #dc2626;">🔴 Dormant >60d (<span id="cnt_dormant">0</span>)</button>
           </div>
-          <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Click "💬 Direct DM" to send custom warm win-back message</span>
+          <span style="font-size: 11px; color: var(--text-sub);">Click <strong>"💬 Direct DM"</strong> to send a personalized return message</span>
         </div>
 
         <div class="table-container">
@@ -422,37 +411,35 @@
       </section>
     </div>
 
-    <!-- Direct 1-to-1 Customer DM & RFM Inspector Modal -->
-    <div id="winBackDmModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
-      <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); animation: fadeIn 0.2s ease-out;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;" id="modalCustomerTitle">💬 Direct WhatsApp DM</h3>
-          <button onclick="closeWinBackDmModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #64748b;">✕</button>
+    <!-- Direct 1-to-1 Customer DM Modal -->
+    <div id="winBackDmModal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0;" id="modalCustomerTitle">💬 Direct WhatsApp DM</h3>
+          <button onclick="closeWinBackDmModal()" style="background: none; border: none; font-size: 16px; cursor: pointer; color: #64748b;">✕</button>
         </div>
 
-        <!-- Customer RFM Summary Card -->
-        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center;">
           <div>
-            <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">LIFETIME VISITS</div>
-            <strong id="modalVisits" style="color: #0284c7; font-size: 14px;">0</strong>
+            <div style="font-size: 9.5px; color: var(--text-sub); font-weight: 700;">LIFETIME VISITS</div>
+            <strong id="modalVisits" style="color: #0284c7; font-size: 13px;">0</strong>
           </div>
           <div>
-            <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">TOTAL SPENT</div>
-            <strong id="modalSpend" style="color: #059669; font-size: 14px;">₹0.00</strong>
+            <div style="font-size: 9.5px; color: var(--text-sub); font-weight: 700;">TOTAL SPENT</div>
+            <strong id="modalSpend" style="color: #059669; font-size: 13px;">₹0.00</strong>
           </div>
           <div>
-            <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">INACTIVE DAYS</div>
-            <strong id="modalInactive" style="color: #d97706; font-size: 14px;">0 days</strong>
+            <div style="font-size: 9.5px; color: var(--text-sub); font-weight: 700;">INACTIVE DAYS</div>
+            <strong id="modalInactive" style="color: #d97706; font-size: 13px;">0 days</strong>
           </div>
         </div>
 
-        <!-- Editable DM Message Box -->
-        <div style="margin-bottom: 16px;">
-          <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">WhatsApp Message Preview (Editable before sending):</label>
-          <textarea id="modalDmMessageInput" rows="6" style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-size: 12px; font-family: inherit; resize: vertical; outline: none; background: white; color: #0f172a; line-height: 1.5;"></textarea>
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 5px;">WhatsApp Message Preview (Editable):</label>
+          <textarea id="modalDmMessageInput" rows="5" style="width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px; font-size: 12px; font-family: inherit; resize: vertical; outline: none; background: white; color: #0f172a; line-height: 1.45;"></textarea>
         </div>
 
-        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <div style="display: flex; gap: 6px; justify-content: flex-end;">
           <button class="btn-sm btn-secondary" onclick="closeWinBackDmModal()">Cancel</button>
           <button class="btn-sm btn-primary" id="btnSendModalDm" onclick="sendModalCustomDm()">🚀 Send WhatsApp DM Now</button>
         </div>
@@ -461,9 +448,14 @@
 
   </div>
 
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+
   <script src="js/app.js"></script>
   <script>
-    // Tab Navigation Handler (Explicit Dictionary Mapping)
     function switchClientTab(tabName) {
       const tabMap = {
         'overview': { btn: 'tabBtnOverview', pane: 'tabPaneOverview' },
