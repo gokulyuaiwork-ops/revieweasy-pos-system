@@ -487,26 +487,30 @@ function renderTransactions(txList) {
   lastRenderedTxsHash = currentHash;
 
   if (filteredList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 32px 16px; font-weight: 500;">No print jobs intercepted today yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 36px 16px; font-weight: 500;">No print jobs intercepted today yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = filteredList.map(tx => {
-    const timeStr = new Date(tx.timestamp).toLocaleTimeString();
+    const dateObj = new Date(tx.timestamp || tx.created_at || Date.now());
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const mins = String(dateObj.getMinutes()).padStart(2, '0');
+    const timeStr = `${hours}:${mins}`;
     const statusClass = `status-${tx.status}`;
-    const syncBadge = tx.synced === 1
-      ? `<span style="color: #059669; font-size: 11px; margin-left: 4px;" title="Synced to Cloud">☁️</span>`
-      : `<span style="color: #d97706; font-size: 11px; margin-left: 4px;" title="Offline Disk Cache">💾</span>`;
+    const formattedAmount = '₹' + Number(tx.totalAmount || 0).toLocaleString('en-IN');
+    const phoneDisplay = tx.formattedPhone || (tx.customerPhone ? (tx.customerPhone.startsWith('+') ? tx.customerPhone : '+91 ' + tx.customerPhone) : '—');
+    const statusLabel = tx.status === 'DELIVERED' ? 'Sent' : formatStatus(tx.status);
 
     return `
       <tr>
-        <td style="color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 11px;">${timeStr}</td>
-        <td><strong style="color: #0284c7; font-family: 'JetBrains Mono', monospace;">${escapeHtml(tx.invoiceNo || 'N/A')}</strong>${syncBadge}</td>
-        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(tx.customerName || 'Valued Customer')}</td>
-        <td style="font-family: 'JetBrains Mono', monospace; color: #334155;">${escapeHtml(tx.formattedPhone || tx.customerPhone || '—')}</td>
-        <td style="font-weight: 700; color: #0f172a;">₹${escapeHtml(tx.totalAmount || '0.00')}</td>
+        <td style="color: var(--text-sub); font-size: 13px; font-weight: 500; width: 80px;">${timeStr}</td>
         <td>
-          <span class="badge-status ${statusClass}">${formatStatus(tx.status)}</span>
+          <span style="font-weight: 700; color: var(--text-main); font-size: 14px;">${escapeHtml(tx.customerName || 'Valued Customer')}</span>
+          <span style="color: var(--text-muted); font-size: 13px; margin-left: 8px;">${escapeHtml(phoneDisplay)}</span>
+        </td>
+        <td style="font-weight: 700; color: var(--text-main); font-size: 14px; text-align: right; width: 120px;">${formattedAmount}</td>
+        <td style="text-align: right; width: 100px;">
+          <span class="badge-status ${statusClass}">${statusLabel}</span>
         </td>
       </tr>
     `;
@@ -515,20 +519,19 @@ function renderTransactions(txList) {
 
 function formatStatus(status) {
   const map = {
-    'VALID_INVOICE': 'Valid Invoice',
-    'SCHEDULED_DISPATCH': 'Pacing Queue',
-    'DELIVERED': 'WhatsApp Sent ⭐',
-    'PENDING_WHATSAPP_LINK': 'Scan QR to Send 📱',
-    'CANCELLED_DAILY_QUOTA': 'Limit Exceeded (Daily 70) 🚫',
-    'CANCELLED_SLOT_QUOTA': 'Limit Exceeded (Slot Full) 🚫',
-    'QUEUED_DAILY_QUOTA': 'Daily Limit (Rolls Tomorrow) ⏸️',
-    'QUEUED_SLOT_QUOTA': 'Slot Full (Rolls Next) ⏸️',
-    'IGNORED_KOT': 'Blocked KOT / Est',
-    'DUPLICATE_SUPPRESSED': 'Deduplicated (24h)',
-    'SUPPRESSED_CUSTOMER_COOLDOWN': '180d Cooldown 🛡️',
-    'ANONYMOUS_WALKIN': 'No Mobile Found',
-    'QUEUED_QUIET_HOURS': 'Held (Quiet Hours)'
-  };
+    'VALID_INVOICE': 'Valid',
+    'SCHEDULED_DISPATCH': 'Queued',
+    'DELIVERED': 'Sent',
+    'PENDING_WHATSAPP_LINK': 'Offline',
+    'CANCELLED_DAILY_QUOTA': 'Capped',
+    'CANCELLED_SLOT_QUOTA': 'Slot Full',
+    'QUEUED_DAILY_QUOTA': 'Rollover',
+    'QUEUED_SLOT_QUOTA': 'Queued',
+    'IGNORED_KOT': 'KOT Ignored',
+    'DUPLICATE_SUPPRESSED': 'Duplicate',
+    'SUPPRESSED_CUSTOMER_COOLDOWN': 'Cooldown',
+    'ANONYMOUS_WALKIN': 'No Mobile',
+    'QUEUED_QUIET_HOURS': 'Held'
   return map[status] || status;
 }
 
@@ -625,6 +628,11 @@ function renderWhatsAppStatus(wsData) {
   const connected = document.getElementById('qrConnected');
   const statusText = document.getElementById('whatsappStatusText');
   const statusChip = document.getElementById('whatsappStatusChip');
+  const cardPhoneText = document.getElementById('cardHeaderPhoneText');
+
+  if (cardPhoneText && wsData.phoneNumber) {
+    cardPhoneText.innerText = wsData.phoneNumber.startsWith('+') ? wsData.phoneNumber : '+91 ' + wsData.phoneNumber;
+  }
 
   const isCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 
@@ -643,7 +651,7 @@ function renderWhatsAppStatus(wsData) {
         <p style="font-size: 11px; color: #475569; line-height: 1.5;">Billing counter agent paired: <strong style="color: #0f172a;">${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'Linked'}</strong></p>
         <span class="session-path" style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 6px;">🟢 Real-Time Cloud Dispatch Ready</span>
       `;
-      if (statusText) statusText.innerText = 'Agent Connected';
+      if (statusText) statusText.innerText = 'All systems normal';
       if (statusChip) statusChip.className = 'status-chip chip-green';
     } else {
       connected.innerHTML = `
@@ -672,7 +680,7 @@ function renderWhatsAppStatus(wsData) {
       <p style="font-size: 11px; color: #64748b; line-height: 1.4;">Store phone actively linked. Invoices dispatch automatically from this PC.</p>
       <button onclick="resetWhatsAppSession()" class="btn-sm btn-secondary" style="font-size: 10.5px; padding: 4px 10px; margin-top: 8px; color: #e11d48; border-color: #fecdd3; background: #fff1f2; font-weight: 700; cursor: pointer;">Unlink / Change Number</button>
     `;
-    if (statusText) statusText.innerText = 'Connected (Edge)';
+    if (statusText) statusText.innerText = 'All systems normal';
     if (statusChip) statusChip.className = 'status-chip chip-green';
   } else if (status === 'RECONNECTING') {
     img.style.display = 'none';
@@ -1544,14 +1552,18 @@ function checkClientAuth() {
     const user = JSON.parse(userJson);
     const userChip = document.getElementById('clientUserName');
     if (userChip) {
-      userChip.innerText = user.name || user.email || 'Merchant';
+      const rawName = (user.name || user.email || 'RS').split('(')[0].trim();
+      const parts = rawName.split(' ').filter(Boolean);
+      const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : rawName.slice(0, 2).toUpperCase();
+      userChip.innerText = initials;
+      userChip.parentElement.title = user.name || user.email || 'Logged In User';
     }
     const storeCode = user.storeCode || (user.store && user.store.storeCode) || 'STORE_DEMO_01';
-    const storeName = (user.store && user.store.storeName) || (user.name ? user.name.split('(')[0].trim() : storeCode);
+    const storeName = (user.store && user.store.storeName) || (user.name ? user.name.split('(')[0].trim() : 'Sunshine Cafe & Bistro');
     const badge = document.getElementById('storeBadgeText');
     const tagline = document.getElementById('storeTaglineText');
     if (badge) badge.innerText = storeCode;
-    if (tagline) tagline.innerText = `${storeName} (Local WhatsApp Edge Dispatcher)`;
+    if (tagline) tagline.innerText = storeName;
     return user;
   } catch (e) {
     localStorage.removeItem('revieweasy_user');
