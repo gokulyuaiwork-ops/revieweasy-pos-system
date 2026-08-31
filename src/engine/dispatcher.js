@@ -97,7 +97,20 @@ export class WhatsAppDispatcher {
       return tx;
     }
 
-    // 2. Category E1: Quiet Hours Check (Overnight hold until 10:30 AM)
+    // 2. 180-Day Customer Anti-Fatigue / Anti-Spam Check
+    const cooldownDays = config.customerCooldownDays || 180;
+    const cooldown = storage.checkCustomer180DayCooldown(tx.storeCode, tx.customerPhone, cooldownDays);
+    if (cooldown.inCooldown) {
+      storage.updateTransactionStatus(tx.id, 'SUPPRESSED_CUSTOMER_COOLDOWN', {
+        reason: `Customer ${tx.formattedPhone} received WhatsApp invite ${cooldown.daysAgo === 0 ? 'today' : cooldown.daysAgo + 'd ago'} (${cooldown.lastSentDate}). ${cooldownDays}-day anti-fatigue rule active — suppressed.`
+      });
+      storage.incrementMetric('duplicatesSuppressed');
+      console.log(`[WhatsApp Dispatcher] 🛡️ 180-Day Customer Cooldown active for ${tx.formattedPhone} (Last sent: ${cooldown.lastSentDate}). Bill #${tx.invoiceNo} intercepted without spamming customer.`);
+      this.broadcast('TRANSACTION_UPDATED', tx);
+      return tx;
+    }
+
+    // 3. Category E1: Quiet Hours Check (Overnight hold until 10:30 AM)
     if (this.isQuietHours(now)) {
       const tomorrow = new Date(now);
       if (now.getHours() >= 21) {
@@ -358,5 +371,27 @@ export class WhatsAppDispatcher {
       storage.removeQueueJob(nextJob.id);
       this.dispatchWhatsAppMessage(nextJob.txId);
     }, 15000); // Check every 15s
+  }
+
+  /**
+   * Automatically re-process pending bills when WhatsApp connects or re-establishes socket
+   */
+  retryPendingMessages() {
+    const config = storage.getConfig();
+    const storeCode = (config.storeCode || 'STORE_DEMO_01').toUpperCase();
+    const pendingTxs = storage.getTransactions(100).filter(t => 
+      (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode &&
+      t.status === 'PENDING_WHATSAPP_LINK' &&
+      t.customerPhone &&
+      t.customerPhone !== 'N/A' &&
+      t.customerPhone.length >= 10
+    );
+
+    if (pendingTxs.length > 0) {
+      console.log(`[WhatsApp Dispatcher] 🔄 Re-enqueuing ${pendingTxs.length} pending bill(s) captured during connection transition...`);
+      for (const tx of pendingTxs) {
+        this.enqueueForPacedDispatch(tx.id);
+      }
+    }
   }
 }

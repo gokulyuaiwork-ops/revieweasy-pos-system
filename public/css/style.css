@@ -496,6 +496,7 @@ body {
 .status-DELIVERED { background: #ecfdf5; color: #047857; border: 1px solid #6ee7b7; font-weight: 800; }
 .status-IGNORED_KOT { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
 .status-DUPLICATE_SUPPRESSED { background: #ecfeff; color: #0891b2; border: 1px solid #a5f3fc; }
+.status-SUPPRESSED_CUSTOMER_COOLDOWN { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
 .status-ANONYMOUS_WALKIN { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
 .status-QUEUED_QUIET_HOURS { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
 

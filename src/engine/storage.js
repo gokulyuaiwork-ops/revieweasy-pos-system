@@ -108,6 +108,7 @@ class ResilientStorage {
         enableDigitalReceipts: true,
         enableImageMessage: true,
         flyerImageUrl: "/assets/default-review-flyer.jpg",
+        customerCooldownDays: 180,
         supabaseUrl: "https://fzjjztbobwtuywohwmfe.supabase.co",
         supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6amp6dGJvYnd0dXl3b2h3bWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3ODUxNDcsImV4cCI6MjEwMjM2MTE0N30.XVIo0uTuFd7p66DaufjLXu1PqGJuLVkEEfY5a32kQ28"
       },
@@ -492,6 +493,54 @@ class ResilientStorage {
 
     this.save();
     return false;
+  }
+
+  // 180-Day Customer Anti-Fatigue / Multi-Visit Duplicate Suppression
+  checkCustomer180DayCooldown(storeCode, customerPhone, cooldownDays = 180) {
+    if (!customerPhone || customerPhone === 'N/A') {
+      return { inCooldown: false, lastSentDate: null, daysAgo: null };
+    }
+    const cleanTarget = String(customerPhone).replace(/\D/g, '').slice(-10);
+    if (cleanTarget.length < 10) {
+      return { inCooldown: false, lastSentDate: null, daysAgo: null };
+    }
+
+    const days = parseInt(cooldownDays, 10) || 180;
+    const cooldownMs = days * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const code = (storeCode || this.state.config.storeCode || 'STORE_DEMO_01').toUpperCase();
+
+    // Check previous delivered/sent/scheduled WhatsApp transactions for this store & customer
+    const matches = (this.state.transactions || []).filter(t => {
+      if ((t.storeCode || 'STORE_DEMO_01').toUpperCase() !== code) return false;
+      if (!['DELIVERED', 'WHATSAPP_SENT', 'SCHEDULED_DISPATCH'].includes(t.status)) return false;
+      if (!t.customerPhone || t.customerPhone === 'N/A') return false;
+      const cleanTxPhone = String(t.customerPhone).replace(/\D/g, '').slice(-10);
+      return cleanTxPhone === cleanTarget;
+    });
+
+    if (matches.length === 0) {
+      return { inCooldown: false, lastSentDate: null, daysAgo: null };
+    }
+
+    let mostRecentTime = 0;
+    for (const m of matches) {
+      const t = new Date(m.timestamp || m.created_at || 0).getTime();
+      if (t > mostRecentTime) mostRecentTime = t;
+    }
+
+    const diffMs = now - mostRecentTime;
+    if (diffMs < cooldownMs) {
+      const daysAgo = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      const lastSentDate = new Date(mostRecentTime).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+      return { inCooldown: true, lastSentDate, daysAgo };
+    }
+
+    return { inCooldown: false, lastSentDate: null, daysAgo: null };
   }
 
   addTransaction(tx) {

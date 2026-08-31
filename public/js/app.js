@@ -490,6 +490,7 @@ function formatStatus(status) {
     'QUEUED_SLOT_QUOTA': 'Slot Full (Rolls Next) ⏸️',
     'IGNORED_KOT': 'Blocked KOT / Est',
     'DUPLICATE_SUPPRESSED': 'Deduplicated (24h)',
+    'SUPPRESSED_CUSTOMER_COOLDOWN': '180d Cooldown 🛡️',
     'ANONYMOUS_WALKIN': 'No Mobile Found',
     'QUEUED_QUIET_HOURS': 'Held (Quiet Hours)'
   };
