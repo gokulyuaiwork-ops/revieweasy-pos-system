@@ -414,10 +414,10 @@ function updateAddFlyerStudioPreview() {
   const badge = document.getElementById('add_nameBadge');
   
   if (!isEnabled) {
-    badge.style.display = 'none';
+    if (badge) badge.style.display = 'none';
     return;
   }
-  badge.style.display = 'block';
+  if (badge) badge.style.display = 'block';
 
   const posX = document.getElementById('add_flyerPosX').value;
   const posY = document.getElementById('add_flyerPosY').value;
@@ -431,11 +431,14 @@ function updateAddFlyerStudioPreview() {
 
   const rendered = template.replace(/\{\{\s*name\s*\}\}/gi, 'Rahul Sharma').replace(/\{\{\s*first_name\s*\}\}/gi, 'Rahul');
   
-  badge.innerText = rendered;
-  badge.style.left = `${posX}%`;
-  badge.style.top = `${posY}%`;
-  badge.style.fontSize = `${Math.round(fontSize * 0.55)}px`;
-  badge.style.color = color;
+  if (badge) {
+    badge.innerText = rendered;
+    badge.style.left = `${posX}%`;
+    badge.style.top = `${posY}%`;
+    const scaledSize = Math.max(10, Math.round(fontSize * 0.42));
+    badge.style.fontSize = `${scaledSize}px`;
+    badge.style.color = color;
+  }
 }
 
 // -------------------------------------------------------------
@@ -458,10 +461,10 @@ function updateEditFlyerStudioPreview() {
   const badge = document.getElementById('edit_nameBadge');
   
   if (!isEnabled) {
-    badge.style.display = 'none';
+    if (badge) badge.style.display = 'none';
     return;
   }
-  badge.style.display = 'block';
+  if (badge) badge.style.display = 'block';
 
   const posX = document.getElementById('edit_flyerPosX').value;
   const posY = document.getElementById('edit_flyerPosY').value;
@@ -475,14 +478,17 @@ function updateEditFlyerStudioPreview() {
 
   const rendered = template.replace(/\{\{\s*name\s*\}\}/gi, 'Rahul Sharma').replace(/\{\{\s*first_name\s*\}\}/gi, 'Rahul');
   
-  badge.innerText = rendered;
-  badge.style.left = `${posX}%`;
-  badge.style.top = `${posY}%`;
-  badge.style.fontSize = `${Math.round(fontSize * 0.55)}px`;
-  badge.style.color = color;
+  if (badge) {
+    badge.innerText = rendered;
+    badge.style.left = `${posX}%`;
+    badge.style.top = `${posY}%`;
+    const scaledSize = Math.max(10, Math.round(fontSize * 0.42));
+    badge.style.fontSize = `${scaledSize}px`;
+    badge.style.color = color;
+  }
 }
 
-// Drag and drop positioning on interactive canvases
+// Drag and drop positioning on interactive canvases directly on the flyer image
 function setupCanvasDrag(canvasId, posXInputId, posYInputId, updateCallback) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -494,22 +500,24 @@ function setupCanvasDrag(canvasId, posXInputId, posYInputId, updateCallback) {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
-    if (clientX !== undefined && clientY !== undefined) {
+    if (clientX !== undefined && clientY !== undefined && rect.width > 0 && rect.height > 0) {
       let x = Math.round(((clientX - rect.left) / rect.width) * 100);
       let y = Math.round(((clientY - rect.top) / rect.height) * 100);
       x = Math.max(5, Math.min(95, x));
       y = Math.max(5, Math.min(95, y));
 
-      document.getElementById(posXInputId).value = x;
-      document.getElementById(posYInputId).value = y;
-      updateCallback();
+      const inputX = document.getElementById(posXInputId);
+      const inputY = document.getElementById(posYInputId);
+      if (inputX) inputX.value = x;
+      if (inputY) inputY.value = y;
+      if (updateCallback) updateCallback();
     }
   };
 
-  canvas.addEventListener('mousedown', (e) => {
+  canvas.onmousedown = (e) => {
     isDragging = true;
     handlePointer(e);
-  });
+  };
 
   window.addEventListener('mousemove', (e) => {
     if (isDragging) handlePointer(e);
@@ -519,10 +527,10 @@ function setupCanvasDrag(canvasId, posXInputId, posYInputId, updateCallback) {
     isDragging = false;
   });
 
-  canvas.addEventListener('touchstart', (e) => {
+  canvas.ontouchstart = (e) => {
     isDragging = true;
     handlePointer(e);
-  });
+  };
 
   window.addEventListener('touchmove', (e) => {
     if (isDragging) handlePointer(e);
