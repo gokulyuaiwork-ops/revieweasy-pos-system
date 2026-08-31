@@ -105,6 +105,9 @@ export class WhatsAppDispatcher {
         reason: `Customer ${tx.formattedPhone} received WhatsApp invite ${cooldown.daysAgo === 0 ? 'today' : cooldown.daysAgo + 'd ago'} (${cooldown.lastSentDate}). ${cooldownDays}-day anti-fatigue rule active — suppressed.`
       });
       storage.incrementMetric('duplicatesSuppressed');
+      if (this.supabaseSync) {
+        this.supabaseSync.syncBillToCloud(tx).catch(() => {});
+      }
       console.log(`[WhatsApp Dispatcher] 🛡️ 180-Day Customer Cooldown active for ${tx.formattedPhone} (Last sent: ${cooldown.lastSentDate}). Bill #${tx.invoiceNo} intercepted without spamming customer.`);
       this.broadcast('TRANSACTION_UPDATED', tx);
       return tx;
@@ -123,6 +126,9 @@ export class WhatsAppDispatcher {
         reason: `Quiet Hours Active (${config.quietHoursStart} - ${config.quietHoursEnd} IST). Delivery queued for 10:30 AM.`
       });
       storage.incrementMetric('quietHoursRescheduled');
+      if (this.supabaseSync) {
+        this.supabaseSync.syncBillToCloud(tx).catch(() => {});
+      }
 
       console.log(`[WhatsApp Dispatcher] 🌙 Quiet hours active. Bill #${tx.invoiceNo} queued for 10:30 AM IST tomorrow.`);
       this.broadcast('TRANSACTION_UPDATED', tx);
@@ -136,6 +142,9 @@ export class WhatsAppDispatcher {
         reason: `Daily store quota of ${quota.dailyMax} messages reached (${quota.dailyUsed}/${quota.dailyMax} sent). Message cancelled to prevent spam risk.`
       });
       storage.incrementMetric('quotaLimitCancelled');
+      if (this.supabaseSync) {
+        this.supabaseSync.syncBillToCloud(tx).catch(() => {});
+      }
 
       console.log(`[WhatsApp Dispatcher] 🚫 Daily cap (${quota.dailyMax}) exceeded. Bill #${tx.invoiceNo} cancelled (Limit Exceeded).`);
       this.broadcast('TRANSACTION_UPDATED', tx);
@@ -154,6 +163,9 @@ export class WhatsAppDispatcher {
         reason: `Limit exceeded: ${slotName} slot quota of ${slotMax} messages reached (${slotUsed}/${slotMax} sent). Message cancelled.`
       });
       storage.incrementMetric('quotaLimitCancelled');
+      if (this.supabaseSync) {
+        this.supabaseSync.syncBillToCloud(tx).catch(() => {});
+      }
 
       console.log(`[WhatsApp Dispatcher] 🚫 ${slotName} slot quota (${slotMax}) exceeded. Bill #${tx.invoiceNo} cancelled (Limit Exceeded).`);
       this.broadcast('TRANSACTION_UPDATED', tx);
@@ -321,6 +333,7 @@ export class WhatsAppDispatcher {
       storage.incrementMetric('whatsAppDelivered');
 
       if (this.supabaseSync) {
+        this.supabaseSync.syncBillToCloud(tx).catch(() => {});
         this.supabaseSync.syncDispatchToCloud(txId, 'DELIVERED', { messagePreview: messagePreviewText });
       }
 
