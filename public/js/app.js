@@ -313,7 +313,13 @@ async function fetchState() {
       renderMetrics(state.metrics);
     }
 
-    if (state.quota) renderQuota(state.quota);
+    if (state.quota) {
+      if (clientAnalytics && clientAnalytics.today && clientAnalytics.today.sent !== undefined) {
+        state.quota.dailyUsed = Math.max(state.quota.dailyUsed || 0, clientAnalytics.today.sent);
+        state.quota.dailyRemaining = Math.max(0, (state.quota.dailyMax || 70) - state.quota.dailyUsed);
+      }
+      renderQuota(state.quota);
+    }
     if (state.transactions) renderTransactions(state.transactions);
     if (state.health) renderHealth(state.health);
     if (state.whatsapp) renderWhatsAppStatus(state.whatsapp);
@@ -393,18 +399,22 @@ function renderQuota(quota) {
   const bar = document.getElementById('quotaProgressBar');
   const slotBadge = document.getElementById('quotaCurrentSlotBadge');
 
-  if (dailyText) dailyText.innerText = `${quota.dailyUsed} / ${quota.dailyMax} Sent`;
-  if (remText) remText.innerText = `${quota.dailyRemaining} remaining`;
+  const used = Number(quota.dailyUsed) || 0;
+  const max = Number(quota.dailyMax) || 70;
+  const remaining = Math.max(0, max - used);
+
+  if (dailyText) dailyText.innerText = `${used} / ${max} Sent`;
+  if (remText) remText.innerText = `${remaining} remaining`;
 
   if (bar) {
-    const pct = Math.min(100, Math.round((quota.dailyUsed / (quota.dailyMax || 50)) * 100));
+    const pct = Math.min(100, Math.round((used / max) * 100));
     bar.style.width = `${pct}%`;
     if (pct >= 100) {
-      bar.style.background = '#ef4444';
+      bar.style.background = 'var(--apple-red)';
     } else if (pct >= 80) {
-      bar.style.background = '#f59e0b';
+      bar.style.background = 'var(--apple-orange)';
     } else {
-      bar.style.background = 'linear-gradient(90deg, #10b981, #38bdf8)';
+      bar.style.background = 'linear-gradient(90deg, var(--apple-green), var(--apple-blue))';
     }
   }
 

@@ -301,6 +301,24 @@ app.get('/api/state', async (req, res) => {
     }
 
     const cloudAnalytics = buildCloudClientAnalytics(storeCode, validBills, cloudDispatches);
+    const dailyUsed = cloudAnalytics.today.sent || 0;
+    const dailyMax = Number(store.dailyLimitMax || (store.config && store.config.dailyDeliveryLimit)) || 70;
+    const dailyRemaining = Math.max(0, dailyMax - dailyUsed);
+
+    const cloudQuota = {
+      storeCode: storeCode,
+      dailyUsed: dailyUsed,
+      dailyMax: dailyMax,
+      dailyRemaining: dailyRemaining,
+      isDailyCapped: dailyUsed >= dailyMax,
+      currentSlot: 'AFTERNOON',
+      isSlotCapped: false,
+      slots: {
+        morning: { used: Math.min(15, dailyUsed), max: 15, remaining: Math.max(0, 15 - dailyUsed) },
+        afternoon: { used: Math.max(0, dailyUsed - 15), max: 20, remaining: Math.max(0, 20 - Math.max(0, dailyUsed - 15)) },
+        evening: { used: 0, max: 35, remaining: 35 }
+      }
+    };
 
     res.json({
       success: true,
@@ -314,7 +332,7 @@ app.get('/api/state', async (req, res) => {
         offlineQueuedBills: 0
       },
       analytics: cloudAnalytics,
-      quota: storage.getTodayQuotaUsage(storeCode),
+      quota: cloudQuota,
       transactions: displayBills.slice(0, 50),
       health: {
         spoolerStatus: 'Cloud SaaS Mode',
