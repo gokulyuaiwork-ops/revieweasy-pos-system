@@ -449,10 +449,19 @@ function renderTransactions(txList) {
   if (!tbody || !txList) return;
 
   const storeCode = getActiveStoreCode();
-  const filteredList = txList.filter(tx => (tx.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+  // STRICT FILTER: Show only today's intercepted receipts
+  const filteredList = txList.filter(tx => {
+    const isStore = (tx.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode;
+    if (!isStore) return false;
+    const txTime = new Date(tx.timestamp || tx.created_at || 0).getTime();
+    return txTime >= startOfToday;
+  });
 
   if (filteredList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 32px 16px; font-weight: 500;">No print jobs intercepted yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 32px 16px; font-weight: 500;">No print jobs intercepted today yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
     return;
   }
 

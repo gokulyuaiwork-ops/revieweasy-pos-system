@@ -98,7 +98,7 @@ wss.on('connection', (ws) => {
       metrics: storage.getMetrics(),
       analytics: storage.getClientAnalytics(storeCode),
       quota: storage.getTodayQuotaUsage(storeCode),
-      transactions: storage.getTransactions(50).filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode),
+      transactions: storage.getTransactions(50, storeCode, true),
       health: resilience.getHealthSummary(),
       whatsapp: localBaileys.getStatus(),
       supabase: {
@@ -131,7 +131,7 @@ app.get('/api/state', async (req, res) => {
       metrics: storage.getMetrics(),
       analytics: storage.getClientAnalytics(storeCode),
       quota: storage.getTodayQuotaUsage(storeCode),
-      transactions: storage.getTransactions(50, storeCode),
+      transactions: storage.getTransactions(50, storeCode, true),
       health: resilience.getHealthSummary(),
       whatsapp: localBaileys.getStatus(storeCode),
       supabase: {

@@ -191,8 +191,15 @@ app.get('/api/state', async (req, res) => {
       }
     }
 
-    // Filter out internal agent heartbeat markers from the visible transaction feed
-    const displayBills = (rawBills || []).filter(b => b.source !== 'AGENT_HEARTBEAT' && !(b.invoiceNo && b.invoiceNo.startsWith('HB-')));
+    // Filter out internal agent heartbeats and show only today's bills in the live transaction feed
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    const displayBills = (rawBills || []).filter(b => {
+      if (b.source === 'AGENT_HEARTBEAT' || (b.invoiceNo && b.invoiceNo.startsWith('HB-'))) return false;
+      const bTime = new Date(b.timestamp || b.created_at || 0).getTime();
+      return bTime >= startOfToday;
+    });
 
     res.json({
       success: true,

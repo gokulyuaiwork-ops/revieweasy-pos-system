@@ -867,12 +867,26 @@ class ResilientStorage {
     return tx;
   }
 
-  getTransactions(limit = 50, storeCode = null) {
+  getTransactions(limit = 50, storeCode = null, todayOnly = false) {
     let list = this.state.transactions || [];
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
     if (storeCode) {
       const code = storeCode.toUpperCase();
       const clearedAt = this.state.clearedAt && this.state.clearedAt[code] ? this.state.clearedAt[code] : 0;
-      list = list.filter(t => (t.storeCode || 'STORE_DEMO_01').toUpperCase() === code && new Date(t.timestamp).getTime() > clearedAt);
+      list = list.filter(t => {
+        const isStore = (t.storeCode || 'STORE_DEMO_01').toUpperCase() === code;
+        const tTime = new Date(t.timestamp || t.created_at || 0).getTime();
+        const afterCleared = tTime > clearedAt;
+        const isToday = !todayOnly || tTime >= startOfToday;
+        return isStore && afterCleared && isToday;
+      });
+    } else if (todayOnly) {
+      list = list.filter(t => {
+        const tTime = new Date(t.timestamp || t.created_at || 0).getTime();
+        return tTime >= startOfToday;
+      });
     }
     return list.slice(0, limit);
   }
