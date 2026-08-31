@@ -146,6 +146,7 @@ class ResilientStorage {
     try {
       if (fs.existsSync(this.dbFile)) {
         const raw = fs.readFileSync(this.dbFile, 'utf8');
+        if (!raw || raw.trim().length === 0) return;
         const data = JSON.parse(raw);
         const rawFeedback = data.privateFeedback || [];
         const cleanFeedback = rawFeedback.filter(f => {
@@ -164,22 +165,25 @@ class ResilientStorage {
           config: { ...this.state.config, ...(data.config || {}) },
           metrics: { ...this.state.metrics, ...(data.metrics || {}) }
         };
-        if (cleanFeedback.length !== rawFeedback.length) {
-          this.save();
-        }
-      } else {
-        this.save();
       }
     } catch (err) {
-      console.error('[Storage] Error loading state, recreating clean store:', err.message);
-      this.save();
+      console.warn('[Storage] Notice reading disk state (retaining active in-memory state):', err.message);
     }
   }
 
-  // Resilient write to disk
+  // Atomic resilient write to disk (prevents partial-read corruptions)
   save() {
     try {
-      fs.writeFileSync(this.dbFile, JSON.stringify(this.state, null, 2), 'utf8');
+      const dataStr = JSON.stringify(this.state, null, 2);
+      const tempFile = `${this.dbFile}.${Date.now()}.${Math.floor(Math.random() * 10000)}.tmp`;
+      fs.writeFileSync(tempFile, dataStr, 'utf8');
+      
+      try {
+        fs.renameSync(tempFile, this.dbFile);
+      } catch (renameErr) {
+        fs.copyFileSync(tempFile, this.dbFile);
+        try { fs.unlinkSync(tempFile); } catch (e) {}
+      }
     } catch (err) {
       console.error('[Storage] Save to disk failed:', err.message);
     }
