@@ -419,32 +419,76 @@ app.post('/api/auth/login', async (req, res) => {
 // -------------------------------------------------------------
 // SaaS Multi-Tenant Store Management (Admin API)
 // -------------------------------------------------------------
-app.get('/api/admin/clients', (req, res) => {
+app.get('/api/admin/clients', async (req, res) => {
   try {
-    const clientsWithMetrics = storage.getAllClientsWithAnalytics();
-    res.json({ success: true, stores: clientsWithMetrics });
+    if (supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+      try { await supabaseSync.pullCloudStores(); } catch (e) {}
+    }
+    const rawStores = storage.getAllStores();
+    
+    // Enrich each store with live cloud telemetry
+    const storesWithMetrics = await Promise.all(rawStores.map(async (store) => {
+      const bills = await getStoreBills(store.storeCode);
+      const validBills = (bills || []).filter(b => b.source !== 'AGENT_HEARTBEAT' && !(b.invoiceNo && b.invoiceNo.startsWith('HB-')));
+      let dispatches = [];
+      if (supabaseSync && supabaseSync.client) {
+        try {
+          const { data } = await supabaseSync.client.from('review_dispatches').select('*').eq('store_code', store.storeCode);
+          if (data) dispatches = data;
+        } catch (e) {}
+      }
+      const a = buildCloudClientAnalytics(store.storeCode, validBills, dispatches);
+      return {
+        ...store,
+        analytics: {
+          todaySent: a.today.sent,
+          todayBills: a.today.bills,
+          lastWeekSent: a.lastWeek.sent,
+          lastWeekBills: a.lastWeek.bills,
+          lastMonthSent: a.lastMonth.sent,
+          lastMonthBills: a.lastMonth.bills,
+          allTimeSent: a.allTime.sent,
+          allTimeBills: a.allTime.bills,
+          allTimeSales: a.allTime.sales,
+          reachRate: a.allTime.reachRate
+        }
+      };
+    }));
+
+    res.json({ success: true, stores: storesWithMetrics });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/admin/clients/:storeCode/details', (req, res) => {
+app.get('/api/admin/clients/:storeCode/details', async (req, res) => {
   try {
     const store = storage.getStoreByCode(req.params.storeCode);
     if (!store) {
       return res.status(404).json({ error: 'Store not found' });
     }
-    const analytics = storage.getClientDetailedAnalytics(req.params.storeCode);
+    const bills = await getStoreBills(req.params.storeCode);
+    const validBills = (bills || []).filter(b => b.source !== 'AGENT_HEARTBEAT' && !(b.invoiceNo && b.invoiceNo.startsWith('HB-')));
+    let dispatches = [];
+    if (supabaseSync && supabaseSync.client) {
+      try {
+        const { data } = await supabaseSync.client.from('review_dispatches').select('*').eq('store_code', req.params.storeCode);
+        if (data) dispatches = data;
+      } catch (e) {}
+    }
+    const analytics = buildCloudClientAnalytics(req.params.storeCode, validBills, dispatches);
     res.json({ success: true, store, analytics });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/admin/analytics/summary', (req, res) => {
+app.get('/api/admin/analytics/summary', async (req, res) => {
   try {
-    const clients = storage.getAllClientsWithAnalytics();
-    const metrics = storage.getMetrics();
+    if (supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+      try { await supabaseSync.pullCloudStores(); } catch (e) {}
+    }
+    const rawStores = storage.getAllStores();
 
     let totalTodaySent = 0;
     let totalTodayBills = 0;
@@ -458,20 +502,31 @@ app.get('/api/admin/analytics/summary', (req, res) => {
     let totalAllTimeBills = 0;
     let totalAllTimeSales = 0;
 
-    for (const c of clients) {
-      const a = c.analytics || {};
-      totalTodaySent += a.todaySent || 0;
-      totalTodayBills += a.todayBills || 0;
-      totalMonthSent += a.lastMonthSent || 0;
-      totalMonthBills += a.lastMonthBills || 0;
-      totalAllTimeSent += a.allTimeSent || 0;
-      totalAllTimeBills += a.allTimeBills || 0;
-      totalAllTimeSales += a.allTimeSales || 0;
-    }
+    await Promise.all(rawStores.map(async (store) => {
+      const bills = await getStoreBills(store.storeCode);
+      const validBills = (bills || []).filter(b => b.source !== 'AGENT_HEARTBEAT' && !(b.invoiceNo && b.invoiceNo.startsWith('HB-')));
+      let dispatches = [];
+      if (supabaseSync && supabaseSync.client) {
+        try {
+          const { data } = await supabaseSync.client.from('review_dispatches').select('*').eq('store_code', store.storeCode);
+          if (data) dispatches = data;
+        } catch (e) {}
+      }
+      const a = buildCloudClientAnalytics(store.storeCode, validBills, dispatches);
+      totalTodaySent += a.today.sent || 0;
+      totalTodayBills += a.today.bills || 0;
+      totalTodaySales += a.today.sales || 0;
+      totalMonthSent += a.lastMonth.sent || 0;
+      totalMonthBills += a.lastMonth.bills || 0;
+      totalMonthSales += a.lastMonth.sales || 0;
+      totalAllTimeSent += a.allTime.sent || 0;
+      totalAllTimeBills += a.allTime.bills || 0;
+      totalAllTimeSales += a.allTime.sales || 0;
+    }));
 
     res.json({
       success: true,
-      totalStores: clients.length,
+      totalStores: rawStores.length,
       today: {
         sent: totalTodaySent,
         bills: totalTodayBills,
@@ -489,8 +544,7 @@ app.get('/api/admin/analytics/summary', (req, res) => {
         bills: totalAllTimeBills,
         sales: Math.round(totalAllTimeSales),
         reachRate: totalAllTimeBills > 0 ? Math.round((totalAllTimeSent / totalAllTimeBills) * 100) : 0
-      },
-      metrics
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

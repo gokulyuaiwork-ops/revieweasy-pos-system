@@ -229,7 +229,10 @@ app.post('/api/whatsapp/reset-session', async (req, res) => {
 // -------------------------------------------------------------
 // Admin Portal CRUD & Per-Client Analytics Endpoints
 // -------------------------------------------------------------
-app.get('/api/admin/clients', (req, res) => {
+app.get('/api/admin/clients', async (req, res) => {
+  if (supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+    try { await supabaseSync.pullCloudStores(); } catch (e) {}
+  }
   const stores = storage.getAllClientsWithAnalytics();
   res.json({ success: true, stores, metrics: storage.getMetrics() });
 });
