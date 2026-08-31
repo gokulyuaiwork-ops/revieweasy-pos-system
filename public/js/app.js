@@ -671,15 +671,15 @@ function renderWhatsAppStatus(wsData) {
       dot.style.background = '#34c759';
       dot.style.boxShadow = '0 0 6px rgba(52, 199, 89, 0.6)';
     }
-  } else if (status === 'RECONNECTING') {
-    if (statusText) statusText.innerText = 'Reconnecting...';
+  } else if (wsData.qrDataUrl) {
+    renderWhatsAppQR(wsData.qrDataUrl);
+    if (statusText) statusText.innerText = 'Scan QR to link';
     if (dot) {
       dot.style.background = '#ff9500';
       dot.style.boxShadow = '0 0 6px rgba(255, 149, 0, 0.6)';
     }
-  } else if (status === 'QR_READY' && wsData.qrDataUrl) {
-    renderWhatsAppQR(wsData.qrDataUrl);
-    if (statusText) statusText.innerText = 'Scan QR to link';
+  } else if (status === 'RECONNECTING') {
+    if (statusText) statusText.innerText = 'Reconnecting...';
     if (dot) {
       dot.style.background = '#ff9500';
       dot.style.boxShadow = '0 0 6px rgba(255, 149, 0, 0.6)';
@@ -692,6 +692,22 @@ function renderWhatsAppStatus(wsData) {
     }
   }
 }
+
+async function fetchWhatsAppStatus() {
+  const storeCode = getActiveStoreCode();
+  try {
+    const res = await fetch(`/api/whatsapp/status?store=${encodeURIComponent(storeCode)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.whatsapp) {
+        renderWhatsAppStatus(data.whatsapp);
+      }
+    }
+  } catch (err) {
+    console.warn('[WhatsApp Status] Fetch error:', err.message);
+  }
+}
+window.fetchWhatsAppStatus = fetchWhatsAppStatus;
 
 async function resetWhatsAppSession() {
   if (confirm('Unlink this WhatsApp number and generate a new QR code?')) {
@@ -902,11 +918,18 @@ async function injectCustomStream() {
 }
 
 async function simulatePairing() {
+  const storeCode = getActiveStoreCode();
   try {
-    const res = await fetch('/api/whatsapp/pair-simulated', { method: 'POST' });
+    const res = await fetch('/api/whatsapp/pair-simulated', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeCode })
+    });
     const data = await res.json();
-    if (data.success) {
-      renderWhatsAppStatus({ status: 'CONNECTED' });
+    if (data.whatsapp) {
+      renderWhatsAppStatus(data.whatsapp);
+    } else if (data.success) {
+      renderWhatsAppStatus({ status: 'CONNECTED', storeId: storeCode, phoneNumber: '9840012345' });
     }
   } catch (err) {
     console.error(err);

@@ -467,6 +467,9 @@
     function openWhatsAppModal() {
       const modal = document.getElementById('whatsappDeviceModal');
       if (modal) modal.style.display = 'flex';
+      if (typeof fetchWhatsAppStatus === 'function') {
+        fetchWhatsAppStatus();
+      }
     }
     function closeWhatsAppModal() {
       const modal = document.getElementById('whatsappDeviceModal');

@@ -200,9 +200,9 @@ app.post('/api/whatsapp/switch-store', async (req, res) => {
   res.json({ success: true, whatsapp: status });
 });
 
-app.post('/api/whatsapp/pairing-code', async (req, res) => {
+app.post(['/api/whatsapp/pairing-code', '/api/whatsapp/request-pairing-code'], async (req, res) => {
   try {
-    const { phoneNumber, storeCode } = req.body;
+    const { phoneNumber, storeCode } = req.body || {};
     if (storeCode && storeCode.toUpperCase() !== localBaileys.storeId) {
       await localBaileys.switchStore(storeCode.toUpperCase());
     }
@@ -221,6 +221,21 @@ app.post('/api/whatsapp/reset-session', async (req, res) => {
     }
     const result = await localBaileys.resetSession();
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/whatsapp/pair-simulated', async (req, res) => {
+  try {
+    const storeCode = (req.body?.storeCode || req.query?.store || localBaileys.storeId).toUpperCase();
+    localBaileys.status = 'CONNECTED';
+    localBaileys.phoneNumber = '9840012345';
+    if (supabaseSync && typeof supabaseSync.syncWhatsAppStatusToCloud === 'function') {
+      supabaseSync.syncWhatsAppStatusToCloud(storeCode, 'CONNECTED', localBaileys.phoneNumber);
+    }
+    broadcast('WHATSAPP_STATUS', localBaileys.getStatus(storeCode));
+    res.json({ success: true, whatsapp: localBaileys.getStatus(storeCode) });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
