@@ -200,7 +200,7 @@ export class LocalBaileysEngine {
           keys: makeCacheableSignalKeyStore(state.keys, logger)
         },
         logger,
-        browser: Browsers.macOS('Desktop'),
+        browser: ['ReviewEasy (Windows)', 'Chrome', '124.0.0'],
         connectTimeoutMs: 60000,
         keepAliveIntervalMs: 30000,
         defaultQueryTimeoutMs: 60000,
