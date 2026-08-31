@@ -597,6 +597,49 @@ class ResilientStorage {
   }
 
   // -------------------------------------------------------------
+  // Customer Feedback & Review Shield Methods
+  // -------------------------------------------------------------
+  getFeedback(storeCode) {
+    this.load();
+    const code = (storeCode || this.state.config.storeCode || 'STORE_DEMO_01').toUpperCase();
+    const clearedAt = this.state.clearedAt && this.state.clearedAt[code] ? this.state.clearedAt[code] : 0;
+    return (this.state.privateFeedback || [])
+      .filter(f => {
+        const isStoreMatch = (f.storeCode || 'STORE_DEMO_01').toUpperCase() === code;
+        const fbTime = new Date(f.timestamp || f.created_at || 0).getTime();
+        return isStoreMatch && fbTime > clearedAt;
+      })
+      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+  }
+
+  addFeedback(fb) {
+    const record = {
+      id: fb.id || `FB_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      storeCode: fb.storeCode || this.state.config.storeCode || 'STORE_DEMO_01',
+      invoiceNo: fb.invoiceNo || 'N/A',
+      customerName: fb.customerName || 'Valued Customer',
+      customerPhone: fb.customerPhone || 'N/A',
+      rating: parseInt(fb.rating, 10) || 5,
+      action: parseInt(fb.rating, 10) >= 4 ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK',
+      category: fb.category || (parseInt(fb.rating, 10) >= 4 ? 'Satisfied Customer' : 'General Grievance'),
+      comment: fb.comment || '',
+      requestCallback: fb.requestCallback || false,
+      status: 'OPEN',
+      timestamp: fb.timestamp || new Date().toISOString()
+    };
+
+    if (record.action === 'GOOGLE_REDIRECT') {
+      this.incrementMetric('positiveReviewsRedirected');
+    } else {
+      this.incrementMetric('negativeReviewsShielded');
+    }
+
+    this.state.privateFeedback.unshift(record);
+    this.save();
+    return record;
+  }
+
+  // -------------------------------------------------------------
   // Per-Client Time-Windowed Analytics Engine
   // (Today, Last 7 Days, Last 30 Days, All-Time)
   // -------------------------------------------------------------
