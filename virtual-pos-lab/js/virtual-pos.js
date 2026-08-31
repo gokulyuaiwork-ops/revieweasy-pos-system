@@ -213,7 +213,52 @@ function triggerPrint(docType) {
   }
 }
 
+async function updateLabTopbarStatus() {
+  try {
+    const res = await fetch('http://localhost:3000/api/state');
+    if (res.ok) {
+      const data = await res.json();
+      
+      // WhatsApp Status
+      const wa = data.whatsapp || {};
+      const waText = document.getElementById('labWhatsAppText');
+      const waDot = document.getElementById('labWhatsAppDot');
+      if (waText && waDot) {
+        if (wa.status === 'CONNECTED') {
+          const phoneFormatted = wa.phoneNumber ? `+${wa.phoneNumber}` : 'Connected';
+          waText.innerText = `Connected (${phoneFormatted})`;
+          waDot.className = 'lab-status-dot green';
+        } else if (wa.status === 'QR_READY') {
+          waText.innerText = 'Ready (Scan QR / Code)';
+          waDot.className = 'lab-status-dot amber';
+        } else {
+          waText.innerText = wa.status || 'Disconnected';
+          waDot.className = 'lab-status-dot amber';
+        }
+      }
+
+      // Spooler Status
+      const spooler = data.health?.spoolerStatus || 'Monitoring (Active)';
+      const spoolerText = document.getElementById('labSpoolerText');
+      const spoolerDot = document.getElementById('labSpoolerDot');
+      if (spoolerText && spoolerDot) {
+        spoolerText.innerText = spooler;
+        spoolerDot.className = spooler.toLowerCase().includes('error') ? 'lab-status-dot amber' : 'lab-status-dot green';
+      }
+    }
+  } catch (e) {
+    const waText = document.getElementById('labWhatsAppText');
+    const waDot = document.getElementById('labWhatsAppDot');
+    if (waText && waDot) {
+      waText.innerText = 'Offline (:3000 Unreachable)';
+      waDot.className = 'lab-status-dot amber';
+    }
+  }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   renderMenu();
   renderCart();
+  updateLabTopbarStatus();
+  setInterval(updateLabTopbarStatus, 3000);
 });

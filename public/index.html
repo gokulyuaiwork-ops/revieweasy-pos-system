@@ -44,10 +44,16 @@
       </div>
       
       <!-- Right: Status Capsule, User Initials, Power/Logout -->
+      <!-- Right: Status Capsule, User Initials, Power/Logout -->
       <div class="topbar-status">
+        <div class="status-chip" id="spoolerStatusChip" title="POS Printer & Windows Spooler Interceptor status">
+          <span class="dot" id="spoolerDot" style="background: #34c759; box-shadow: 0 0 6px rgba(52, 199, 89, 0.6);"></span>
+          <span id="spoolerStatusText">Spooler: Active</span>
+        </div>
+
         <div class="status-chip" id="whatsappStatusChip" onclick="openWhatsAppModal()" title="Click to manage WhatsApp device connection">
           <span class="dot" id="systemStatusDot"></span>
-          <span id="whatsappStatusText">All systems normal</span>
+          <span id="whatsappStatusText">WhatsApp: Connecting...</span>
         </div>
 
         <div class="user-profile" id="userProfileChip" title="Logged in user">
@@ -59,7 +65,7 @@
 
       <!-- Hidden compatibility bindings for telemetry -->
       <span id="storeBadgeText" style="display:none;">STORE_DEMO_01</span>
-      <span id="spoolerStatusChip" style="display:none;"><span id="spoolerPrefix"></span><span id="spoolerStatusText"></span></span>
+      <span id="spoolerPrefix" style="display:none;"></span>
       <span id="supabaseStatusChip" style="display:none;"><span id="supabaseStatusText"></span></span>
     </header>
 
