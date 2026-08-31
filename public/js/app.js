@@ -634,7 +634,9 @@ function renderWhatsAppStatus(wsData) {
     loading.style.display = 'none';
     connected.style.display = 'flex';
 
+    const headerBtnText = document.getElementById('headerWhatsAppBtnText');
     if (status === 'CONNECTED') {
+      if (headerBtnText) headerBtnText.innerText = 'WhatsApp: Connected';
       connected.innerHTML = `
         <div class="connected-icon" style="font-size: 36px; color: #10b981;">✅</div>
         <h4 style="color: #059669; font-weight: 800; margin: 4px 0;">Local POS WhatsApp Active</h4>
@@ -657,7 +659,9 @@ function renderWhatsAppStatus(wsData) {
   }
 
   // Local POS Terminal Mode (Edge)
+  const headerBtnText = document.getElementById('headerWhatsAppBtnText');
   if (status === 'CONNECTED') {
+    if (headerBtnText) headerBtnText.innerText = 'WhatsApp: Connected';
     img.style.display = 'none';
     loading.style.display = 'none';
     connected.style.display = 'flex';
