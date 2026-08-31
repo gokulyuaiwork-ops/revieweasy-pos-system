@@ -602,15 +602,13 @@ class ResilientStorage {
   getFeedback(storeCode) {
     this.load();
     const code = (storeCode || this.state.config.storeCode || 'STORE_DEMO_01').toUpperCase();
-    const clearedAt = this.state.clearedAt && this.state.clearedAt[code] ? this.state.clearedAt[code] : 0;
     return (this.state.privateFeedback || [])
       .filter(f => {
         const isStoreMatch = (f.storeCode || 'STORE_DEMO_01').toUpperCase() === code;
-        const fbTime = new Date(f.timestamp || f.created_at || 0).getTime();
         const isNegative = (parseInt(f.rating, 10) <= 3) || f.action === 'PRIVATE_FEEDBACK';
-        return isStoreMatch && fbTime > clearedAt && isNegative;
+        return isStoreMatch && isNegative;
       })
-      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+      .sort((a, b) => new Date(b.timestamp || b.created_at || 0).getTime() - new Date(a.timestamp || a.created_at || 0).getTime());
   }
 
   addFeedback(fb) {

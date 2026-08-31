@@ -1010,33 +1010,35 @@ app.get('/api/feedback', async (req, res) => {
         .order('created_at', { ascending: false });
 
       if (!error && data && data.length > 0) {
-        feedbacks = data.map(r => {
-          let category = 'General Grievance';
-          let comment = r.message_text || '';
-          if (comment.includes(' - ') && comment.includes(': ')) {
-            const parts = comment.split(' - ');
-            if (parts.length > 1) {
-              const subParts = parts[1].split(': ');
-              category = subParts[0] || category;
-              comment = subParts.slice(1).join(': ') || comment;
+        feedbacks = data
+          .filter(r => (r.rating_given && Number(r.rating_given) <= 3) || r.dispatch_status === 'PRIVATE_FEEDBACK')
+          .map(r => {
+            let category = 'General Grievance';
+            let comment = r.message_text || '';
+            if (comment.includes(' - ') && comment.includes(': ')) {
+              const parts = comment.split(' - ');
+              if (parts.length > 1) {
+                const subParts = parts[1].split(': ');
+                category = subParts[0] || category;
+                comment = subParts.slice(1).join(': ') || comment;
+              }
             }
-          }
-          return {
-            id: r.id,
-            billId: r.bill_id,
-            storeCode: r.store_code,
-            invoiceNo: 'INV-4920',
-            customerName: r.customer_name || 'Customer',
-            customerPhone: r.customer_phone || '9876543210',
-            rating: r.rating_given || 2,
-            action: 'PRIVATE_FEEDBACK',
-            category: category,
-            comment: comment,
-            requestCallback: true,
-            status: r.resolution_status || 'OPEN',
-            timestamp: r.created_at || new Date().toISOString()
-          };
-        });
+            return {
+              id: r.id,
+              billId: r.bill_id,
+              storeCode: r.store_code,
+              invoiceNo: 'INV-4920',
+              customerName: r.customer_name || 'Customer',
+              customerPhone: r.customer_phone || '9876543210',
+              rating: r.rating_given || 2,
+              action: 'PRIVATE_FEEDBACK',
+              category: category,
+              comment: comment,
+              requestCallback: true,
+              status: r.resolution_status || 'OPEN',
+              timestamp: r.created_at || new Date().toISOString()
+            };
+          });
       }
     }
 
