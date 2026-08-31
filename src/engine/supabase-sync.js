@@ -112,15 +112,18 @@ export class SupabaseSyncEngine {
   }
 
   /**
-   * Delete store record from Supabase Cloud
+   * Delete store record from Supabase Cloud (Soft delete to prevent RLS delete rejections)
    */
   async deleteStoreFromCloud(storeCode) {
     if (!this.client || !storeCode) return;
     try {
       const code = String(storeCode).toUpperCase();
       const cfgId = getStoreConfigUuid(code);
-      await this.client.from('bills').delete().eq('id', cfgId);
-      console.log(`[Supabase Sync] 🗑️ Store config [${code}] deleted from cloud.`);
+      await this.client
+        .from('bills')
+        .update({ status: 'DELETED', source: 'DELETED_STORE' })
+        .eq('id', cfgId);
+      console.log(`[Supabase Sync] 🗑️ Store config [${code}] marked as DELETED on cloud.`);
     } catch (err) {
       console.warn('[Supabase Sync] Warning deleting store config from cloud:', err.message);
     }
@@ -135,7 +138,7 @@ export class SupabaseSyncEngine {
       const { data, error } = await this.client
         .from('bills')
         .select('*')
-        .eq('source', 'STORE_CONFIG');
+        .in('source', ['STORE_CONFIG', 'DELETED_STORE']);
 
       if (error || !data) return [];
 
@@ -147,6 +150,13 @@ export class SupabaseSyncEngine {
           if (storeData && storeData.storeCode) {
             const code = storeData.storeCode.toUpperCase();
             
+            // Handle deleted stores
+            if (row.source === 'DELETED_STORE' || row.status === 'DELETED') {
+              storage.state.clientStores = (storage.state.clientStores || []).filter(s => (s.storeCode || s.id || '').toUpperCase() !== code);
+              storage.state.users = (storage.state.users || []).filter(u => (u.storeCode || '').toUpperCase() !== code);
+              continue;
+            }
+
             // 1. Ensure store exists in local storage
             let existing = storage.state.clientStores.find(s => s.storeCode.toUpperCase() === code);
             if (!existing) {
