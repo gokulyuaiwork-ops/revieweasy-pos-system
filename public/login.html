@@ -96,61 +96,6 @@
       box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
       transition: all 0.2s;
     }
-    .btn-login:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
-    }
-    .demo-accounts {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border-color);
-    }
-    .demo-accounts p {
-      font-size: 11px;
-      color: var(--text-sub);
-      text-transform: uppercase;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-bottom: 10px;
-      text-align: center;
-    }
-    .demo-pills {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .demo-pill {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid var(--border-color);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .demo-pill:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
-    }
-    .pill-info strong {
-      font-size: 12px;
-      display: block;
-      color: #0f172a;
-    }
-    .pill-info span {
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-    .pill-badge {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    .badge-admin { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
-    .badge-client { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
     .login-error {
       background: #fff1f2;
       border: 1px solid #fecdd3;
@@ -187,37 +132,6 @@
 
         <button type="submit" class="btn-login" id="btnLogin">Sign In ➔</button>
       </form>
-
-      <!-- Quick 1-Click Demo Accounts -->
-      <div class="demo-accounts">
-        <p>⚡ 1-Click Test Credentials</p>
-        <div class="demo-pills">
-          <div class="demo-pill" onclick="fillCredentials('admin@revieweasy.com', 'admin123')">
-            <div class="pill-info">
-              <strong>👑 SaaS Admin Portal</strong>
-              <span>admin@revieweasy.com / admin123</span>
-            </div>
-            <span class="pill-badge badge-admin">Admin</span>
-          </div>
-
-          <div class="demo-pill" onclick="fillCredentials('client@sunshine.com', 'client123')">
-            <div class="pill-info">
-              <strong>🏪 Sunshine Cafe (Merchant)</strong>
-              <span>client@sunshine.com / client123</span>
-            </div>
-            <span class="pill-badge badge-client">Client</span>
-          </div>
-
-          <div class="demo-pill" onclick="fillCredentials('client@bluetokai.com', 'client123')">
-            <div class="pill-info">
-              <strong>☕ Blue Tokai (Merchant)</strong>
-              <span>client@bluetokai.com / client123</span>
-            </div>
-            <span class="pill-badge badge-client">Client</span>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -234,12 +148,6 @@
         } catch (e) {}
       }
     });
-
-    function fillCredentials(email, password) {
-      document.getElementById('email').value = email;
-      document.getElementById('password').value = password;
-      document.getElementById('loginError').style.display = 'none';
-    }
 
     async function handleLogin(e) {
       e.preventDefault();
