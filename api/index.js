@@ -228,7 +228,7 @@ app.get('/api/feedback', async (req, res) => {
       try { await supabaseSync.pullCloudFeedbacks(storeCode); } catch (e) {}
     }
     const feedback = storage.getFeedback(storeCode);
-    res.json({ success: true, feedback });
+    res.json({ success: true, feedbacks: feedback, feedback });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

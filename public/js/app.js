@@ -925,7 +925,7 @@ async function fetchFeedbacks() {
     const res = await fetch(`/api/feedback?store=${encodeURIComponent(storeCode)}`);
     const data = await res.json();
     if (data.success) {
-      renderFeedbackTable(data.feedbacks || []);
+      renderFeedbackTable(data.feedbacks || data.feedback || []);
     }
   } catch (err) {
     console.error('Error fetching feedbacks:', err);
