@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import WebSocket from 'ws';
+import crypto from 'crypto';
 import { storage } from './storage.js';
+
+export function getStoreHeartbeatUuid(storeCode) {
+  const hash = crypto.createHash('md5').update('ReviewEasy_Heartbeat_' + (storeCode || 'STORE_DEMO_01')).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
 
 export class SupabaseSyncEngine {
   constructor(broadcastCallback) {
@@ -96,15 +102,24 @@ export class SupabaseSyncEngine {
     if (!this.client) return;
     try {
       const code = (storeCode || 'STORE_DEMO_01').toUpperCase();
+      const hbId = getStoreHeartbeatUuid(code);
       await this.client
-        .from('stores')
-        .update({
-          whatsapp_status: status,
-          whatsapp_phone: phoneNumber || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('store_code', code);
-    } catch (e) {}
+        .from('bills')
+        .upsert({
+          id: hbId,
+          invoice_no: `HB-${code}`,
+          store_code: code,
+          customer_name: 'Edge WhatsApp Agent',
+          customer_phone: phoneNumber || '919342350747',
+          total_amount: 0,
+          status: status || 'CONNECTED',
+          source: 'AGENT_HEARTBEAT',
+          local_created_at: new Date().toISOString(),
+          synced_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+    } catch (e) {
+      console.warn('[Supabase Sync] Heartbeat sync note:', e.message);
+    }
   }
 
   /**
@@ -248,6 +263,7 @@ export class SupabaseSyncEngine {
       if (!error && cloudBills && cloudBills.length > 0) {
         let newCount = 0;
         for (const b of cloudBills) {
+          if (b.source === 'AGENT_HEARTBEAT' || (b.invoice_no && b.invoice_no.startsWith('HB-'))) continue;
           const billTime = new Date(b.created_at || b.local_created_at || 0).getTime();
           if (billTime <= clearedAt) continue;
           const exists = storage.state.transactions.find(t => t.invoiceNo === b.invoice_no);
@@ -388,18 +404,30 @@ export class SupabaseSyncEngine {
     }
   }
 
+  async broadcastHeartbeatToCloud() {
+    if (!this.client) return;
+    try {
+      const config = storage.getConfig();
+      const code = (config.storeCode || 'STORE_DEMO_01').toUpperCase();
+      const phone = config.storePhone || '919342350747';
+      await this.syncWhatsAppStatusToCloud(code, 'CONNECTED', phone);
+    } catch (e) {}
+  }
+
   startPeriodicSyncWorker() {
     // Initial sync
     setTimeout(() => {
       this.pullCloudBills();
       this.pullCloudFeedbacks();
       this.flushOfflineSyncQueue();
+      this.broadcastHeartbeatToCloud();
     }, 2000);
 
     setInterval(() => {
       this.flushOfflineSyncQueue();
       this.pullCloudBills();
       this.pullCloudFeedbacks();
-    }, 5000);
+      this.broadcastHeartbeatToCloud();
+    }, 15000);
   }
 }

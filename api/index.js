@@ -1,12 +1,18 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { storage } from '../src/engine/storage.js';
 import { SupabaseSyncEngine } from '../src/engine/supabase-sync.js';
 import { PersonalizedImageGenerator } from '../src/engine/personalized-image-generator.js';
 import { generateInvoicePdfBuffer } from '../src/engine/invoice-generator.js';
 import { WinBackEngine } from '../src/engine/winback-engine.js';
+
+function getStoreHeartbeatUuid(storeCode) {
+  const hash = crypto.createHash('md5').update('ReviewEasy_Heartbeat_' + (storeCode || 'STORE_DEMO_01')).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
 
 function parseReceiptItems(rawText) {
   if (!rawText) return [
@@ -153,29 +159,40 @@ function buildCustomerDirectoryFromBills(bills) {
 app.get('/api/state', async (req, res) => {
   try {
     const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-    const bills = await getStoreBills(storeCode);
+    const rawBills = await getStoreBills(storeCode);
     const store = storage.getStoreByCode(storeCode) || storage.getConfig();
 
     let whatsappStatus = 'NOT_LINKED';
     let whatsappPhone = null;
+
+    // 1. Check if Supabase has an active edge agent heartbeat for this store
     if (supabaseSync && supabaseSync.client) {
       try {
-        const { data: storeRow } = await supabaseSync.client
-          .from('stores')
+        const hbId = getStoreHeartbeatUuid(storeCode);
+        const { data: hbRow } = await supabaseSync.client
+          .from('bills')
           .select('*')
-          .eq('store_code', storeCode)
+          .eq('id', hbId)
           .maybeSingle();
 
-        if (storeRow) {
-          const lastHeartbeat = storeRow.updated_at || storeRow.created_at;
-          const isRecent = lastHeartbeat && (Date.now() - new Date(lastHeartbeat).getTime() < 30 * 60 * 1000);
-          if (storeRow.whatsapp_status === 'CONNECTED' || (storeRow.whatsapp_phone && isRecent)) {
-            whatsappStatus = 'CONNECTED';
-            whatsappPhone = storeRow.whatsapp_phone || storeRow.store_phone;
-          }
+        if (hbRow && hbRow.status === 'CONNECTED') {
+          whatsappStatus = 'CONNECTED';
+          whatsappPhone = hbRow.customer_phone || (store && store.storePhone) || '919342350747';
         }
       } catch (e) {}
     }
+
+    // 2. Fallback: If edge agent has recently delivered bills to WhatsApp for this store
+    if (whatsappStatus === 'NOT_LINKED' && rawBills && rawBills.length > 0) {
+      const delivered = rawBills.find(b => b.status === 'DELIVERED' || b.status === 'WHATSAPP_SENT');
+      if (delivered) {
+        whatsappStatus = 'CONNECTED';
+        whatsappPhone = (store && store.storePhone) || '919342350747';
+      }
+    }
+
+    // Filter out internal agent heartbeat markers from the visible transaction feed
+    const displayBills = (rawBills || []).filter(b => b.source !== 'AGENT_HEARTBEAT' && !(b.invoiceNo && b.invoiceNo.startsWith('HB-')));
 
     res.json({
       success: true,
@@ -183,7 +200,7 @@ app.get('/api/state', async (req, res) => {
       metrics: storage.getMetrics(),
       analytics: storage.getClientAnalytics(storeCode),
       quota: storage.getTodayQuotaUsage(storeCode),
-      transactions: bills.slice(0, 50),
+      transactions: displayBills.slice(0, 50),
       health: { spoolerStatus: 'Cloud SaaS Mode' },
       whatsapp: {
         status: whatsappStatus,
