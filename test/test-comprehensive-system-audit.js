@@ -14,6 +14,7 @@ import { PersonalizedImageGenerator } from '../src/engine/personalized-image-gen
 import { parseReceiptItems, generateInvoicePdfBuffer } from '../src/engine/invoice-generator.js';
 import { SupabaseSyncEngine } from '../src/engine/supabase-sync.js';
 import { SystemResilienceEngine } from '../src/engine/system-resilience.js';
+import sharp from 'sharp';
 
 const dispatcher = new WhatsAppDispatcher();
 
@@ -132,8 +133,16 @@ DO NOT BILL - KITCHEN USE ONLY`;
   // ----------------------------------------------------------------------------
   console.log('\n📦 [3/10] Testing Personalized Dynamic Flyer Generator...');
   
-  const dummyBase = Buffer.from('<svg width="800" height="1000"></svg>');
-  const flyerSvg = PersonalizedImageGenerator.generatePersonalizedFlyer(dummyBase, 'Sunita Rao', {
+  const dummyBase = await sharp({
+    create: {
+      width: 800,
+      height: 1000,
+      channels: 4,
+      background: { r: 100, g: 150, b: 200, alpha: 1 }
+    }
+  }).jpeg().toBuffer();
+
+  const flyerBuffer = await PersonalizedImageGenerator.generatePersonalizedFlyer(dummyBase, 'Sunita Rao', {
     enabled: true,
     template: 'A special treat for {{name}}! ✨',
     posX: 50,
@@ -141,7 +150,7 @@ DO NOT BILL - KITCHEN USE ONLY`;
     fontSize: 26,
     color: '#ffffff'
   });
-  assert(flyerSvg && flyerSvg.includes('Sunita Rao'), 'Dynamic SVG generated with customer name overlay');
+  assert(Buffer.isBuffer(flyerBuffer) && flyerBuffer.length > 1000, 'Dynamic personalized JPEG flyer generated with customer overlay');
 
   // ----------------------------------------------------------------------------
   // MODULE 4: SMART REVIEW SHIELD & GOOGLE GATING

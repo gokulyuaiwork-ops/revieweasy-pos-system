@@ -13,6 +13,11 @@ export function getBillUuid(storeCode, invoiceNo) {
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
 }
 
+export function getStoreConfigUuid(storeCode) {
+  const hash = crypto.createHash('md5').update('ReviewEasy_StoreConfig_' + (storeCode || 'STORE_DEMO_01').toUpperCase()).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
 export class SupabaseSyncEngine {
   constructor(broadcastCallback) {
     this.broadcast = broadcastCallback || (() => {});
@@ -23,7 +28,14 @@ export class SupabaseSyncEngine {
     this.lastSyncTimestamp = null;
     
     this.initClient();
-    this.startPeriodicSyncWorker();
+    if (!process.env.VERCEL) {
+      this.syncInterval = setInterval(() => {
+        if (this.isOnline) {
+          this.flushOfflineSyncQueue().catch(() => {});
+        }
+      }, 30000);
+      if (this.syncInterval && this.syncInterval.unref) this.syncInterval.unref();
+    }
   }
 
   initClient() {
@@ -63,35 +75,139 @@ export class SupabaseSyncEngine {
   /**
    * Push/Update Store Profile, Google Review URL & Dynamic Image Card Config to Supabase
    */
-  async syncStoreToCloud(store) {
+  async syncStoreToCloud(store, userData = {}) {
     if (!this.client || !store) {
       return { success: false, mode: 'OFFLINE_LOCAL' };
     }
 
     try {
-      const payload = {
-        store_code: store.storeCode,
-        store_name: store.storeName,
-        google_review_url: store.googleReviewUrl
+      const code = String(store.storeCode || store.id).toUpperCase();
+      const cfgId = getStoreConfigUuid(code);
+      const fullConfig = {
+        ...store,
+        storeCode: code,
+        clientEmail: userData.email || store.clientEmail || `owner@${code.toLowerCase()}.com`,
+        clientPassword: userData.password || store.clientPassword || 'client123'
       };
 
-      // Non-blocking sync with quick timeout
-      Promise.race([
-        this.client.from('stores').upsert(payload, { onConflict: 'store_code' }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Sync Timeout')), 1000))
-      ]).then(({ data, error }) => {
-        if (error) {
-          console.log(`[Supabase Sync] Store profile registered locally (${store.storeName}).`);
-        } else {
-          console.log(`[Supabase Sync] ☁️ Store profile for '${store.storeName}' synced to Supabase!`);
-        }
-      }).catch(err => {
-        console.log(`[Supabase Sync] Store profile active in resilient storage (${store.storeName}).`);
-      });
+      await this.client.from('bills').upsert({
+        id: cfgId,
+        store_code: code,
+        invoice_no: `CFG-${code}`,
+        customer_name: store.storeName,
+        customer_phone: store.storePhone || '9840012345',
+        total_amount: 0,
+        status: store.status || 'ACTIVE',
+        source: 'STORE_CONFIG',
+        raw_text: JSON.stringify(fullConfig),
+        local_created_at: new Date().toISOString()
+      }, { onConflict: 'id' });
 
-      return { success: true, mode: 'STORE_REGISTERED_LOCAL', storeCode: store.storeCode };
+      console.log(`[Supabase Sync] ☁️ Store profile & credentials for '${store.storeName}' synced to cloud!`);
+      return { success: true, mode: 'STORE_SYNCED_CLOUD', storeCode: code };
     } catch (err) {
+      console.warn('[Supabase Sync] Store sync note:', err.message);
       return { success: true, mode: 'STORE_REGISTERED_LOCAL', error: err.message };
+    }
+  }
+
+  /**
+   * Delete store record from Supabase Cloud (Soft delete to prevent RLS delete rejections)
+   */
+  async deleteStoreFromCloud(storeCode) {
+    if (!this.client || !storeCode) return;
+    try {
+      const code = String(storeCode).toUpperCase();
+      const cfgId = getStoreConfigUuid(code);
+      await this.client
+        .from('bills')
+        .update({ status: 'DELETED', source: 'DELETED_STORE' })
+        .eq('id', cfgId);
+      console.log(`[Supabase Sync] 🗑️ Store config [${code}] marked as DELETED on cloud.`);
+    } catch (err) {
+      console.warn('[Supabase Sync] Warning deleting store config from cloud:', err.message);
+    }
+  }
+
+  /**
+   * Pull all cloud-registered merchant stores and credentials to local storage
+   */
+  async pullCloudStores() {
+    if (!this.client) return [];
+    try {
+      const { data, error } = await this.client
+        .from('bills')
+        .select('*')
+        .in('source', ['STORE_CONFIG', 'DELETED_STORE']);
+
+      if (error || !data) return [];
+
+      const pulled = [];
+      for (const row of data) {
+        if (!row.raw_text) continue;
+        try {
+          const storeData = JSON.parse(row.raw_text);
+          if (storeData && storeData.storeCode) {
+            const code = storeData.storeCode.toUpperCase();
+            
+            // Handle deleted stores
+            if (row.source === 'DELETED_STORE' || row.status === 'DELETED') {
+              storage.state.clientStores = (storage.state.clientStores || []).filter(s => (s.storeCode || s.id || '').toUpperCase() !== code);
+              storage.state.users = (storage.state.users || []).filter(u => (u.storeCode || '').toUpperCase() !== code);
+              continue;
+            }
+
+            // 1. Ensure store exists in local storage
+            let existing = storage.state.clientStores.find(s => s.storeCode.toUpperCase() === code);
+            if (!existing) {
+              storage.state.clientStores.push({
+                id: code,
+                storeCode: code,
+                storeName: storeData.storeName || row.customer_name,
+                storePhone: storeData.storePhone || row.customer_phone,
+                storeGstin: storeData.storeGstin || '',
+                googleReviewUrl: storeData.googleReviewUrl || 'https://g.page/review',
+                secretKey: storeData.secretKey || `SEC_${code}_1234`,
+                status: storeData.status || row.status || 'ACTIVE',
+                plan: storeData.plan || 'PRO_UNLIMITED',
+                businessCategory: storeData.businessCategory || 'RESTAURANT_CAFE',
+                customWhatsAppTemplate: storeData.customWhatsAppTemplate || null,
+                enableDigitalReceipts: storeData.enableDigitalReceipts !== false,
+                enableImageMessage: storeData.enableImageMessage !== false,
+                flyerImageUrl: storeData.flyerImageUrl || '/assets/default-review-flyer.jpg',
+                flyerOverlayConfig: storeData.flyerOverlayConfig,
+                createdAt: storeData.createdAt || row.created_at || new Date().toISOString()
+              });
+            }
+
+            // 2. Ensure user login exists
+            const email = (storeData.clientEmail || `owner@${code.toLowerCase()}.com`).toLowerCase();
+            const password = storeData.clientPassword || 'client123';
+            let user = storage.state.users.find(u => (u.email || '').toLowerCase() === email || (u.storeCode || '').toUpperCase() === code);
+            if (!user) {
+              storage.state.users.push({
+                id: `USR_${code}`,
+                email: email,
+                password: password,
+                name: storeData.storeName || row.customer_name,
+                role: 'CLIENT',
+                storeCode: code
+              });
+            } else {
+              user.password = password;
+              user.email = email;
+            }
+            pulled.push(storeData);
+          }
+        } catch (e) {}
+      }
+      if (pulled.length > 0) {
+        storage.save();
+      }
+      return pulled;
+    } catch (err) {
+      console.warn('[Supabase Sync] pullCloudStores note:', err.message);
+      return [];
     }
   }
 
@@ -294,7 +410,10 @@ export class SupabaseSyncEngine {
             if (b.source === 'AGENT_HEARTBEAT' || (b.invoice_no && b.invoice_no.startsWith('HB-'))) continue;
             
             const billTime = b.local_created_at || b.created_at || new Date().toISOString();
-            let existing = storage.state.transactions.find(t => t.id === b.id);
+            let existing = storage.state.transactions.find(t => 
+              t.id === b.id || 
+              (t.invoiceNo && b.invoice_no && t.invoiceNo === b.invoice_no && (t.storeCode || '').toUpperCase() === (b.store_code || '').toUpperCase())
+            );
             
             if (!existing) {
               storage.state.transactions.push({
@@ -314,7 +433,8 @@ export class SupabaseSyncEngine {
               });
               newCount++;
             } else {
-              if (existing.status !== b.status) existing.status = b.status;
+              existing.id = b.id || existing.id;
+              if (existing.status !== 'SCHEDULED_DISPATCH' && b.status) existing.status = b.status;
               if (b.total_amount) existing.totalAmount = (b.total_amount || 0).toFixed(2);
               if (b.customer_phone) existing.customerPhone = b.customer_phone;
               if (b.customer_name) existing.customerName = b.customer_name;

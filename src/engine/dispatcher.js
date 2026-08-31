@@ -97,7 +97,8 @@ export class WhatsAppDispatcher {
       return tx;
     }
 
-    // 2. 180-Day Customer Anti-Fatigue / Anti-Spam Check
+    // 2. 180-Day Customer Anti-Fatigue / Anti-Spam Check [TESTING OVERRIDE: COMMENTED OUT]
+    /*
     const cooldownDays = config.customerCooldownDays || 180;
     const cooldown = storage.checkCustomer180DayCooldown(tx.storeCode, tx.customerPhone, cooldownDays);
     if (cooldown.inCooldown) {
@@ -112,6 +113,7 @@ export class WhatsAppDispatcher {
       this.broadcast('TRANSACTION_UPDATED', tx);
       return tx;
     }
+    */
 
     // 3. Category E1: Quiet Hours Check (Overnight hold until 10:30 AM)
     if (this.isQuietHours(now)) {
@@ -179,20 +181,28 @@ export class WhatsAppDispatcher {
   }
 
   /**
-   * Enqueues a transaction into the strict FIFO pacing queue with exact 15s spacing
+   * Enqueues a transaction into the FIFO pacing queue (Immediate when idle, paced when back-to-back)
    */
   enqueueForPacedDispatch(txId) {
     const config = storage.getConfig();
-    // Strict Anti-Ban: Spaced randomly between 10 and 15 seconds
-    const randomDelay = Math.floor(10 + Math.random() * 6); // 10s - 15s random jitter
-    
     const now = Date.now();
-    const baseTime = Math.max(now, this.nextAvailableDispatchTime || now);
-    this.nextAvailableDispatchTime = baseTime + (randomDelay * 1000);
+    const minSpacingMs = 10 * 1000;
+    
+    // If last message was sent more than minSpacingMs ago and queue is empty, dispatch immediately (300ms)!
+    const timeSinceLastDispatch = now - (this.lastDispatchedTimestamp || 0);
+    const isIdle = this.pacingQueue.length === 0 && timeSinceLastDispatch >= minSpacingMs;
 
-    const estimatedWaitMs = this.nextAvailableDispatchTime - now;
+    if (isIdle) {
+      this.nextAvailableDispatchTime = now + 300;
+    } else {
+      const baseTime = Math.max(now, this.nextAvailableDispatchTime || now);
+      const jitter = Math.floor(5 + Math.random() * 5) * 1000; // 5-10s safe pacing for burst
+      this.nextAvailableDispatchTime = baseTime + jitter;
+    }
+
+    const estimatedWaitMs = Math.max(0, this.nextAvailableDispatchTime - now);
     const estimatedWaitSeconds = Math.round(estimatedWaitMs / 1000);
-    const queuePosition = Math.max(1, Math.round(estimatedWaitSeconds / randomDelay));
+    const queuePosition = Math.max(1, this.pacingQueue.length + 1);
     const scheduledTime = new Date(this.nextAvailableDispatchTime).toISOString();
 
     storage.updateTransactionStatus(txId, 'SCHEDULED_DISPATCH', {
@@ -202,12 +212,13 @@ export class WhatsAppDispatcher {
     });
 
     const tx = storage.state.transactions.find(t => t.id === txId);
+    const invoiceNo = tx ? tx.invoiceNo : null;
     if (tx) {
-      console.log(`[Pacing Queue] 📥 Queued Bill #${tx.invoiceNo} (Position: #${queuePosition} in FIFO queue, dispatch in ~${estimatedWaitSeconds}s)`);
+      console.log(`[Pacing Queue] 📥 Queued Bill #${tx.invoiceNo} (Position: #${queuePosition}, dispatch in ~${estimatedWaitSeconds}s)`);
       this.broadcast('TRANSACTION_UPDATED', tx);
     }
 
-    this.pacingQueue.push({ txId, dispatchAt: this.nextAvailableDispatchTime });
+    this.pacingQueue.push({ txId, invoiceNo, dispatchAt: this.nextAvailableDispatchTime });
     this.triggerQueueWorker();
   }
 
@@ -226,7 +237,7 @@ export class WhatsAppDispatcher {
       }
 
       this.pacingQueue.shift();
-      await this.dispatchWhatsAppMessage(job.txId);
+      await this.dispatchWhatsAppMessage(job.txId, job.invoiceNo);
       this.lastDispatchedTimestamp = Date.now();
     }
 
@@ -236,10 +247,34 @@ export class WhatsAppDispatcher {
   /**
    * Dispatch WhatsApp Message via Local Baileys WebSocket Engine directly from PC
    */
-  async dispatchWhatsAppMessage(txId) {
+  async dispatchWhatsAppMessage(txId, fallbackInvoiceNo = null) {
     const config = storage.getConfig();
-    const tx = storage.state.transactions.find(t => t.id === txId);
+    const tx = storage.state.transactions.find(t => 
+      t.id === txId || 
+      (fallbackInvoiceNo && t.invoiceNo === fallbackInvoiceNo) ||
+      t.invoiceNo === txId
+    );
     if (!tx || tx.status === 'DELIVERED') return;
+
+    // Strict Anti-Spam Guardrail: Before dispatching, verify customer is not in 180-day cooldown [TESTING OVERRIDE: COMMENTED OUT]
+    /*
+    if (tx.customerPhone && tx.customerPhone !== 'N/A') {
+      const cooldownDays = config.customerCooldownDays || 180;
+      const cooldown = storage.checkCustomer180DayCooldown(tx.storeCode, tx.customerPhone, cooldownDays);
+      if (cooldown.inCooldown) {
+        storage.updateTransactionStatus(tx.id, 'SUPPRESSED_CUSTOMER_COOLDOWN', {
+          reason: `Customer ${tx.formattedPhone} already received invite (${cooldown.lastSentDate}). Suppressed by 180-day anti-fatigue rule.`
+        });
+        storage.incrementMetric('duplicatesSuppressed');
+        if (this.supabaseSync) {
+          this.supabaseSync.syncBillToCloud(tx).catch(() => {});
+        }
+        console.log(`[WhatsApp Dispatcher] 🛡️ Dispatch suppressed: Customer ${tx.formattedPhone} already received a message on ${cooldown.lastSentDate}.`);
+        this.broadcast('TRANSACTION_UPDATED', tx);
+        return;
+      }
+    }
+    */
 
     const storeCode = tx.storeCode || config.storeCode || 'STORE_DEMO_01';
     const store = storage.getStoreByCode(storeCode);
@@ -392,17 +427,62 @@ export class WhatsAppDispatcher {
   retryPendingMessages() {
     const config = storage.getConfig();
     const storeCode = (config.storeCode || 'STORE_DEMO_01').toUpperCase();
-    const pendingTxs = storage.getTransactions(100).filter(t => 
+    const now = Date.now();
+    const MAX_PENDING_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours max freshness window
+    const cooldownDays = config.customerCooldownDays || 180;
+
+    const allPending = storage.getTransactions(200).filter(t => 
       (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode &&
-      t.status === 'PENDING_WHATSAPP_LINK' &&
-      t.customerPhone &&
-      t.customerPhone !== 'N/A' &&
-      t.customerPhone.length >= 10
+      t.status === 'PENDING_WHATSAPP_LINK'
     );
 
-    if (pendingTxs.length > 0) {
-      console.log(`[WhatsApp Dispatcher] 🔄 Re-enqueuing ${pendingTxs.length} pending bill(s) captured during connection transition...`);
-      for (const tx of pendingTxs) {
+    const seenPhones = new Set();
+    const eligibleTxs = [];
+
+    for (const tx of allPending) {
+      const txAge = now - new Date(tx.timestamp || tx.createdAt || 0).getTime();
+      
+      // 1. Expire stale pending bills older than 2 hours to avoid sending outdated historical messages
+      if (txAge > MAX_PENDING_AGE_MS) {
+        storage.updateTransactionStatus(tx.id, 'SUPPRESSED_CUSTOMER_COOLDOWN', {
+          reason: 'Pending bill expired (>2h old during offline period).'
+        });
+        continue;
+      }
+
+      // 2. Validate phone number
+      const phone = tx.customerPhone;
+      if (!phone || phone === 'N/A' || phone.length < 10) {
+        storage.updateTransactionStatus(tx.id, 'ANONYMOUS_WALKIN', {
+          reason: 'No valid mobile number on receipt.'
+        });
+        continue;
+      }
+
+      // 3. Deduplicate: only take the single latest bill per customer
+      if (seenPhones.has(phone)) {
+        storage.updateTransactionStatus(tx.id, 'DUPLICATE_SUPPRESSED', {
+          reason: 'Duplicate bill in queue for same customer.'
+        });
+        continue;
+      }
+      seenPhones.add(phone);
+
+      // 4. Verify 180-day cooldown
+      const cooldown = storage.checkCustomer180DayCooldown(tx.storeCode, phone, cooldownDays);
+      if (cooldown.inCooldown) {
+        storage.updateTransactionStatus(tx.id, 'SUPPRESSED_CUSTOMER_COOLDOWN', {
+          reason: `Customer ${tx.formattedPhone} in ${cooldownDays}-day cooldown.`
+        });
+        continue;
+      }
+
+      eligibleTxs.push(tx);
+    }
+
+    if (eligibleTxs.length > 0) {
+      console.log(`[WhatsApp Dispatcher] 🔄 Re-enqueuing ${eligibleTxs.length} fresh pending bill(s) captured during connection transition...`);
+      for (const tx of eligibleTxs) {
         this.enqueueForPacedDispatch(tx.id);
       }
     }

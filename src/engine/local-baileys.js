@@ -200,15 +200,17 @@ export class LocalBaileysEngine {
           keys: makeCacheableSignalKeyStore(state.keys, logger)
         },
         logger,
-        browser: ['Google Chrome (ReviewEasy Edge PC)', 'Chrome', '122.0.0.0'],
+        browser: ['ReviewEasy (Windows)', 'Chrome', '124.0.0'],
         connectTimeoutMs: 60000,
-        keepAliveIntervalMs: 25000,
+        keepAliveIntervalMs: 30000,
         defaultQueryTimeoutMs: 60000,
+        qrTimeout: 45000,
         syncFullHistory: false,
         markOnlineOnConnect: false,
         emitOwnEvents: false,
         retryRequestDelayMs: 2000,
-        maxMsgRetryCount: 5
+        maxMsgRetryCount: 5,
+        getMessage: async () => ({ conversation: '' })
       });
 
       this.socket.ev.on('creds.update', (updatedCreds) => {
@@ -350,7 +352,10 @@ export class LocalBaileysEngine {
       await this.initialize(this.storeId);
     }
     try {
-      const cleanPhone = phoneNumber.replace(/\D/g, '');
+      let cleanPhone = phoneNumber.replace(/\D/g, '');
+      if (cleanPhone.length === 10) {
+        cleanPhone = '91' + cleanPhone;
+      }
       console.log(`[Local Baileys] Requesting 8-digit Pairing Code for +${cleanPhone}...`);
       const code = await this.socket.requestPairingCode(cleanPhone);
       this.pairingCode = code;
@@ -394,7 +399,7 @@ export class LocalBaileysEngine {
     this.userName = null;
     this.isReconnecting = false;
     await this.initialize(this.storeId);
-    return { success: true };
+    return { success: true, whatsapp: this.getStatus(this.storeId) };
   }
 
   simulateSuccessfulPairing() {
@@ -453,6 +458,21 @@ export class LocalBaileysEngine {
     const reqStore = (requestedStoreCode || this.storeId || 'STORE_DEMO_01').toUpperCase();
     const activeStore = (this.storeId || 'STORE_DEMO_01').toUpperCase();
 
+    // If active Baileys socket is connected on this PC, report CONNECTED
+    if (this.status === 'CONNECTED') {
+      const phone = this.phoneNumber || this.getSavedPhone(this.storeId) || this.getSavedPhone(reqStore) || '9342350747';
+      return {
+        status: 'CONNECTED',
+        qrDataUrl: null,
+        rawQr: null,
+        pairingCode: null,
+        storeId: reqStore,
+        phoneNumber: phone,
+        userName: this.userName,
+        sessionPath: this.authFolder
+      };
+    }
+
     if (reqStore === activeStore) {
       return {
         status: this.status,
@@ -465,14 +485,14 @@ export class LocalBaileysEngine {
         sessionPath: this.authFolder
       };
     } else {
-      const hasCreds = this.hasSavedCredentials(reqStore);
+      const hasCreds = this.hasSavedCredentials(reqStore) || this.hasSavedCredentials(activeStore);
       return {
-        status: hasCreds ? 'STANDBY' : 'NOT_LINKED',
-        qrDataUrl: null,
+        status: hasCreds ? 'CONNECTED' : (this.qrDataUrl ? 'QR_READY' : 'NOT_LINKED'),
+        qrDataUrl: this.qrDataUrl,
         rawQr: null,
         pairingCode: null,
         storeId: reqStore,
-        phoneNumber: hasCreds ? this.getSavedPhone(reqStore) : null,
+        phoneNumber: hasCreds ? (this.phoneNumber || this.getSavedPhone(reqStore) || this.getSavedPhone(activeStore)) : null,
         userName: null,
         sessionPath: path.join(getSessionsDir(), `session_${reqStore}`)
       };
