@@ -245,13 +245,17 @@ class ResilientStorage {
         const sCodeNoUnderscore = sCode.replace(/_/g, '');
         const sEmail = `owner@${sCode}.com`.toLowerCase();
         const sEmailClean = `owner@${sCodeNoUnderscore}.com`.toLowerCase();
+        const sPhone = (s.storePhone || '').replace(/\D/g, '');
+        const cleanDigits = cleanId.replace(/\D/g, '');
+        const phoneMatch = cleanDigits.length >= 10 && (sPhone.includes(cleanDigits) || cleanDigits.includes(sPhone));
         
         return sCode === cleanId || 
                sCodeNoUnderscore === cleanNoUnderscore ||
                sEmail === cleanId ||
                sEmailClean === cleanId ||
                sEmailClean === cleanNoUnderscore ||
-               cleanId.includes(sCodeNoUnderscore);
+               cleanId.includes(sCodeNoUnderscore) ||
+               phoneMatch;
       });
 
       if (store) {
