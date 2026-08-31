@@ -23,7 +23,14 @@ export class SupabaseSyncEngine {
     this.lastSyncTimestamp = null;
     
     this.initClient();
-    this.startPeriodicSyncWorker();
+    if (!process.env.VERCEL) {
+      this.syncInterval = setInterval(() => {
+        if (this.isOnline) {
+          this.flushOfflineSyncQueue().catch(() => {});
+        }
+      }, 30000);
+      if (this.syncInterval && this.syncInterval.unref) this.syncInterval.unref();
+    }
   }
 
   initClient() {
