@@ -469,6 +469,46 @@ class ResilientStorage {
     return { valid: false, reason: "INVALID_SECRET_KEY" };
   }
 
+  /**
+   * 180-Day Anti-Fatigue / Anti-Spam Check
+   * Checks if customer already received a WhatsApp dispatch for this store in the last N days
+   */
+  checkCustomer180DayCooldown(storeCode, customerPhone, cooldownDays = 180) {
+    if (!customerPhone || customerPhone === 'N/A') {
+      return { inCooldown: false };
+    }
+    const cleanTargetPhone = String(customerPhone).replace(/\D/g, '').slice(-10);
+    if (!cleanTargetPhone || cleanTargetPhone.length < 10) {
+      return { inCooldown: false };
+    }
+
+    const cleanStoreCode = (storeCode || 'STORE_DEMO_01').toUpperCase();
+    const now = Date.now();
+    const cooldownMs = cooldownDays * 24 * 60 * 60 * 1000;
+
+    const previousDelivered = (this.state.transactions || []).find(t => {
+      if ((t.storeCode || 'STORE_DEMO_01').toUpperCase() !== cleanStoreCode) return false;
+      if (t.status !== 'DELIVERED') return false;
+      const tPhone = String(t.customerPhone || '').replace(/\D/g, '').slice(-10);
+      if (tPhone !== cleanTargetPhone) return false;
+
+      const tTime = new Date(t.timestamp || t.createdAt || 0).getTime();
+      return (now - tTime) < cooldownMs;
+    });
+
+    if (previousDelivered) {
+      const sentTime = new Date(previousDelivered.timestamp || previousDelivered.createdAt || 0);
+      const daysAgo = Math.floor((now - sentTime.getTime()) / (24 * 60 * 60 * 1000));
+      return {
+        inCooldown: true,
+        daysAgo,
+        lastSentDate: sentTime.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+      };
+    }
+
+    return { inCooldown: false };
+  }
+
   // -------------------------------------------------------------
   // Config & Core Metrics Methods
   // -------------------------------------------------------------
