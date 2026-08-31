@@ -533,15 +533,15 @@ class ResilientStorage {
     }
   }
 
-  // Category B4: 24-hour SHA-256 Idempotency Check
+  // Category B4: Idempotency Check (prevents spool double-trigger within 10s)
   isDuplicate(storeId, invoiceNo, phone, total) {
     const rawKey = `${storeId}_${invoiceNo}_${phone}_${total}`;
     const hash = crypto.createHash('sha256').update(rawKey).digest('hex');
     const now = Date.now();
-    const twentyFourHours = 24 * 60 * 60 * 1000;
+    const tenSeconds = 10 * 1000;
 
     const existing = this.state.idempotencyKeys[hash];
-    if (existing && (now - existing.timestamp) < twentyFourHours) {
+    if (existing && (now - existing.timestamp) < tenSeconds) {
       return true;
     }
 
@@ -553,7 +553,7 @@ class ResilientStorage {
     };
 
     for (const [k, v] of Object.entries(this.state.idempotencyKeys)) {
-      if (now - v.timestamp > twentyFourHours) {
+      if (now - v.timestamp > tenSeconds) {
         delete this.state.idempotencyKeys[k];
       }
     }
@@ -918,7 +918,11 @@ class ResilientStorage {
   }
 
   updateTransactionStatus(id, status, details = {}) {
-    const tx = this.state.transactions.find(t => t.id === id);
+    const tx = this.state.transactions.find(t => 
+      t.id === id || 
+      (details.invoiceNo && t.invoiceNo === details.invoiceNo) ||
+      t.invoiceNo === id
+    );
     if (tx) {
       tx.status = status;
       tx.statusDetails = { ...(tx.statusDetails || {}), ...details, updatedAt: new Date().toISOString() };

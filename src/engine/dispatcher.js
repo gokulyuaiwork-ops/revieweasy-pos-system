@@ -181,20 +181,28 @@ export class WhatsAppDispatcher {
   }
 
   /**
-   * Enqueues a transaction into the strict FIFO pacing queue with exact 15s spacing
+   * Enqueues a transaction into the FIFO pacing queue (Immediate when idle, paced when back-to-back)
    */
   enqueueForPacedDispatch(txId) {
     const config = storage.getConfig();
-    // Strict Anti-Ban: Spaced randomly between 10 and 15 seconds
-    const randomDelay = Math.floor(10 + Math.random() * 6); // 10s - 15s random jitter
-    
     const now = Date.now();
-    const baseTime = Math.max(now, this.nextAvailableDispatchTime || now);
-    this.nextAvailableDispatchTime = baseTime + (randomDelay * 1000);
+    const minSpacingMs = 10 * 1000;
+    
+    // If last message was sent more than minSpacingMs ago and queue is empty, dispatch immediately (300ms)!
+    const timeSinceLastDispatch = now - (this.lastDispatchedTimestamp || 0);
+    const isIdle = this.pacingQueue.length === 0 && timeSinceLastDispatch >= minSpacingMs;
 
-    const estimatedWaitMs = this.nextAvailableDispatchTime - now;
+    if (isIdle) {
+      this.nextAvailableDispatchTime = now + 300;
+    } else {
+      const baseTime = Math.max(now, this.nextAvailableDispatchTime || now);
+      const jitter = Math.floor(5 + Math.random() * 5) * 1000; // 5-10s safe pacing for burst
+      this.nextAvailableDispatchTime = baseTime + jitter;
+    }
+
+    const estimatedWaitMs = Math.max(0, this.nextAvailableDispatchTime - now);
     const estimatedWaitSeconds = Math.round(estimatedWaitMs / 1000);
-    const queuePosition = Math.max(1, Math.round(estimatedWaitSeconds / randomDelay));
+    const queuePosition = Math.max(1, this.pacingQueue.length + 1);
     const scheduledTime = new Date(this.nextAvailableDispatchTime).toISOString();
 
     storage.updateTransactionStatus(txId, 'SCHEDULED_DISPATCH', {
@@ -206,7 +214,7 @@ export class WhatsAppDispatcher {
     const tx = storage.state.transactions.find(t => t.id === txId);
     const invoiceNo = tx ? tx.invoiceNo : null;
     if (tx) {
-      console.log(`[Pacing Queue] 📥 Queued Bill #${tx.invoiceNo} (Position: #${queuePosition} in FIFO queue, dispatch in ~${estimatedWaitSeconds}s)`);
+      console.log(`[Pacing Queue] 📥 Queued Bill #${tx.invoiceNo} (Position: #${queuePosition}, dispatch in ~${estimatedWaitSeconds}s)`);
       this.broadcast('TRANSACTION_UPDATED', tx);
     }
 
