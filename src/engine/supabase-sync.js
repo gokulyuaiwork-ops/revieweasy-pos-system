@@ -293,9 +293,9 @@ export class SupabaseSyncEngine {
           if (b.source === 'AGENT_HEARTBEAT' || (b.invoice_no && b.invoice_no.startsWith('HB-'))) continue;
           
           const billTime = b.local_created_at || b.created_at || new Date().toISOString();
-          const exists = storage.state.transactions.find(t => t.id === b.id || (t.invoiceNo === b.invoice_no && t.storeCode === b.store_code));
+          let existing = storage.state.transactions.find(t => t.id === b.id || (t.invoiceNo === b.invoice_no && (t.storeCode || '').toUpperCase() === (b.store_code || '').toUpperCase()));
           
-          if (!exists) {
+          if (!existing) {
             storage.state.transactions.unshift({
               id: b.id || getBillUuid(b.store_code, b.invoice_no),
               storeCode: b.store_code,
@@ -313,10 +313,11 @@ export class SupabaseSyncEngine {
             });
             newCount++;
           } else {
-            // Update status if changed in cloud
-            if (exists.status !== b.status) {
-              exists.status = b.status;
-            }
+            existing.id = b.id;
+            if (existing.status !== b.status) existing.status = b.status;
+            if (b.total_amount) existing.totalAmount = (b.total_amount || 0).toFixed(2);
+            if (b.customer_phone) existing.customerPhone = b.customer_phone;
+            if (b.customer_name) existing.customerName = b.customer_name;
           }
         }
         if (newCount > 0) {
