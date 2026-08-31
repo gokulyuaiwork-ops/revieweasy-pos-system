@@ -611,14 +611,15 @@ function renderWhatsAppQR(qrUrl) {
   const img = document.getElementById('qrImage');
   const loading = document.getElementById('qrLoading');
   const connected = document.getElementById('qrConnected');
+  const instructions = document.getElementById('qrScanInstructions');
 
   if (qrUrl) {
     img.src = qrUrl;
     img.style.display = 'block';
     loading.style.display = 'none';
     connected.style.display = 'none';
+    if (instructions) instructions.style.display = 'block';
     document.getElementById('whatsappStatusText').innerText = 'Scan QR';
-    document.getElementById('whatsappStatusChip').className = 'status-chip chip-amber';
   }
 }
 
@@ -631,25 +632,28 @@ function renderWhatsAppStatus(wsData) {
   const statusText = document.getElementById('whatsappStatusText');
   const phoneChip = document.getElementById('connectedPhoneDisplay');
   const dot = document.getElementById('systemStatusDot');
+  const instructions = document.getElementById('qrScanInstructions');
 
   if (phoneChip && wsData.phoneNumber) {
     const p = wsData.phoneNumber.startsWith('+') ? wsData.phoneNumber : '+91 ' + wsData.phoneNumber;
     phoneChip.innerText = p;
   }
 
-  const isCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-
   if (status === 'CONNECTED') {
     if (img) img.style.display = 'none';
     if (loading) loading.style.display = 'none';
+    if (instructions) instructions.style.display = 'none';
     if (connected) {
       connected.style.display = 'flex';
+      connected.style.flexDirection = 'column';
+      connected.style.alignItems = 'center';
+      connected.style.justifyContent = 'center';
       connected.innerHTML = `
-        <div style="width: 44px; height: 44px; border-radius: 50%; background: #e1f8eb; color: #1b873f; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">✓</div>
-        <h4 style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">WhatsApp Connected</h4>
-        <p style="font-size: 13px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--apple-blue);">${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'Store Device Linked'}</p>
-        <p style="font-size: 11.5px; color: var(--text-sub); margin-top: 4px;">Invoices dispatch automatically from this PC.</p>
-        <button onclick="resetWhatsAppSession()" class="btn-sm btn-secondary" style="font-size: 11px; padding: 4px 10px; margin-top: 8px; color: var(--apple-red); border-color: rgba(255, 59, 48, 0.2); background: var(--apple-red-light); font-weight: 600;">Unlink Device</button>
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: #e1f8eb; color: #1b873f; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 8px;">✓</div>
+        <h4 style="font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 3px;">WhatsApp Connected</h4>
+        <p style="font-size: 13.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--apple-blue); margin-bottom: 4px;">${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'Store Device Linked'}</p>
+        <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 12px;">Invoices dispatch automatically from this PC.</p>
+        <button onclick="resetWhatsAppSession()" class="btn-sm btn-secondary" style="font-size: 11px; padding: 5px 14px; color: var(--apple-red); border-color: rgba(255, 59, 48, 0.2); background: var(--apple-red-light); font-weight: 600; cursor: pointer;">Unlink Device</button>
       `;
     }
     if (statusText) statusText.innerText = 'All systems normal';
