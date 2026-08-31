@@ -8,6 +8,11 @@ export function getStoreHeartbeatUuid(storeCode) {
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
 }
 
+export function getBillUuid(storeCode, invoiceNo) {
+  const hash = crypto.createHash('md5').update(`ReviewEasy_Bill_${(storeCode || 'STORE_DEMO_01').toUpperCase()}_${invoiceNo || 'INV_001'}`).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
 export class SupabaseSyncEngine {
   constructor(broadcastCallback) {
     this.broadcast = broadcastCallback || (() => {});
@@ -51,12 +56,7 @@ export class SupabaseSyncEngine {
   }
 
   async checkConnectivity() {
-    if (this.isSimulatedOffline) {
-      this.isOnline = false;
-      return false;
-    }
-    // In real mode, test lightweight ping
-    this.isOnline = true;
+    if (this.isSimulatedOffline) return false;
     return true;
   }
 
@@ -117,17 +117,18 @@ export class SupabaseSyncEngine {
           local_created_at: new Date().toISOString(),
           synced_at: new Date().toISOString()
         }, { onConflict: 'id' });
-    } catch (e) {
-      console.warn('[Supabase Sync] Heartbeat sync note:', e.message);
+    } catch (err) {
+      // Non-fatal background telemetry
     }
   }
 
   /**
-   * Push a new bill to Supabase Cloud
+   * Push a single bill to Supabase Cloud with UUID conflict resolution
    */
   async syncBillToCloud(tx) {
     const isConnected = await this.checkConnectivity();
     const config = storage.getConfig();
+    const storeCode = (tx.storeCode || config.storeCode || 'STORE_DEMO_01').toUpperCase();
 
     if (!isConnected || !this.client) {
       // OFFLINE-FIRST: Mark as pending sync in local storage
@@ -143,19 +144,21 @@ export class SupabaseSyncEngine {
 
     try {
       const payload = {
-        store_code: tx.storeCode || config.storeCode || 'STORE_DEMO_01',
+        id: getBillUuid(storeCode, tx.invoiceNo),
+        store_code: storeCode,
         invoice_no: tx.invoiceNo || 'INV-001',
         customer_name: tx.customerName || 'Valued Customer',
-        customer_phone: tx.customerPhone || '9840012345',
+        customer_phone: tx.customerPhone || 'N/A',
         total_amount: parseFloat(tx.totalAmount) || 0,
         status: tx.status || 'DELIVERED',
         source: tx.source || 'PRINT_SPOOLER',
-        raw_text: tx.rawText || ''
+        raw_text: tx.rawText || '',
+        local_created_at: tx.timestamp || new Date().toISOString()
       };
 
       const { data, error } = await this.client
         .from('bills')
-        .insert(payload);
+        .upsert(payload, { onConflict: 'id' });
 
       if (error) throw error;
 
@@ -188,17 +191,19 @@ export class SupabaseSyncEngine {
     }
 
     try {
+      const storeCode = (tx.storeCode || config.storeCode || 'STORE_DEMO_01').toUpperCase();
       if (tx.invoiceNo) {
+        const billId = getBillUuid(storeCode, tx.invoiceNo);
         await this.client
           .from('bills')
           .update({ status: status })
-          .eq('invoice_no', tx.invoiceNo);
+          .eq('id', billId);
       }
 
       await this.client
         .from('review_dispatches')
         .insert({
-          store_code: config.storeCode || 'STORE_DEMO_01',
+          store_code: storeCode,
           customer_phone: tx.customerPhone,
           customer_name: tx.customerName || 'Valued Customer',
           message_text: details.messagePreview || 'Review invite',
@@ -214,34 +219,52 @@ export class SupabaseSyncEngine {
   }
 
   /**
-   * Flush and Batch-Sync All Pending Offline Records when Internet Returns
+   * Flush and Batch-Sync All Local Records to Supabase Cloud
    */
   async flushOfflineSyncQueue() {
     const isConnected = await this.checkConnectivity();
-    if (!isConnected) return;
+    if (!isConnected || !this.client) return;
 
-    const unSyncedTransactions = storage.state.transactions.filter(t => t.synced === 0);
-    if (unSyncedTransactions.length === 0) {
-      this.pendingSyncCount = 0;
-      this.broadcast('CLOUD_SYNC_STATUS', { pending: 0, isOnline: true });
-      return;
+    const validTxs = (storage.state.transactions || []).filter(t => t.source !== 'AGENT_HEARTBEAT' && !(t.invoiceNo && t.invoiceNo.startsWith('HB-')));
+    if (validTxs.length === 0) return;
+
+    const config = storage.getConfig();
+    const payloadList = validTxs.map(tx => {
+      const storeCode = (tx.storeCode || config.storeCode || 'STORE_DEMO_01').toUpperCase();
+      return {
+        id: getBillUuid(storeCode, tx.invoiceNo),
+        store_code: storeCode,
+        invoice_no: tx.invoiceNo || 'INV-001',
+        customer_name: tx.customerName || 'Valued Customer',
+        customer_phone: tx.customerPhone || 'N/A',
+        total_amount: parseFloat(tx.totalAmount) || 0,
+        status: tx.status || 'DELIVERED',
+        source: tx.source || 'PRINT_SPOOLER',
+        raw_text: tx.rawText || '',
+        local_created_at: tx.timestamp || new Date().toISOString()
+      };
+    });
+
+    try {
+      const { data, error } = await this.client
+        .from('bills')
+        .upsert(payloadList, { onConflict: 'id' });
+
+      if (!error) {
+        for (const tx of validTxs) {
+          tx.synced = 1;
+          tx.syncStatus = 'SYNCED_TO_SUPABASE';
+          storage.updateTransactionStatus(tx.id, tx.status, { synced: 1, syncStatus: 'SYNCED_TO_SUPABASE' });
+        }
+        this.pendingSyncCount = 0;
+        this.lastSyncTimestamp = new Date().toISOString();
+        this.broadcast('CLOUD_SYNC_STATUS', { pending: 0, isOnline: true, lastSync: this.lastSyncTimestamp });
+      } else {
+        console.warn('[Supabase Sync] Batch upsert warning:', error.message);
+      }
+    } catch (e) {
+      console.warn('[Supabase Sync] Batch sync error:', e.message);
     }
-
-    console.log(`[Supabase Sync] 🔄 Internet Active! Batch syncing ${unSyncedTransactions.length} offline bills to Supabase...`);
-
-    let syncedCount = 0;
-    for (const tx of unSyncedTransactions) {
-      // Simulate fast batch sync
-      tx.synced = 1;
-      tx.syncStatus = 'SYNCED_TO_SUPABASE';
-      storage.updateTransactionStatus(tx.id, tx.status, { synced: 1, syncStatus: 'SYNCED_TO_SUPABASE' });
-      syncedCount++;
-    }
-
-    this.pendingSyncCount = 0;
-    this.lastSyncTimestamp = new Date().toISOString();
-    console.log(`[Supabase Sync] ✅ All ${syncedCount} offline bills successfully batch-synced to Supabase!`);
-    this.broadcast('CLOUD_SYNC_STATUS', { pending: 0, isOnline: true, lastSync: this.lastSyncTimestamp, batchSynced: syncedCount });
   }
 
   /**

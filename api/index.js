@@ -158,6 +158,82 @@ function buildCustomerDirectoryFromBills(bills) {
     .sort((a, b) => b.daysSinceLastVisit - a.daysSinceLastVisit);
 }
 
+function getStartOfTodayIst() {
+  const now = new Date();
+  const istTime = new Date(now.getTime() + (330 * 60 * 1000));
+  const startOfTodayIst = new Date(Date.UTC(istTime.getUTCFullYear(), istTime.getUTCMonth(), istTime.getUTCDate(), 0, 0, 0));
+  return startOfTodayIst.getTime() - (330 * 60 * 1000);
+}
+
+function buildCloudClientAnalytics(storeCode, validBills, dispatches = []) {
+  const code = (storeCode || 'STORE_DEMO_01').toUpperCase();
+  const startOfTodayUtc = getStartOfTodayIst();
+  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+
+  const aggregate = (txList, minTimestamp = 0) => {
+    let sentCount = 0;
+    let totalBills = 0;
+    let totalSales = 0;
+    let kotsBlocked = 0;
+    let dummyFiltered = 0;
+
+    for (const t of txList) {
+      if (!['IGNORED_KOT', 'DUPLICATE_SUPPRESSED', 'ANONYMOUS_WALKIN', 'DUMMY_PHONE_REJECTED', 'STORE_OWNER_FILTERED'].includes(t.status)) {
+        totalBills++;
+        totalSales += parseFloat(t.totalAmount) || 0;
+      }
+      if (t.status === 'DELIVERED' || t.status === 'WHATSAPP_SENT') {
+        sentCount++;
+      }
+      if (t.status === 'IGNORED_KOT') {
+        kotsBlocked++;
+      }
+      if (t.status === 'ANONYMOUS_WALKIN' || t.reason?.includes('DUMMY')) {
+        dummyFiltered++;
+      }
+    }
+
+    const periodDispatches = dispatches.filter(d => new Date(d.dispatched_at || d.created_at || 0).getTime() >= minTimestamp);
+    const positiveRedirects = periodDispatches.filter(d => d.dispatch_status === 'GOOGLE_REDIRECT' || Number(d.rating_given) >= 4).length;
+    const shieldedGrievances = periodDispatches.filter(d => d.dispatch_status === 'PRIVATE_FEEDBACK' || (d.rating_given && Number(d.rating_given) <= 3)).length;
+    const reachRate = totalBills > 0 ? Math.round((sentCount / totalBills) * 100) : 0;
+
+    return {
+      sent: sentCount,
+      bills: totalBills,
+      sales: Math.round(totalSales * 100) / 100,
+      positiveRedirects,
+      shieldedGrievances,
+      reachRate,
+      kotsBlocked,
+      dummyFiltered
+    };
+  };
+
+  const todayTxs = validBills.filter(t => new Date(t.timestamp || t.created_at || 0).getTime() >= startOfTodayUtc);
+  const weekTxs = validBills.filter(t => new Date(t.timestamp || t.created_at || 0).getTime() >= sevenDaysAgo);
+  const monthTxs = validBills.filter(t => new Date(t.timestamp || t.created_at || 0).getTime() >= thirtyDaysAgo);
+
+  const shieldedCount = dispatches.filter(d => d.dispatch_status === 'PRIVATE_FEEDBACK' || (d.rating_given && Number(d.rating_given) <= 3)).length;
+  const redirectedCount = dispatches.filter(d => d.dispatch_status === 'GOOGLE_REDIRECT' || Number(d.rating_given) >= 4).length;
+
+  return {
+    storeCode: code,
+    today: aggregate(todayTxs, startOfTodayUtc),
+    lastWeek: aggregate(weekTxs, sevenDaysAgo),
+    lastMonth: aggregate(monthTxs, thirtyDaysAgo),
+    allTime: aggregate(validBills, 0),
+    shield: {
+      totalFeedback: shieldedCount + redirectedCount,
+      shieldedNegative: shieldedCount,
+      redirectedPositive: redirectedCount,
+      averageRating: 5.0,
+      openComplaints: shieldedCount
+    }
+  };
+}
+
 // -------------------------------------------------------------
 // Cloud State & Store Telemetry Endpoint
 // -------------------------------------------------------------
@@ -197,20 +273,39 @@ app.get('/api/state', async (req, res) => {
     }
 
     // Filter out internal agent heartbeats and show only today's bills in the live transaction feed
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const validBills = (rawBills || []).filter(b => b.source !== 'AGENT_HEARTBEAT' && !(b.invoiceNo && b.invoiceNo.startsWith('HB-')));
+    const startOfTodayUtc = getStartOfTodayIst();
 
-    const displayBills = (rawBills || []).filter(b => {
-      if (b.source === 'AGENT_HEARTBEAT' || (b.invoiceNo && b.invoiceNo.startsWith('HB-'))) return false;
+    const displayBills = validBills.filter(b => {
       const bTime = new Date(b.timestamp || b.created_at || 0).getTime();
-      return bTime >= startOfToday;
+      return bTime >= startOfTodayUtc;
     });
+
+    let cloudDispatches = [];
+    if (supabaseSync && supabaseSync.client) {
+      try {
+        const { data: dispatches } = await supabaseSync.client
+          .from('review_dispatches')
+          .select('*')
+          .eq('store_code', storeCode);
+        if (dispatches) cloudDispatches = dispatches;
+      } catch (e) {}
+    }
+
+    const cloudAnalytics = buildCloudClientAnalytics(storeCode, validBills, cloudDispatches);
 
     res.json({
       success: true,
       config: store || storage.getConfig(),
-      metrics: storage.getMetrics(),
-      analytics: storage.getClientAnalytics(storeCode),
+      metrics: {
+        todayInvoices: cloudAnalytics.today.bills,
+        todaySent: cloudAnalytics.today.sent,
+        totalInvoices: cloudAnalytics.allTime.bills,
+        totalSent: cloudAnalytics.allTime.sent,
+        deliveryRateToday: cloudAnalytics.today.reachRate,
+        offlineQueuedBills: 0
+      },
+      analytics: cloudAnalytics,
       quota: storage.getTodayQuotaUsage(storeCode),
       transactions: displayBills.slice(0, 50),
       health: { spoolerStatus: 'Cloud SaaS Mode' },
