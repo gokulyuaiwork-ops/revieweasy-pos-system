@@ -157,35 +157,13 @@ app.post('/api/auth/login', async (req, res) => {
 
   let user = storage.authenticateUser(email, password);
 
-  // Cloud Fallback: Check Supabase if local store cache missed
-  if (!user && supabaseSync.client) {
+  // Cloud Fallback: Pull registered stores & credentials from Supabase if local cache missed
+  if (!user && supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
     try {
-      const cleanId = String(email).trim().toUpperCase();
-      const { data: storeData } = await supabaseSync.client
-        .from('stores')
-        .select('*')
-        .or(`store_code.eq.${cleanId},store_phone.eq.${cleanId}`)
-        .limit(1);
-
-      if (storeData && storeData.length > 0) {
-        const s = storeData[0];
-        user = {
-          id: `USR_${s.store_code}`,
-          email: email,
-          name: `${s.store_name} Manager`,
-          role: 'CLIENT',
-          storeCode: s.store_code,
-          store: {
-            id: s.id,
-            storeCode: s.store_code,
-            storeName: s.store_name,
-            storePhone: s.store_phone,
-            googleReviewUrl: s.google_review_url
-          }
-        };
-      }
+      await supabaseSync.pullCloudStores();
+      user = storage.authenticateUser(email, password);
     } catch (e) {
-      console.warn('[Server Auth] Supabase query note:', e.message);
+      console.warn('[Server Auth] Supabase cloud stores pull note:', e.message);
     }
   }
 
@@ -407,10 +385,15 @@ app.post('/api/admin/upload-image', (req, res) => {
   }
 });
 
-app.post('/api/admin/clients', (req, res) => {
+app.post('/api/admin/clients', async (req, res) => {
   try {
     const newStore = storage.createStore(req.body);
-    supabaseSync.syncStoreToCloud(newStore);
+    if (supabaseSync && typeof supabaseSync.syncStoreToCloud === 'function') {
+      await supabaseSync.syncStoreToCloud(newStore, {
+        email: req.body.clientEmail,
+        password: req.body.clientPassword
+      });
+    }
     broadcast('STORES_UPDATED', { action: 'CREATED', store: newStore });
     res.json({ success: true, store: newStore });
   } catch (err) {
@@ -418,10 +401,15 @@ app.post('/api/admin/clients', (req, res) => {
   }
 });
 
-app.put('/api/admin/clients/:storeCode', (req, res) => {
+app.put('/api/admin/clients/:storeCode', async (req, res) => {
   try {
     const updated = storage.updateStore(req.params.storeCode, req.body);
-    supabaseSync.syncStoreToCloud(updated);
+    if (supabaseSync && typeof supabaseSync.syncStoreToCloud === 'function') {
+      await supabaseSync.syncStoreToCloud(updated, {
+        email: req.body.clientEmail,
+        password: req.body.clientPassword
+      });
+    }
     broadcast('STORES_UPDATED', { action: 'UPDATED', store: updated });
     res.json({ success: true, store: updated });
   } catch (err) {
@@ -429,14 +417,18 @@ app.put('/api/admin/clients/:storeCode', (req, res) => {
   }
 });
 
-app.delete('/api/admin/clients/:storeCode', (req, res) => {
+app.delete('/api/admin/clients/:storeCode', async (req, res) => {
   try {
-    const deleted = storage.deleteStore(req.params.storeCode);
+    const storeCode = req.params.storeCode;
+    const deleted = storage.deleteStore(storeCode);
     if (!deleted) {
       return res.status(404).json({ error: 'Store not found' });
     }
-    broadcast('STORES_UPDATED', { action: 'DELETED', storeCode: req.params.storeCode });
-    res.json({ success: true, storeCode: req.params.storeCode });
+    if (supabaseSync && typeof supabaseSync.deleteStoreFromCloud === 'function') {
+      await supabaseSync.deleteStoreFromCloud(storeCode);
+    }
+    broadcast('STORES_UPDATED', { action: 'DELETED', storeCode: storeCode });
+    res.json({ success: true, storeCode: storeCode });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
