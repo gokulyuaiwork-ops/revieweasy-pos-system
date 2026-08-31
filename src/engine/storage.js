@@ -427,11 +427,19 @@ class ResilientStorage {
 
   deleteStore(storeCode) {
     this.load();
-    const initialLen = this.state.clientStores.length;
-    this.state.clientStores = this.state.clientStores.filter(s => s.storeCode.toUpperCase() !== storeCode.toUpperCase());
+    if (!storeCode) return false;
+    const clean = String(storeCode).trim().toUpperCase();
+    const initialLen = (this.state.clientStores || []).length;
+    this.state.clientStores = (this.state.clientStores || []).filter(s => {
+      const sCode = (s.storeCode || s.id || '').trim().toUpperCase();
+      return sCode !== clean;
+    });
     
     // Also remove associated client users
-    this.state.users = this.state.users.filter(u => u.storeCode?.toUpperCase() !== storeCode.toUpperCase());
+    this.state.users = (this.state.users || []).filter(u => {
+      const uCode = (u.storeCode || '').trim().toUpperCase();
+      return uCode !== clean;
+    });
 
     this.save();
     return this.state.clientStores.length < initialLen;

@@ -719,21 +719,23 @@ async function handleEditClient(e) {
 }
 
 async function deleteClient(storeCode) {
-  if (confirm(`⚠️ Are you sure you want to delete client store [${storeCode}]?\nThis will revoke their secret key and delete merchant access.`)) {
-    try {
-      const res = await fetch(`/api/admin/clients/${storeCode}`, {
-        method: 'DELETE'
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert(`🗑️ Client store ${storeCode} deleted.`);
-        fetchClients();
-      } else {
-        alert('Error: ' + data.error);
-      }
-    } catch (err) {
-      alert('Failed to delete client: ' + err.message);
+  if (!confirm(`⚠️ Are you sure you want to delete merchant store [${storeCode}]?\n\nThis will permanently remove the store account and revoke all secret keys.`)) {
+    return;
+  }
+  try {
+    const res = await fetch(`/api/admin/clients/${encodeURIComponent(storeCode)}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(`🗑️ Store ${storeCode} deleted successfully.`);
+      fetchClients();
+    } else {
+      alert('Error deleting store: ' + (data.error || 'Failed to delete store'));
     }
+  } catch (err) {
+    alert('Failed to delete store: ' + err.message);
   }
 }
 

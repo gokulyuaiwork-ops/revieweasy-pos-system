@@ -96,6 +96,20 @@ export class SupabaseSyncEngine {
   }
 
   /**
+   * Delete store record from Supabase Cloud
+   */
+  async deleteStoreFromCloud(storeCode) {
+    if (!this.client || !storeCode) return;
+    try {
+      const code = String(storeCode).toUpperCase();
+      await this.client.from('stores').delete().eq('store_code', code);
+      console.log(`[Supabase Sync] 🗑️ Store [${code}] deleted from Supabase.`);
+    } catch (err) {
+      console.warn('[Supabase Sync] Warning deleting store from cloud:', err.message);
+    }
+  }
+
+  /**
    * Sync Edge WhatsApp connection heartbeat to Supabase Cloud
    */
   async syncWhatsAppStatusToCloud(storeCode, status, phoneNumber) {

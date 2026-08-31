@@ -9,6 +9,8 @@ import { PersonalizedImageGenerator } from '../src/engine/personalized-image-gen
 import { generateInvoicePdfBuffer } from '../src/engine/invoice-generator.js';
 import { WinBackEngine } from '../src/engine/winback-engine.js';
 
+const supabaseSync = new SupabaseSyncEngine();
+
 function getStoreHeartbeatUuid(storeCode) {
   const hash = crypto.createHash('md5').update('ReviewEasy_Heartbeat_' + (storeCode || 'STORE_DEMO_01')).digest('hex');
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
@@ -520,13 +522,17 @@ app.put('/api/admin/clients/:storeCode', (req, res) => {
   }
 });
 
-app.delete('/api/admin/clients/:storeCode', (req, res) => {
+app.delete('/api/admin/clients/:storeCode', async (req, res) => {
   try {
-    const deleted = storage.deleteStore(req.params.storeCode);
+    const storeCode = req.params.storeCode;
+    const deleted = storage.deleteStore(storeCode);
     if (!deleted) {
-      return res.status(404).json({ error: 'Store not found' });
+      return res.status(404).json({ error: 'Store not found or already deleted' });
     }
-    res.json({ success: true, storeCode: req.params.storeCode });
+    if (supabaseSync && typeof supabaseSync.deleteStoreFromCloud === 'function') {
+      await supabaseSync.deleteStoreFromCloud(storeCode);
+    }
+    res.json({ success: true, storeCode: storeCode });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
