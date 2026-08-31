@@ -994,6 +994,77 @@ app.post('/api/winback/dispatch', async (req, res) => {
 });
 
 // -------------------------------------------------------------
+// Smart Review Shield & Customer Feedback Endpoints
+// -------------------------------------------------------------
+app.get('/api/feedback', async (req, res) => {
+  try {
+    const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    let feedbacks = storage.getFeedback(storeCode);
+
+    if (supabaseSync && supabaseSync.client) {
+      const { data, error } = await supabaseSync.client
+        .from('review_dispatches')
+        .select('*')
+        .eq('store_code', storeCode)
+        .eq('dispatch_status', 'PRIVATE_FEEDBACK')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        feedbacks = data.map(r => {
+          let category = 'General Grievance';
+          let comment = r.message_text || '';
+          if (comment.includes(' - ') && comment.includes(': ')) {
+            const parts = comment.split(' - ');
+            if (parts.length > 1) {
+              const subParts = parts[1].split(': ');
+              category = subParts[0] || category;
+              comment = subParts.slice(1).join(': ') || comment;
+            }
+          }
+          return {
+            id: r.id,
+            billId: r.bill_id,
+            storeCode: r.store_code,
+            invoiceNo: 'INV-4920',
+            customerName: r.customer_name || 'Customer',
+            customerPhone: r.customer_phone || '9876543210',
+            rating: r.rating_given || 2,
+            action: 'PRIVATE_FEEDBACK',
+            category: category,
+            comment: comment,
+            requestCallback: true,
+            status: r.resolution_status || 'OPEN',
+            timestamp: r.created_at || new Date().toISOString()
+          };
+        });
+      }
+    }
+
+    res.json({ success: true, feedbacks });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/feedback/:id/status', async (req, res) => {
+  try {
+    const { status, notes } = req.body;
+    const updated = storage.updateFeedbackStatus(req.params.id, status || 'RESOLVED', notes);
+    if (supabaseSync && supabaseSync.client) {
+      try {
+        await supabaseSync.client
+          .from('review_dispatches')
+          .update({ resolution_status: status || 'RESOLVED' })
+          .eq('id', req.params.id);
+      } catch (e) {}
+    }
+    res.json({ success: true, feedback: updated || { id: req.params.id, status: status || 'RESOLVED' } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
 // Digital E-Bill & PDF Receipt Cloud Endpoints
 // -------------------------------------------------------------
 app.get('/api/bill-info/:billId', async (req, res) => {
