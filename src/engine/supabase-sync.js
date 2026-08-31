@@ -410,7 +410,10 @@ export class SupabaseSyncEngine {
             if (b.source === 'AGENT_HEARTBEAT' || (b.invoice_no && b.invoice_no.startsWith('HB-'))) continue;
             
             const billTime = b.local_created_at || b.created_at || new Date().toISOString();
-            let existing = storage.state.transactions.find(t => t.id === b.id);
+            let existing = storage.state.transactions.find(t => 
+              t.id === b.id || 
+              (t.invoiceNo && b.invoice_no && t.invoiceNo === b.invoice_no && (t.storeCode || '').toUpperCase() === (b.store_code || '').toUpperCase())
+            );
             
             if (!existing) {
               storage.state.transactions.push({
@@ -430,7 +433,8 @@ export class SupabaseSyncEngine {
               });
               newCount++;
             } else {
-              if (existing.status !== b.status) existing.status = b.status;
+              existing.id = b.id || existing.id;
+              if (existing.status !== 'SCHEDULED_DISPATCH' && b.status) existing.status = b.status;
               if (b.total_amount) existing.totalAmount = (b.total_amount || 0).toFixed(2);
               if (b.customer_phone) existing.customerPhone = b.customer_phone;
               if (b.customer_name) existing.customerName = b.customer_name;

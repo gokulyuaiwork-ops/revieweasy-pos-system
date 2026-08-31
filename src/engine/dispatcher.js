@@ -204,12 +204,13 @@ export class WhatsAppDispatcher {
     });
 
     const tx = storage.state.transactions.find(t => t.id === txId);
+    const invoiceNo = tx ? tx.invoiceNo : null;
     if (tx) {
       console.log(`[Pacing Queue] 📥 Queued Bill #${tx.invoiceNo} (Position: #${queuePosition} in FIFO queue, dispatch in ~${estimatedWaitSeconds}s)`);
       this.broadcast('TRANSACTION_UPDATED', tx);
     }
 
-    this.pacingQueue.push({ txId, dispatchAt: this.nextAvailableDispatchTime });
+    this.pacingQueue.push({ txId, invoiceNo, dispatchAt: this.nextAvailableDispatchTime });
     this.triggerQueueWorker();
   }
 
@@ -228,7 +229,7 @@ export class WhatsAppDispatcher {
       }
 
       this.pacingQueue.shift();
-      await this.dispatchWhatsAppMessage(job.txId);
+      await this.dispatchWhatsAppMessage(job.txId, job.invoiceNo);
       this.lastDispatchedTimestamp = Date.now();
     }
 
@@ -238,9 +239,13 @@ export class WhatsAppDispatcher {
   /**
    * Dispatch WhatsApp Message via Local Baileys WebSocket Engine directly from PC
    */
-  async dispatchWhatsAppMessage(txId) {
+  async dispatchWhatsAppMessage(txId, fallbackInvoiceNo = null) {
     const config = storage.getConfig();
-    const tx = storage.state.transactions.find(t => t.id === txId);
+    const tx = storage.state.transactions.find(t => 
+      t.id === txId || 
+      (fallbackInvoiceNo && t.invoiceNo === fallbackInvoiceNo) ||
+      t.invoiceNo === txId
+    );
     if (!tx || tx.status === 'DELIVERED') return;
 
     // Strict Anti-Spam Guardrail: Before dispatching, verify customer is not in 180-day cooldown [TESTING OVERRIDE: COMMENTED OUT]
