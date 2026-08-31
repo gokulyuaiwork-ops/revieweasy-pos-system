@@ -94,6 +94,38 @@ function calculateTotals() {
   return { subtotal, gst, grandTotal };
 }
 
+window.currentActiveStore = localStorage.getItem('revieweasy_lab_store') || 'STORE_7915';
+let availableStores = [];
+
+function onStoreSelectChange(val) {
+  window.currentActiveStore = val;
+  localStorage.setItem('revieweasy_lab_store', val);
+  const found = availableStores.find(s => s.storeCode === val);
+  const storeName = found ? found.storeName : (val === 'STORE_7915' ? 'Test Sync Cafe' : 'Sunshine Cafe');
+  const title = document.getElementById('posStoreTitle');
+  if (title) title.innerText = `🏪 ${storeName} POS`;
+}
+
+async function loadAvailableStores() {
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/clients');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.clients && data.clients.length > 0) {
+        availableStores = data.clients;
+        const sel = document.getElementById('posStoreSelect');
+        if (sel) {
+          const currentVal = window.currentActiveStore || 'STORE_7915';
+          sel.innerHTML = data.clients.map(c => `
+            <option value="${c.storeCode}" ${c.storeCode === currentVal ? 'selected' : ''}>${c.storeName} (${c.storeCode})</option>
+          `).join('');
+          onStoreSelectChange(sel.value);
+        }
+      }
+    }
+  } catch (e) {}
+}
+
 function generateReceiptText(docType = 'TAX_INVOICE') {
   const name = document.getElementById('custName').value.trim() || 'Valued Customer';
   const phone = document.getElementById('custPhone').value.trim() || '9876543219';
@@ -101,6 +133,10 @@ function generateReceiptText(docType = 'TAX_INVOICE') {
   const date = new Date().toLocaleDateString();
   const time = new Date().toLocaleTimeString();
   const invNo = 'INV-' + Math.floor(1000 + Math.random() * 9000);
+
+  const found = availableStores.find(s => s.storeCode === window.currentActiveStore);
+  const storeName = found ? found.storeName.toUpperCase() : (window.currentActiveStore === 'STORE_7915' ? 'TEST SYNC CAFE' : 'SUNSHINE CAFE & BISTRO');
+  const storePhone = found && found.clientPhone ? found.clientPhone : '9840012345';
 
   if (docType === 'KOT') {
     return `========================================
@@ -117,7 +153,7 @@ RUNNING KOT - NOT FOR BILLING / PAYMENT
 
   if (docType === 'ESTIMATE') {
     return `========================================
-           SUNSHINE CAFE & BISTRO       
+           ${storeName.padEnd(28)}       
 ========================================
 Date: ${date} ${time}
 Customer: ${name}
@@ -133,8 +169,8 @@ TOTAL ESTIMATE AMOUNT:        ₹${subtotal.toFixed(2)}
 
   // Standard Tax Invoice
   return `========================================
-           SUNSHINE CAFE & BISTRO       
-     Ph: 9840012345 (Store Helpline)    
+           ${storeName.padEnd(28)}       
+     Ph: ${storePhone} (Store Helpline)    
       GSTIN: 33AABCS1429B1ZB             
 ========================================
 Date: ${date} ${time}
@@ -259,6 +295,7 @@ async function updateLabTopbarStatus() {
 window.addEventListener('DOMContentLoaded', () => {
   renderMenu();
   renderCart();
+  loadAvailableStores();
   updateLabTopbarStatus();
   setInterval(updateLabTopbarStatus, 3000);
 });

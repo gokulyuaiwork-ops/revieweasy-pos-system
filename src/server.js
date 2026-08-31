@@ -515,8 +515,11 @@ app.post('/api/simulate-print', (req, res) => {
     return res.status(400).json({ error: 'rawText is required' });
   }
 
-  const tx = spoolerWatcher.injectPrintJob(rawText, { customTimestamp, source, storeCode });
-  broadcast('METRICS_UPDATED', storage.getMetrics());
+  const effectiveStoreCode = (storeCode || req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  const tx = spoolerWatcher.injectPrintJob(rawText, { customTimestamp, source, storeCode: effectiveStoreCode });
+  broadcast('NEW_PRINT_JOB', tx);
+  broadcast('TRANSACTION_UPDATED', tx);
+  broadcast('METRICS_UPDATED', storage.getMetrics(effectiveStoreCode));
   res.json({ success: true, transaction: tx });
 });
 
@@ -527,28 +530,6 @@ app.post('/api/simulate-usb-hop', (req, res) => {
 
 app.post('/api/sync-clock', async (req, res) => {
   const result = await resilience.syncSystemClockOffset();
-  res.json(result);
-});
-
-// WhatsApp Multi-Device Endpoints
-app.get('/api/whatsapp/status', (req, res) => {
-  res.json(localBaileys.getStatus());
-});
-
-app.post('/api/whatsapp/pair-simulated', (req, res) => {
-  localBaileys.simulateSuccessfulPairing();
-  res.json({ success: true, status: 'CONNECTED' });
-});
-
-app.post('/api/whatsapp/request-pairing-code', async (req, res) => {
-  const { phoneNumber } = req.body;
-  if (!phoneNumber) return res.status(400).json({ error: 'phoneNumber is required' });
-  const result = await localBaileys.requestPairingCode(phoneNumber);
-  res.json(result);
-});
-
-app.post('/api/whatsapp/reset-session', async (req, res) => {
-  const result = await localBaileys.resetSession();
   res.json(result);
 });
 

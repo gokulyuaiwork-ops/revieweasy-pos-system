@@ -53,8 +53,12 @@
       <!-- LEFT: Interactive Billing Terminal (POS) -->
       <section class="pos-terminal-card">
         <div class="pos-topbar">
-          <div class="pos-title">
-            <h2>🏪 Sunshine Cafe & Retail POS</h2>
+          <div class="pos-title" style="display: flex; align-items: center; gap: 10px;">
+            <h2 id="posStoreTitle">🏪 Sunshine Cafe POS</h2>
+            <select id="posStoreSelect" onchange="onStoreSelectChange(this.value)" style="background: #1e293b; border: 1px solid #334155; color: #38bdf8; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 6px; outline: none; cursor: pointer;">
+              <option value="STORE_7915">Test Sync Cafe (STORE_7915)</option>
+              <option value="STORE_DEMO_01">Sunshine Cafe (STORE_DEMO_01)</option>
+            </select>
             <span class="pos-badge">Terminal #01 (Online)</span>
           </div>
 

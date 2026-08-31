@@ -74,13 +74,14 @@ class VirtualThermalPrinter {
     try {
       const source = selectedMode === 'TCP_9100' ? 'TCP_9100_NETWORK_STREAM' : 'WINDOWS_PRINT_SPOOLER';
       
+      const storeCode = (window.currentActiveStore || localStorage.getItem('revieweasy_lab_store') || 'STORE_DEMO_01').toUpperCase();
       const res = await fetch('http://localhost:3000/api/simulate-print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           rawText: receiptText,
           source: source,
-          storeCode: 'STORE_DEMO_01'
+          storeCode: storeCode
         })
       });
 
