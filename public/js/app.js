@@ -199,11 +199,30 @@ function connectWebSocket() {
   };
 }
 
-// Periodic state polling ensures live numbers on cloud and local
-setInterval(() => {
-  fetchState();
-  fetchFeedbacks();
-}, 4000);
+// -------------------------------------------------------------
+// DOM Smart Setter Helper (Eliminates Visual Number Flickering)
+// -------------------------------------------------------------
+function setElementText(id, newText) {
+  const el = typeof id === 'string' ? document.getElementById(id) : id;
+  if (el) {
+    const textStr = String(newText !== undefined && newText !== null ? newText : '');
+    if (el.innerText !== textStr) {
+      el.innerText = textStr;
+    }
+  }
+}
+
+let isFetchingState = false;
+let isFetchingFeedbacks = false;
+let isFetchingWinBack = false;
+let stateDebounceTimer = null;
+
+function debouncedFetchState(delayMs = 300) {
+  if (stateDebounceTimer) clearTimeout(stateDebounceTimer);
+  stateDebounceTimer = setTimeout(() => {
+    fetchState();
+  }, delayMs);
+}
 
 let clientPeriod = 'today'; // 'today' | 'month' | 'alltime'
 let clientAnalytics = null;
@@ -244,28 +263,26 @@ function handleSocketMessage(msg) {
     renderSupabaseStatus(data.supabase);
     fetchFeedbacks();
     fetchWinBackData();
-  } else if (type === 'NEW_PRINT_JOB' || type === 'TRANSACTION_UPDATED') {
-    fetchState();
-    fetchWinBackData();
-  } else if (type === 'METRICS_UPDATED') {
-    fetchState();
+  } else if (type === 'NEW_PRINT_JOB' || type === 'TRANSACTION_UPDATED' || type === 'METRICS_UPDATED') {
+    debouncedFetchState(200);
   } else if (type === 'QUOTA_UPDATED') {
     renderQuota(data);
   } else if (type === 'FEEDBACK_RECEIVED' || type === 'FEEDBACK_UPDATED') {
     fetchFeedbacks();
-    fetchState();
+    debouncedFetchState(200);
   } else if (type === 'WINBACK_DISPATCHED') {
     fetchWinBackData();
-    fetchState();
+    debouncedFetchState(200);
   } else if (type === 'DIGEST_SENT') {
     alert(`🌙 Closing Digest sent to owner +91 ${data.recipientPhone} (${data.storeName})!`);
-    fetchState();
+    debouncedFetchState(0);
   } else if (type === 'CONFIG_UPDATED') {
     currentConfig = data;
     renderConfig(data);
   } else if (type === 'USB_PORT_REBOUND') {
-    document.getElementById('usbDeviceText').innerText = data.device.name;
-    document.getElementById('usbStatusChip').classList.add('chip-green');
+    setElementText('usbDeviceText', data.device.name);
+    const chip = document.getElementById('usbStatusChip');
+    if (chip) chip.classList.add('chip-green');
   } else if (type === 'WHATSAPP_QR') {
     renderWhatsAppQR(data.qrDataUrl);
   } else if (type === 'WHATSAPP_STATUS') {
@@ -275,13 +292,15 @@ function handleSocketMessage(msg) {
   } else if (type === 'UPDATER_STATUS') {
     renderUpdaterStatus(data);
   } else if (type === 'STATE_CLEARED') {
-    fetchState();
+    debouncedFetchState(0);
     fetchFeedbacks();
     fetchWinBackData();
   }
 }
 
 async function fetchState() {
+  if (isFetchingState) return;
+  isFetchingState = true;
   try {
     const storeCode = getActiveStoreCode();
     const res = await fetch(`/api/state?store=${encodeURIComponent(storeCode)}`);
@@ -290,17 +309,19 @@ async function fetchState() {
     if (state.analytics) {
       clientAnalytics = state.analytics;
       renderClientPeriodMetrics(clientPeriod);
-    } else {
+    } else if (state.metrics) {
       renderMetrics(state.metrics);
     }
 
-    renderQuota(state.quota);
-    renderTransactions(state.transactions);
-    renderHealth(state.health);
-    renderWhatsAppStatus(state.whatsapp);
-    renderSupabaseStatus(state.supabase);
+    if (state.quota) renderQuota(state.quota);
+    if (state.transactions) renderTransactions(state.transactions);
+    if (state.health) renderHealth(state.health);
+    if (state.whatsapp) renderWhatsAppStatus(state.whatsapp);
+    if (state.supabase) renderSupabaseStatus(state.supabase);
   } catch (err) {
     console.error('Failed to fetch state:', err);
+  } finally {
+    isFetchingState = false;
   }
 }
 
@@ -332,32 +353,22 @@ function renderClientPeriodMetrics(period) {
   }
 
   // 1. Invoices & Sales
-  const elPrints = document.getElementById('m_totalPrints');
-  const elSales = document.getElementById('m_totalSales');
-  const lblPrints = document.getElementById('lbl_totalPrints');
-  if (elPrints) elPrints.innerText = activeData.bills || 0;
-  if (elSales) elSales.innerText = (activeData.sales || 0).toLocaleString('en-IN');
-  if (lblPrints) lblPrints.innerText = `${prefix} Invoices`;
+  setElementText('m_totalPrints', activeData.bills || 0);
+  setElementText('m_totalSales', (activeData.sales || 0).toLocaleString('en-IN'));
+  setElementText('lbl_totalPrints', `${prefix} Invoices`);
 
   // 2. WhatsApp Delivered & Reach Rate
-  const elSent = document.getElementById('m_whatsAppDelivered');
-  const elReach = document.getElementById('m_reachRate');
-  const lblSent = document.getElementById('lbl_whatsAppDelivered');
-  if (elSent) elSent.innerText = activeData.sent || 0;
-  if (elReach) elReach.innerText = activeData.reachRate !== undefined ? activeData.reachRate : 100;
-  if (lblSent) lblSent.innerText = `${prefix} Sent`;
+  setElementText('m_whatsAppDelivered', activeData.sent || 0);
+  setElementText('m_reachRate', activeData.reachRate !== undefined ? activeData.reachRate : 100);
+  setElementText('lbl_whatsAppDelivered', `${prefix} Sent`);
 
   // 3. Google 5-Star Reviews
-  const elPos = document.getElementById('m_positiveReviewsRedirected');
-  const lblPos = document.getElementById('lbl_positiveReviews');
-  if (elPos) elPos.innerText = activeData.positiveRedirects || 0;
-  if (lblPos) lblPos.innerText = `${prefix} Google 5★`;
+  setElementText('m_positiveReviewsRedirected', activeData.positiveRedirects || 0);
+  setElementText('lbl_positiveReviews', `${prefix} Google 5★`);
 
   // 4. Review Shield (Deflected Complaints)
-  const elNeg = document.getElementById('m_negativeReviewsShielded');
-  const lblNeg = document.getElementById('lbl_negativeReviews');
-  if (elNeg) elNeg.innerText = activeData.shieldedGrievances || 0;
-  if (lblNeg) lblNeg.innerText = `${prefix} Review Shield`;
+  setElementText('m_negativeReviewsShielded', activeData.shieldedGrievances || 0);
+  setElementText('lbl_negativeReviews', `${prefix} Review Shield`);
 }
 
 function renderMetrics(m) {
@@ -444,6 +455,8 @@ function renderQuota(quota) {
   }
 }
 
+let lastRenderedTxsHash = '';
+
 function renderTransactions(txList) {
   const tbody = document.getElementById('txTableBody');
   if (!tbody || !txList) return;
@@ -459,6 +472,12 @@ function renderTransactions(txList) {
     const txTime = new Date(tx.timestamp || tx.created_at || 0).getTime();
     return txTime >= startOfToday;
   });
+
+  const currentHash = filteredList.map(tx => `${tx.id || tx.invoiceNo}:${tx.status}:${tx.synced}:${tx.totalAmount}`).join('|');
+  if (currentHash === lastRenderedTxsHash) {
+    return; // No change in data, prevent DOM flickering
+  }
+  lastRenderedTxsHash = currentHash;
 
   if (filteredList.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 32px 16px; font-weight: 500;">No print jobs intercepted today yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
@@ -947,7 +966,11 @@ async function clearHistory() {
 // -------------------------------------------------------------
 // Smart Review Shield & Customer Feedback Functions
 // -------------------------------------------------------------
+let lastRenderedFeedbackHash = '';
+
 async function fetchFeedbacks() {
+  if (isFetchingFeedbacks) return;
+  isFetchingFeedbacks = true;
   try {
     const storeCode = getActiveStoreCode();
     const res = await fetch(`/api/feedback?store=${encodeURIComponent(storeCode)}`);
@@ -957,6 +980,8 @@ async function fetchFeedbacks() {
     }
   } catch (err) {
     console.error('Error fetching feedbacks:', err);
+  } finally {
+    isFetchingFeedbacks = false;
   }
 }
 
@@ -966,6 +991,12 @@ function renderFeedbackTable(feedbacks) {
 
   // STRICT FILTER: Only display negative / 1-3 star deflected private complaints in the Review Shield
   const negativeList = (feedbacks || []).filter(fb => (parseInt(fb.rating, 10) <= 3) || fb.action === 'PRIVATE_FEEDBACK');
+
+  const currentHash = negativeList.map(fb => `${fb.id}:${fb.status}:${fb.rating}:${fb.comment || ''}`).join('|');
+  if (currentHash === lastRenderedFeedbackHash) {
+    return; // No change in feedback complaints, skip DOM rewrite
+  }
+  lastRenderedFeedbackHash = currentHash;
 
   if (negativeList.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #0f172a; padding: 24px; font-weight: 600;">No private complaints or shielded feedback yet. 100% customer satisfaction! 🎉</td></tr>`;
@@ -1081,7 +1112,11 @@ let activeSegmentFilter = 'ALL';
 let activeSelectedCustomer = null;
 let currentWinBackTemplate = '';
 
+let lastRenderedWinBackHash = '';
+
 async function fetchWinBackData() {
+  if (isFetchingWinBack) return;
+  isFetchingWinBack = true;
   try {
     const storeCode = currentConfig.storeCode || 'STORE_DEMO_01';
     const [analyticsRes, customersRes, templateRes] = await Promise.all([
@@ -1114,21 +1149,19 @@ async function fetchWinBackData() {
     }
   } catch (err) {
     console.error('Error fetching win-back data:', err);
+  } finally {
+    isFetchingWinBack = false;
   }
 }
 
 function updateSegmentCounts(customers) {
-  const cntAll = document.getElementById('cnt_all');
-  const cntLapsed = document.getElementById('cnt_lapsed');
-  const cntDormant = document.getElementById('cnt_dormant');
-
   const eligible = (customers || []).filter(c => (c.daysSinceLastVisit || 0) >= 30);
   const lapsed = eligible.filter(c => c.segment === 'LAPSED' || (c.daysSinceLastVisit >= 30 && c.daysSinceLastVisit <= 60)).length;
   const dormant = eligible.filter(c => c.segment === 'DORMANT' || c.daysSinceLastVisit > 60).length;
 
-  if (cntAll) cntAll.innerText = eligible.length;
-  if (cntLapsed) cntLapsed.innerText = lapsed;
-  if (cntDormant) cntDormant.innerText = dormant;
+  setElementText('cnt_all', eligible.length);
+  setElementText('cnt_lapsed', lapsed);
+  setElementText('cnt_dormant', dormant);
 }
 
 function filterWinBackSegment(segment) {
@@ -1155,20 +1188,21 @@ function renderFilteredWinBackTable() {
 }
 
 function renderWinBackKPIs(a) {
-  const lapsed = document.getElementById('wb_lapsedCount');
-  const sent = document.getElementById('wb_sentCount');
-  const recovered = document.getElementById('wb_recoveredCount');
-  const rev = document.getElementById('wb_recoveredRevenue');
-
-  if (lapsed) lapsed.innerText = a.lapsedCount || 0;
-  if (sent) sent.innerText = a.winBacksSent || 0;
-  if (recovered) recovered.innerText = `${a.customersRecovered || 0} (${a.recoveryRate || 0}%)`;
-  if (rev) rev.innerText = `₹${(a.totalRecoveredRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+  setElementText('wb_lapsedCount', a.lapsedCount || 0);
+  setElementText('wb_sentCount', a.winBacksSent || 0);
+  setElementText('wb_recoveredCount', `${a.customersRecovered || 0} (${a.recoveryRate || 0}%)`);
+  setElementText('wb_recoveredRevenue', `₹${(a.totalRecoveredRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
 }
 
 function renderWinBackTable(customers) {
   const tbody = document.getElementById('winBackTableBody');
   if (!tbody) return;
+
+  const currentHash = `${activeSegmentFilter}:` + (customers || []).map(c => `${c.phone}:${c.daysSinceLastVisit}:${c.totalVisits}:${c.totalSpend}`).join('|');
+  if (currentHash === lastRenderedWinBackHash) {
+    return; // No change in win-back directory, skip DOM rebuild
+  }
+  lastRenderedWinBackHash = currentHash;
 
   if (!customers || customers.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 24px; font-weight: 500;">No lapsed customers (30+ days inactive) found. All customers have visited recently! 🎉</td></tr>`;
@@ -1523,8 +1557,10 @@ window.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
   }
 
-  // Periodic polling fallback (keeps cloud & local state 100% in sync)
+  // Gentle background synchronization (8s) - smooth and seamless with zero DOM jitter
   setInterval(() => {
-    fetchState();
-  }, 3000);
+    debouncedFetchState(0);
+    fetchFeedbacks();
+    fetchWinBackData();
+  }, 8000);
 });
