@@ -229,10 +229,14 @@ export class SupabaseSyncEngine {
     if (validTxs.length === 0) return;
 
     const config = storage.getConfig();
-    const payloadList = validTxs.map(tx => {
+    const payloadMap = new Map();
+    for (const tx of validTxs) {
       const storeCode = (tx.storeCode || config.storeCode || 'STORE_DEMO_01').toUpperCase();
-      return {
-        id: getBillUuid(storeCode, tx.invoiceNo),
+      const uuid = tx.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tx.id)
+        ? tx.id
+        : getBillUuid(storeCode, tx.invoiceNo);
+      payloadMap.set(uuid, {
+        id: uuid,
         store_code: storeCode,
         invoice_no: tx.invoiceNo || 'INV-001',
         customer_name: tx.customerName || 'Valued Customer',
@@ -242,8 +246,9 @@ export class SupabaseSyncEngine {
         source: tx.source || 'PRINT_SPOOLER',
         raw_text: tx.rawText || '',
         local_created_at: tx.timestamp || new Date().toISOString()
-      };
-    });
+      });
+    }
+    const payloadList = Array.from(payloadMap.values());
 
     try {
       const { data, error } = await this.client
