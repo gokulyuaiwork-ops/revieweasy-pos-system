@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReviewEasy | Unified Authentication Portal</title>
+  <title>ReviewEasy | Sign In</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
     .login-wrapper {
@@ -14,48 +14,53 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 24px 16px;
     }
     .login-card {
       width: 100%;
-      max-width: 440px;
-      background: #ffffff;
-      border: 1px solid var(--border-color);
-      border-radius: 20px;
+      max-width: 400px;
+      background: var(--glass-surface);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
       padding: 36px 32px;
-      box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+      box-shadow: var(--glass-shadow-lg);
+      animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .login-header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
     .login-logo {
-      font-size: 36px;
-      width: 64px;
-      height: 64px;
-      background: linear-gradient(135deg, #f59e0b, #ef4444);
-      border-radius: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ff9500, #ff5e3a);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 16px;
-      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.25);
+      font-size: 22px;
       color: #ffffff;
+      margin: 0 auto 14px;
+      box-shadow: 0 4px 16px rgba(255, 149, 0, 0.35);
     }
     .login-header h2 {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 800;
-      color: #0f172a;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
     }
     .login-header p {
       font-size: 13px;
-      color: var(--text-muted);
+      color: var(--text-sub);
       margin-top: 4px;
+      font-weight: 500;
     }
     .login-form {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
     .form-field {
       display: flex;
@@ -63,47 +68,50 @@
       gap: 6px;
     }
     .form-field label {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
-      color: #475569;
+      color: var(--text-muted);
     }
     .form-field input {
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      color: #0f172a;
-      padding: 12px 14px;
-      border-radius: 8px;
-      font-size: 14px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
     .form-field input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
       background: #ffffff;
+      border-color: var(--apple-blue);
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
     }
     .btn-login {
       width: 100%;
-      padding: 12px;
-      font-size: 14px;
+      padding: 11px;
+      font-size: 13.5px;
       font-weight: 700;
-      background: linear-gradient(135deg, #0284c7, #0369a1);
+      background: var(--apple-blue);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      margin-top: 8px;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
-      transition: all 0.2s;
+      margin-top: 6px;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: inherit;
     }
     .btn-login:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
+      background: #0077ed;
+      transform: translateY(-0.5px);
+      box-shadow: 0 4px 14px rgba(0, 113, 227, 0.4);
     }
     .demo-accounts {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border-color);
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
     .demo-accounts p {
       font-size: 11px;
@@ -111,55 +119,58 @@
       text-transform: uppercase;
       font-weight: 700;
       letter-spacing: 0.5px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-align: center;
     }
     .demo-pills {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
     .demo-pill {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.04);
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s ease;
     }
     .demo-pill:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
+      background: #ffffff;
+      border-color: rgba(0, 0, 0, 0.1);
+      transform: translateY(-0.5px);
     }
     .pill-info strong {
       font-size: 12px;
       display: block;
-      color: #0f172a;
+      color: var(--text-main);
     }
     .pill-info span {
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--text-sub);
+      font-family: 'JetBrains Mono', monospace;
     }
     .pill-badge {
       font-size: 10px;
       font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
     }
-    .badge-admin { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
-    .badge-client { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .badge-admin { background: #f4eefb; color: #893cc5; }
+    .badge-client { background: #e1f8eb; color: #1b873f; }
     .login-error {
-      background: #fff1f2;
-      border: 1px solid #fecdd3;
-      color: #e11d48;
-      padding: 10px;
-      border-radius: 8px;
+      background: #feecee;
+      color: #d70015;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
       font-size: 12px;
       text-align: center;
       display: none;
+      margin-bottom: 12px;
+      font-weight: 500;
     }
   </style>
 </head>
@@ -167,17 +178,17 @@
   <div class="login-wrapper">
     <div class="login-card">
       <div class="login-header">
-        <div class="login-logo">⭐</div>
-        <h2>ReviewEasy Portal</h2>
-        <p>Unified Login for Admins & Client Merchants</p>
+        <div class="login-logo">★</div>
+        <h2>ReviewEasy</h2>
+        <p>Terminal & Dashboard Portal</p>
       </div>
 
       <div class="login-error" id="loginError"></div>
 
       <form class="login-form" onsubmit="handleLogin(event)">
         <div class="form-field">
-          <label>Email Address</label>
-          <input type="email" id="email" required placeholder="admin@revieweasy.com or store@cafe.com">
+          <label>Store ID or Email</label>
+          <input type="text" id="email" required placeholder="admin@revieweasy.com or STORE_DEMO_01">
         </div>
 
         <div class="form-field">
@@ -188,14 +199,14 @@
         <button type="submit" class="btn-login" id="btnLogin">Sign In ➔</button>
       </form>
 
-      <!-- Quick 1-Click Demo Accounts -->
+      <!-- 1-Click Fast Credentials -->
       <div class="demo-accounts">
-        <p>⚡ 1-Click Test Credentials</p>
+        <p>⚡ Quick Test Credentials</p>
         <div class="demo-pills">
           <div class="demo-pill" onclick="fillCredentials('admin@revieweasy.com', 'admin123')">
             <div class="pill-info">
               <strong>👑 SaaS Admin Portal</strong>
-              <span>admin@revieweasy.com / admin123</span>
+              <span>admin@revieweasy.com</span>
             </div>
             <span class="pill-badge badge-admin">Admin</span>
           </div>
@@ -203,17 +214,17 @@
           <div class="demo-pill" onclick="fillCredentials('client@sunshine.com', 'client123')">
             <div class="pill-info">
               <strong>🏪 Sunshine Cafe (Merchant)</strong>
-              <span>client@sunshine.com / client123</span>
+              <span>client@sunshine.com</span>
             </div>
-            <span class="pill-badge badge-client">Client</span>
+            <span class="pill-badge badge-client">Merchant</span>
           </div>
 
           <div class="demo-pill" onclick="fillCredentials('client@bluetokai.com', 'client123')">
             <div class="pill-info">
               <strong>☕ Blue Tokai (Merchant)</strong>
-              <span>client@bluetokai.com / client123</span>
+              <span>client@bluetokai.com</span>
             </div>
-            <span class="pill-badge badge-client">Client</span>
+            <span class="pill-badge badge-client">Merchant</span>
           </div>
         </div>
       </div>
@@ -222,7 +233,6 @@
   </div>
 
   <script>
-    // Auto-redirect if already logged in
     window.addEventListener('DOMContentLoaded', () => {
       const userJson = localStorage.getItem('revieweasy_user');
       if (userJson) {
@@ -261,7 +271,6 @@
         const data = await res.json();
 
         if (data.success) {
-          // Store session in localStorage
           localStorage.setItem('revieweasy_user', JSON.stringify(data.user));
           window.location.href = data.redirectUrl;
         } else {

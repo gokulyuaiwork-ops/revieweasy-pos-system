@@ -487,30 +487,30 @@ function renderTransactions(txList) {
   lastRenderedTxsHash = currentHash;
 
   if (filteredList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 36px 16px; font-weight: 500;">No print jobs intercepted today yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-sub); padding: 36px 16px; font-weight: 500;">No print jobs intercepted today yet. Incoming POS receipts will appear here in real-time.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = filteredList.map(tx => {
-    const dateObj = new Date(tx.timestamp || tx.created_at || Date.now());
-    const hours = String(dateObj.getHours()).padStart(2, '0');
-    const mins = String(dateObj.getMinutes()).padStart(2, '0');
-    const timeStr = `${hours}:${mins}`;
+    const d = new Date(tx.timestamp || tx.created_at || Date.now());
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const timeStr = `${hours}:${minutes}`;
     const statusClass = `status-${tx.status}`;
-    const formattedAmount = '₹' + Number(tx.totalAmount || 0).toLocaleString('en-IN');
-    const phoneDisplay = tx.formattedPhone || (tx.customerPhone ? (tx.customerPhone.startsWith('+') ? tx.customerPhone : '+91 ' + tx.customerPhone) : '—');
-    const statusLabel = tx.status === 'DELIVERED' ? 'Sent' : formatStatus(tx.status);
+    const formattedAmt = `₹${Number(tx.totalAmount || 0).toLocaleString('en-IN')}`;
 
     return `
       <tr>
-        <td style="color: var(--text-sub); font-size: 13px; font-weight: 500; width: 80px;">${timeStr}</td>
+        <td style="color: var(--text-sub); font-size: 12.5px; font-weight: 500;">${timeStr}</td>
         <td>
-          <span style="font-weight: 700; color: var(--text-main); font-size: 14px;">${escapeHtml(tx.customerName || 'Valued Customer')}</span>
-          <span style="color: var(--text-muted); font-size: 13px; margin-left: 8px;">${escapeHtml(phoneDisplay)}</span>
+          <div class="customer-cell">
+            <span>${escapeHtml(tx.customerName || 'Valued Customer')}</span>
+            <span class="phone-num">${escapeHtml(tx.formattedPhone || tx.customerPhone || '')}</span>
+          </div>
         </td>
-        <td style="font-weight: 700; color: var(--text-main); font-size: 14px; text-align: right; width: 120px;">${formattedAmount}</td>
-        <td style="text-align: right; width: 100px;">
-          <span class="badge-status ${statusClass}">${statusLabel}</span>
+        <td style="text-align: right; font-weight: 700; color: var(--text-main); font-size: 13.5px;">${formattedAmt}</td>
+        <td style="text-align: right;">
+          <span class="badge-status ${statusClass}">${formatStatus(tx.status)}</span>
         </td>
       </tr>
     `;
@@ -519,19 +519,21 @@ function renderTransactions(txList) {
 
 function formatStatus(status) {
   const map = {
-    'VALID_INVOICE': 'Valid',
+    'VALID_INVOICE': 'Queued',
     'SCHEDULED_DISPATCH': 'Queued',
     'DELIVERED': 'Sent',
-    'PENDING_WHATSAPP_LINK': 'Offline',
-    'CANCELLED_DAILY_QUOTA': 'Capped',
+    'WHATSAPP_SENT': 'Sent',
+    'PENDING_WHATSAPP_LINK': 'Link Device',
+    'CANCELLED_DAILY_QUOTA': 'Limit Exceeded',
     'CANCELLED_SLOT_QUOTA': 'Slot Full',
-    'QUEUED_DAILY_QUOTA': 'Rollover',
+    'QUEUED_DAILY_QUOTA': 'Queued',
     'QUEUED_SLOT_QUOTA': 'Queued',
-    'IGNORED_KOT': 'KOT Ignored',
-    'DUPLICATE_SUPPRESSED': 'Duplicate',
+    'IGNORED_KOT': 'Blocked',
+    'DUPLICATE_SUPPRESSED': 'Deduplicated',
     'SUPPRESSED_CUSTOMER_COOLDOWN': 'Cooldown',
-    'ANONYMOUS_WALKIN': 'No Mobile',
+    'ANONYMOUS_WALKIN': 'Walk-in',
     'QUEUED_QUIET_HOURS': 'Held'
+  };
   return map[status] || status;
 }
 
@@ -627,93 +629,53 @@ function renderWhatsAppStatus(wsData) {
   const loading = document.getElementById('qrLoading');
   const connected = document.getElementById('qrConnected');
   const statusText = document.getElementById('whatsappStatusText');
-  const statusChip = document.getElementById('whatsappStatusChip');
-  const cardPhoneText = document.getElementById('cardHeaderPhoneText');
+  const phoneChip = document.getElementById('connectedPhoneDisplay');
+  const dot = document.getElementById('systemStatusDot');
 
-  if (cardPhoneText && wsData.phoneNumber) {
-    cardPhoneText.innerText = wsData.phoneNumber.startsWith('+') ? wsData.phoneNumber : '+91 ' + wsData.phoneNumber;
+  if (phoneChip && wsData.phoneNumber) {
+    const p = wsData.phoneNumber.startsWith('+') ? wsData.phoneNumber : '+91 ' + wsData.phoneNumber;
+    phoneChip.innerText = p;
   }
 
   const isCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 
-  // Cloud Mode Handling
-  if (isCloud || wsData.mode === 'CLOUD_HOSTED') {
-    img.style.display = 'none';
-    loading.style.display = 'none';
-    connected.style.display = 'flex';
-
-    const headerBtnText = document.getElementById('headerWhatsAppBtnText');
-    if (status === 'CONNECTED') {
-      if (headerBtnText) headerBtnText.innerText = 'WhatsApp: Connected';
-      connected.innerHTML = `
-        <div class="connected-icon" style="font-size: 36px; color: #10b981;">✅</div>
-        <h4 style="color: #059669; font-weight: 800; margin: 4px 0;">Local POS WhatsApp Active</h4>
-        <p style="font-size: 11px; color: #475569; line-height: 1.5;">Billing counter agent paired: <strong style="color: #0f172a;">${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'Linked'}</strong></p>
-        <span class="session-path" style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 6px;">🟢 Real-Time Cloud Dispatch Ready</span>
-      `;
-      if (statusText) statusText.innerText = 'All systems normal';
-      if (statusChip) statusChip.className = 'status-chip chip-green';
-    } else {
-      connected.innerHTML = `
-        <div class="connected-icon" style="font-size: 36px; color: #f59e0b;">📱</div>
-        <h4 style="color: #d97706; font-weight: 800; margin: 4px 0;">WhatsApp Agent Not Linked</h4>
-        <p style="font-size: 11px; color: #64748b; line-height: 1.5;">To dispatch WhatsApp receipts, open <code>localhost:3000</code> on your billing PC and scan the QR code.</p>
-        <span class="session-path" style="font-size: 10px; color: #d97706; font-weight: 600; margin-top: 6px;">🟡 Billing Counter Agent: Offline</span>
-      `;
-      if (statusText) statusText.innerText = 'Agent Not Linked';
-      if (statusChip) statusChip.className = 'status-chip chip-amber';
-    }
-    return;
-  }
-
-  // Local POS Terminal Mode (Edge)
-  const headerBtnText = document.getElementById('headerWhatsAppBtnText');
   if (status === 'CONNECTED') {
-    if (headerBtnText) headerBtnText.innerText = 'WhatsApp: Connected';
-    img.style.display = 'none';
-    loading.style.display = 'none';
-    connected.style.display = 'flex';
-    connected.innerHTML = `
-      <div class="connected-icon" style="font-size: 36px; color: #10b981;">✅</div>
-      <h4 style="color: #059669; font-weight: 800; margin: 4px 0;">WhatsApp Connected</h4>
-      <p style="font-size: 12px; color: #0f172a; font-weight: 700; margin: 2px 0;">${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'Store Phone Paired'}</p>
-      <p style="font-size: 11px; color: #64748b; line-height: 1.4;">Store phone actively linked. Invoices dispatch automatically from this PC.</p>
-      <button onclick="resetWhatsAppSession()" class="btn-sm btn-secondary" style="font-size: 10.5px; padding: 4px 10px; margin-top: 8px; color: #e11d48; border-color: #fecdd3; background: #fff1f2; font-weight: 700; cursor: pointer;">Unlink / Change Number</button>
-    `;
+    if (img) img.style.display = 'none';
+    if (loading) loading.style.display = 'none';
+    if (connected) {
+      connected.style.display = 'flex';
+      connected.innerHTML = `
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: #e1f8eb; color: #1b873f; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">✓</div>
+        <h4 style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">WhatsApp Connected</h4>
+        <p style="font-size: 13px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--apple-blue);">${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'Store Device Linked'}</p>
+        <p style="font-size: 11.5px; color: var(--text-sub); margin-top: 4px;">Invoices dispatch automatically from this PC.</p>
+        <button onclick="resetWhatsAppSession()" class="btn-sm btn-secondary" style="font-size: 11px; padding: 4px 10px; margin-top: 8px; color: var(--apple-red); border-color: rgba(255, 59, 48, 0.2); background: var(--apple-red-light); font-weight: 600;">Unlink Device</button>
+      `;
+    }
     if (statusText) statusText.innerText = 'All systems normal';
-    if (statusChip) statusChip.className = 'status-chip chip-green';
+    if (dot) {
+      dot.style.background = '#34c759';
+      dot.style.boxShadow = '0 0 6px rgba(52, 199, 89, 0.6)';
+    }
   } else if (status === 'RECONNECTING') {
-    img.style.display = 'none';
-    loading.style.display = 'none';
-    connected.style.display = 'flex';
-    connected.innerHTML = `
-      <div class="connected-icon" style="font-size: 32px;">🔄</div>
-      <h4 style="color: #d97706; font-weight: 800; margin: 4px 0;">Reconnecting WhatsApp...</h4>
-      <p style="font-size: 11px; color: #64748b; line-height: 1.5;">Auto-recovering live socket for <strong>${wsData.phoneNumber ? '+91 ' + wsData.phoneNumber : 'linked phone'}</strong>.<br><em>Sleep/Wake recovery in progress.</em></p>
-      <span class="session-path" style="font-size: 10px; color: #0284c7; font-weight: 600; margin-top: 6px;">Preserved credentials active</span>
-    `;
     if (statusText) statusText.innerText = 'Reconnecting...';
-    if (statusChip) statusChip.className = 'status-chip chip-amber';
+    if (dot) {
+      dot.style.background = '#ff9500';
+      dot.style.boxShadow = '0 0 6px rgba(255, 149, 0, 0.6)';
+    }
   } else if (status === 'QR_READY' && wsData.qrDataUrl) {
     renderWhatsAppQR(wsData.qrDataUrl);
-  } else if (status === 'NOT_LINKED') {
-    img.style.display = 'none';
-    loading.style.display = 'none';
-    connected.style.display = 'flex';
-    connected.innerHTML = `
-      <div class="connected-icon" style="font-size: 36px; color: #f59e0b;">📱</div>
-      <h4 style="color: #d97706; font-weight: 800; margin: 4px 0;">WhatsApp Not Linked</h4>
-      <p style="font-size: 11px; color: #64748b; line-height: 1.4;">Click below to generate a QR code and pair this store's WhatsApp.</p>
-      <button onclick="regenerateWhatsAppQR()" class="btn-sm btn-primary" style="font-size: 11px; padding: 6px 12px; margin-top: 8px; font-weight: 700; cursor: pointer;">📱 Generate QR Code</button>
-    `;
-    if (statusText) statusText.innerText = 'Not Linked';
-    if (statusChip) statusChip.className = 'status-chip chip-amber';
+    if (statusText) statusText.innerText = 'Scan QR to link';
+    if (dot) {
+      dot.style.background = '#ff9500';
+      dot.style.boxShadow = '0 0 6px rgba(255, 149, 0, 0.6)';
+    }
   } else {
-    img.style.display = 'none';
-    loading.style.display = 'flex';
-    connected.style.display = 'none';
-    if (statusText) statusText.innerText = 'Generating QR...';
-    if (statusChip) statusChip.className = 'status-chip chip-blue';
+    if (statusText) statusText.innerText = 'Link device';
+    if (dot) {
+      dot.style.background = '#ff9500';
+      dot.style.boxShadow = '0 0 6px rgba(255, 149, 0, 0.6)';
+    }
   }
 }
 
@@ -1542,6 +1504,16 @@ async function applyAutoUpdateNow() {
   }
 }
 
+function getInitials(name) {
+  if (!name) return 'RS';
+  const clean = name.replace(/\(.*?\)/g, '').trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return clean.slice(0, 2).toUpperCase() || 'RS';
+}
+
 function checkClientAuth() {
   const userJson = localStorage.getItem('revieweasy_user');
   if (!userJson) {
@@ -1552,14 +1524,10 @@ function checkClientAuth() {
     const user = JSON.parse(userJson);
     const userChip = document.getElementById('clientUserName');
     if (userChip) {
-      const rawName = (user.name || user.email || 'RS').split('(')[0].trim();
-      const parts = rawName.split(' ').filter(Boolean);
-      const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : rawName.slice(0, 2).toUpperCase();
-      userChip.innerText = initials;
-      userChip.parentElement.title = user.name || user.email || 'Logged In User';
+      userChip.innerText = getInitials(user.name || user.email || 'RS');
     }
     const storeCode = user.storeCode || (user.store && user.store.storeCode) || 'STORE_DEMO_01';
-    const storeName = (user.store && user.store.storeName) || (user.name ? user.name.split('(')[0].trim() : 'Sunshine Cafe & Bistro');
+    const storeName = (user.store && user.store.storeName) || (user.name ? user.name.split('(')[0].trim() : storeCode);
     const badge = document.getElementById('storeBadgeText');
     const tagline = document.getElementById('storeTaglineText');
     if (badge) badge.innerText = storeCode;

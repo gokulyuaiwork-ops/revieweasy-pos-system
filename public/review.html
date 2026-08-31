@@ -9,45 +9,51 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --border: #e2e8f0;
-      --primary: #0284c7;
-      --gold: #f59e0b;
-      --emerald: #059669;
-      --rose: #e11d48;
-      --text: #0f172a;
-      --text-muted: #64748b;
+      --bg-gradient: radial-gradient(at 10% 10%, rgba(219, 234, 254, 0.9) 0px, transparent 50%),
+                     radial-gradient(at 90% 10%, rgba(243, 232, 255, 0.8) 0px, transparent 50%),
+                     radial-gradient(at 50% 50%, rgba(254, 243, 199, 0.6) 0px, transparent 60%),
+                     radial-gradient(at 10% 90%, rgba(254, 226, 226, 0.7) 0px, transparent 50%),
+                     radial-gradient(at 90% 90%, rgba(224, 231, 255, 0.9) 0px, transparent 50%),
+                     #e2e8f0;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --border: rgba(255, 255, 255, 0.9);
+      --primary: #0071e3;
+      --gold: #ff9500;
+      --emerald: #34c759;
+      --rose: #ff3b30;
+      --text: #1d1d1f;
+      --text-muted: #6e6e73;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     body {
-      background-color: var(--bg);
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(2, 132, 199, 0.05) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.04) 0px, transparent 50%);
+      background: var(--bg-gradient);
+      background-attachment: fixed;
       color: var(--text);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 24px 16px;
+      -webkit-font-smoothing: antialiased;
     }
 
     .container {
       width: 100%;
       max-width: 440px;
       background: var(--card-bg);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
       border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 28px 24px;
-      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+      border-radius: 28px;
+      padding: 32px 26px;
+      box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04);
       position: relative;
     }
 
