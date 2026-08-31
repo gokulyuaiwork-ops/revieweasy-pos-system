@@ -97,7 +97,8 @@ export class WhatsAppDispatcher {
       return tx;
     }
 
-    // 2. 180-Day Customer Anti-Fatigue / Anti-Spam Check
+    // 2. 180-Day Customer Anti-Fatigue / Anti-Spam Check [TESTING OVERRIDE: COMMENTED OUT]
+    /*
     const cooldownDays = config.customerCooldownDays || 180;
     const cooldown = storage.checkCustomer180DayCooldown(tx.storeCode, tx.customerPhone, cooldownDays);
     if (cooldown.inCooldown) {
@@ -112,6 +113,7 @@ export class WhatsAppDispatcher {
       this.broadcast('TRANSACTION_UPDATED', tx);
       return tx;
     }
+    */
 
     // 3. Category E1: Quiet Hours Check (Overnight hold until 10:30 AM)
     if (this.isQuietHours(now)) {
@@ -241,7 +243,8 @@ export class WhatsAppDispatcher {
     const tx = storage.state.transactions.find(t => t.id === txId);
     if (!tx || tx.status === 'DELIVERED') return;
 
-    // Strict Anti-Spam Guardrail: Before dispatching, verify customer is not in 180-day cooldown
+    // Strict Anti-Spam Guardrail: Before dispatching, verify customer is not in 180-day cooldown [TESTING OVERRIDE: COMMENTED OUT]
+    /*
     if (tx.customerPhone && tx.customerPhone !== 'N/A') {
       const cooldownDays = config.customerCooldownDays || 180;
       const cooldown = storage.checkCustomer180DayCooldown(tx.storeCode, tx.customerPhone, cooldownDays);
@@ -258,6 +261,7 @@ export class WhatsAppDispatcher {
         return;
       }
     }
+    */
 
     const storeCode = tx.storeCode || config.storeCode || 'STORE_DEMO_01';
     const store = storage.getStoreByCode(storeCode);
