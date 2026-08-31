@@ -447,6 +447,11 @@ class ResilientStorage {
       return uCode !== clean;
     });
 
+    this.state.deletedStoreCodes = this.state.deletedStoreCodes || [];
+    if (!this.state.deletedStoreCodes.includes(clean)) {
+      this.state.deletedStoreCodes.push(clean);
+    }
+
     this.save();
     return this.state.clientStores.length < initialLen;
   }

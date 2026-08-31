@@ -112,17 +112,18 @@ export class SupabaseSyncEngine {
   }
 
   /**
-   * Delete store record from Supabase Cloud (Soft delete to prevent RLS delete rejections)
+   * Delete store record from Supabase Cloud
    */
   async deleteStoreFromCloud(storeCode) {
     if (!this.client || !storeCode) return;
     try {
       const code = String(storeCode).toUpperCase();
-      const cfgId = getStoreConfigUuid(code);
+      // Update all rows with this store_code to DELETED on Supabase
       await this.client
         .from('bills')
         .update({ status: 'DELETED', source: 'DELETED_STORE' })
-        .eq('id', cfgId);
+        .eq('store_code', code);
+
       console.log(`[Supabase Sync] 🗑️ Store config [${code}] marked as DELETED on cloud.`);
     } catch (err) {
       console.warn('[Supabase Sync] Warning deleting store config from cloud:', err.message);
@@ -138,36 +139,43 @@ export class SupabaseSyncEngine {
       const { data, error } = await this.client
         .from('bills')
         .select('*')
-        .in('source', ['STORE_CONFIG', 'DELETED_STORE']);
+        .eq('source', 'STORE_CONFIG')
+        .neq('status', 'DELETED')
+        .order('created_at', { ascending: true });
 
       if (error || !data) return [];
+
+      const deletedCodes = new Set((storage.state.deletedStoreCodes || []).map(c => String(c).toUpperCase()));
+
+      // Purge all deleted stores from local memory
+      for (const delCode of deletedCodes) {
+        storage.state.clientStores = (storage.state.clientStores || []).filter(s => (s.storeCode || s.id || '').toUpperCase() !== delCode);
+        storage.state.users = (storage.state.users || []).filter(u => (u.storeCode || '').toUpperCase() !== delCode);
+      }
 
       const pulled = [];
       for (const row of data) {
         if (!row.raw_text) continue;
+        const code = (row.store_code || '').toUpperCase();
+        if (deletedCodes.has(code) || row.status === 'DELETED') continue;
+
         try {
           const storeData = JSON.parse(row.raw_text);
-          if (storeData && storeData.storeCode) {
-            const code = storeData.storeCode.toUpperCase();
-            
-            // Handle deleted stores
-            if (row.source === 'DELETED_STORE' || row.status === 'DELETED') {
-              storage.state.clientStores = (storage.state.clientStores || []).filter(s => (s.storeCode || s.id || '').toUpperCase() !== code);
-              storage.state.users = (storage.state.users || []).filter(u => (u.storeCode || '').toUpperCase() !== code);
-              continue;
-            }
+          if (storeData && (storeData.storeCode || code)) {
+            const effectiveCode = (storeData.storeCode || code).toUpperCase();
+            if (deletedCodes.has(effectiveCode)) continue;
 
             // 1. Ensure store exists in local storage
-            let existing = storage.state.clientStores.find(s => s.storeCode.toUpperCase() === code);
+            let existing = storage.state.clientStores.find(s => (s.storeCode || s.id || '').toUpperCase() === effectiveCode);
             if (!existing) {
               storage.state.clientStores.push({
-                id: code,
-                storeCode: code,
+                id: effectiveCode,
+                storeCode: effectiveCode,
                 storeName: storeData.storeName || row.customer_name,
                 storePhone: storeData.storePhone || row.customer_phone,
                 storeGstin: storeData.storeGstin || '',
                 googleReviewUrl: storeData.googleReviewUrl || 'https://g.page/review',
-                secretKey: storeData.secretKey || `SEC_${code}_1234`,
+                secretKey: storeData.secretKey || `SEC_${effectiveCode}_1234`,
                 status: storeData.status || row.status || 'ACTIVE',
                 plan: storeData.plan || 'PRO_UNLIMITED',
                 businessCategory: storeData.businessCategory || 'RESTAURANT_CAFE',
@@ -181,17 +189,17 @@ export class SupabaseSyncEngine {
             }
 
             // 2. Ensure user login exists
-            const email = (storeData.clientEmail || `owner@${code.toLowerCase()}.com`).toLowerCase();
+            const email = (storeData.clientEmail || `owner@${effectiveCode.toLowerCase()}.com`).toLowerCase();
             const password = storeData.clientPassword || 'client123';
-            let user = storage.state.users.find(u => (u.email || '').toLowerCase() === email || (u.storeCode || '').toUpperCase() === code);
+            let user = storage.state.users.find(u => (u.email || '').toLowerCase() === email || (u.storeCode || '').toUpperCase() === effectiveCode);
             if (!user) {
               storage.state.users.push({
-                id: `USR_${code}`,
+                id: `USR_${effectiveCode}`,
                 email: email,
                 password: password,
                 name: storeData.storeName || row.customer_name,
                 role: 'CLIENT',
-                storeCode: code
+                storeCode: effectiveCode
               });
             } else {
               user.password = password;
@@ -201,9 +209,7 @@ export class SupabaseSyncEngine {
           }
         } catch (e) {}
       }
-      if (pulled.length > 0) {
-        storage.save();
-      }
+      storage.save();
       return pulled;
     } catch (err) {
       console.warn('[Supabase Sync] pullCloudStores note:', err.message);
