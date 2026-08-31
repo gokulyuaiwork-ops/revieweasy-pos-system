@@ -1038,7 +1038,7 @@ class ResilientStorage {
   // -------------------------------------------------------------
   // Lapsed Customer RFM Segmentation & Win-Back CRM Methods
   // -------------------------------------------------------------
-  getCustomerDirectory(storeCode = null) {
+  getCustomerDirectory(storeCode = null, lapsedOnly = true) {
     const code = (storeCode || this.state.config.storeCode || 'STORE_DEMO_01').toUpperCase();
     const now = Date.now();
     const customerMap = {};
@@ -1051,7 +1051,7 @@ class ResilientStorage {
       if (!tx.customerPhone || tx.customerPhone === 'N/A') continue;
 
       const cleanPhone = tx.customerPhone.replace(/\D/g, '').slice(-10);
-      if (cleanPhone.length !== 10) continue;
+      if (cleanPhone.length < 10) continue;
 
       const txTime = new Date(tx.timestamp).getTime();
       const amount = parseFloat(tx.totalAmount) || 0;
@@ -1059,13 +1059,13 @@ class ResilientStorage {
       if (!customerMap[cleanPhone]) {
         customerMap[cleanPhone] = {
           phone: cleanPhone,
-          formattedPhone: `+91 ${cleanPhone.slice(0, 5)} ${cleanPhone.slice(5)}`,
-          name: tx.customerName && tx.customerName !== 'Valued Customer' ? tx.customerName : 'Valued Customer',
+          name: tx.customerName || 'Valued Customer',
+          formattedPhone: tx.formattedPhone || `+91 ${cleanPhone}`,
           totalVisits: 0,
           totalSpend: 0,
-          firstVisit: tx.timestamp,
           lastVisit: tx.timestamp,
-          lastVisitTime: txTime
+          lastVisitTime: txTime,
+          firstVisit: tx.timestamp
         };
       }
 
@@ -1085,14 +1085,14 @@ class ResilientStorage {
       }
     }
 
-    const directory = Object.values(customerMap).map(c => {
+    let directory = Object.values(customerMap).map(c => {
       const daysSince = Math.floor((now - c.lastVisitTime) / (1000 * 60 * 60 * 24));
       
       let segment = 'ACTIVE';
       if (daysSince >= 30 && daysSince <= 60) {
         segment = 'LAPSED'; // Target Zone (30–60 Days)
       } else if (daysSince > 60) {
-        segment = 'CHURNED'; // 60+ Days
+        segment = 'DORMANT'; // 60+ Days
       }
 
       // Check win-back dispatch status
@@ -1104,7 +1104,7 @@ class ResilientStorage {
       const latestDispatch = dispatches[0] || null;
 
       let winBackStatus = 'ELIGIBLE';
-      if (segment !== 'LAPSED') {
+      if (segment !== 'LAPSED' && segment !== 'DORMANT') {
         winBackStatus = 'NOT_ELIGIBLE';
       } else if (latestDispatch) {
         if (latestDispatch.status === 'RECOVERED') {
@@ -1125,12 +1125,17 @@ class ResilientStorage {
       };
     });
 
+    // STRICT FILTER: When lapsedOnly is true, only include customers inactive for 30+ days
+    if (lapsedOnly) {
+      directory = directory.filter(c => c.daysSinceLastVisit >= 30);
+    }
+
     // Sort by inactivity days descending
     return directory.sort((a, b) => b.daysSinceLastVisit - a.daysSinceLastVisit);
   }
 
   getLapsedCustomers(storeCode = null) {
-    const directory = this.getCustomerDirectory(storeCode);
+    const directory = this.getCustomerDirectory(storeCode, true);
     return directory.filter(c => c.segment === 'LAPSED');
   }
 

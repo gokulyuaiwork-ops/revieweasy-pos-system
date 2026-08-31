@@ -392,12 +392,11 @@
         <!-- Segment Filter Pills -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; gap: 6px;" id="segmentFilterGroup">
-            <button class="btn-sm active" id="btnFilterAll" onclick="filterWinBackSegment('ALL')" style="font-size: 11px; padding: 5px 12px; border-radius: 20px;">👥 All Customers (<span id="cnt_all">0</span>)</button>
+            <button class="btn-sm active" id="btnFilterAll" onclick="filterWinBackSegment('ALL')" style="font-size: 11px; padding: 5px 12px; border-radius: 20px;">👥 All Lapsed (30+ Days) (<span id="cnt_all">0</span>)</button>
             <button class="btn-sm" id="btnFilterLapsed" onclick="filterWinBackSegment('LAPSED')" style="font-size: 11px; padding: 5px 12px; border-radius: 20px; background: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3);">🟡 Lapsed 30–60d (<span id="cnt_lapsed">0</span>)</button>
-            <button class="btn-sm" id="btnFilterRegular" onclick="filterWinBackSegment('REGULAR')" style="font-size: 11px; padding: 5px 12px; border-radius: 20px; background: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">🟢 Active Regulars (<span id="cnt_regular">0</span>)</button>
             <button class="btn-sm" id="btnFilterDormant" onclick="filterWinBackSegment('DORMANT')" style="font-size: 11px; padding: 5px 12px; border-radius: 20px; background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3);">🔴 Dormant >60d (<span id="cnt_dormant">0</span>)</button>
           </div>
-          <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Click "💬 Direct DM" on any customer to inspect & send</span>
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Click "💬 Direct DM" to send custom warm win-back message</span>
         </div>
 
         <div class="table-container">

@@ -138,9 +138,9 @@ function buildCustomerDirectoryFromBills(bills) {
     }
   }
 
-  return Object.values(customerMap).map(c => {
+  let directory = Object.values(customerMap).map(c => {
     const daysSinceLastVisit = Math.floor((now - c.lastVisitTimestamp) / (24 * 60 * 60 * 1000));
-    let segment = 'REGULAR';
+    let segment = 'ACTIVE';
     if (daysSinceLastVisit > 60) segment = 'DORMANT';
     else if (daysSinceLastVisit >= 30) segment = 'LAPSED';
 
@@ -151,6 +151,11 @@ function buildCustomerDirectoryFromBills(bills) {
       winBackStatus: 'ELIGIBLE'
     };
   });
+
+  // STRICT FILTER: Only return customers inactive for 30+ days in the Win-Back list
+  return directory
+    .filter(c => c.daysSinceLastVisit >= 30)
+    .sort((a, b) => b.daysSinceLastVisit - a.daysSinceLastVisit);
 }
 
 // -------------------------------------------------------------

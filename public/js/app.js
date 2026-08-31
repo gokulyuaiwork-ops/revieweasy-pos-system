@@ -1101,16 +1101,14 @@ async function fetchWinBackData() {
 function updateSegmentCounts(customers) {
   const cntAll = document.getElementById('cnt_all');
   const cntLapsed = document.getElementById('cnt_lapsed');
-  const cntRegular = document.getElementById('cnt_regular');
   const cntDormant = document.getElementById('cnt_dormant');
 
-  const lapsed = customers.filter(c => c.segment === 'LAPSED').length;
-  const regular = customers.filter(c => c.segment === 'REGULAR' || c.segment === 'ACTIVE').length;
-  const dormant = customers.filter(c => c.segment === 'DORMANT').length;
+  const eligible = (customers || []).filter(c => (c.daysSinceLastVisit || 0) >= 30);
+  const lapsed = eligible.filter(c => c.segment === 'LAPSED' || (c.daysSinceLastVisit >= 30 && c.daysSinceLastVisit <= 60)).length;
+  const dormant = eligible.filter(c => c.segment === 'DORMANT' || c.daysSinceLastVisit > 60).length;
 
-  if (cntAll) cntAll.innerText = customers.length;
+  if (cntAll) cntAll.innerText = eligible.length;
   if (cntLapsed) cntLapsed.innerText = lapsed;
-  if (cntRegular) cntRegular.innerText = regular;
   if (cntDormant) cntDormant.innerText = dormant;
 }
 
@@ -1126,13 +1124,13 @@ function filterWinBackSegment(segment) {
 }
 
 function renderFilteredWinBackTable() {
-  let list = allWinBackCustomers;
+  // STRICT FILTER: Only customers who have not visited for 30+ days
+  const eligibleList = (allWinBackCustomers || []).filter(c => (c.daysSinceLastVisit || 0) >= 30);
+  let list = eligibleList;
   if (activeSegmentFilter === 'LAPSED') {
-    list = allWinBackCustomers.filter(c => c.segment === 'LAPSED');
-  } else if (activeSegmentFilter === 'REGULAR') {
-    list = allWinBackCustomers.filter(c => c.segment === 'REGULAR' || c.segment === 'ACTIVE');
+    list = eligibleList.filter(c => c.segment === 'LAPSED' || (c.daysSinceLastVisit >= 30 && c.daysSinceLastVisit <= 60));
   } else if (activeSegmentFilter === 'DORMANT') {
-    list = allWinBackCustomers.filter(c => c.segment === 'DORMANT');
+    list = eligibleList.filter(c => c.segment === 'DORMANT' || c.daysSinceLastVisit > 60);
   }
   renderWinBackTable(list);
 }
@@ -1154,7 +1152,7 @@ function renderWinBackTable(customers) {
   if (!tbody) return;
 
   if (!customers || customers.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 24px;">No customers matching this segment filter right now.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 24px; font-weight: 500;">No lapsed customers (30+ days inactive) found. All customers have visited recently! 🎉</td></tr>`;
     return;
   }
 
