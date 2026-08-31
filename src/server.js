@@ -149,9 +149,10 @@ app.get('/api/state', async (req, res) => {
 // Authentication Endpoints
 // -------------------------------------------------------------
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
+  const email = (req.body.email || req.body.identifier || req.body.username || '').trim();
+  const password = (req.body.password || '').trim();
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email/Store Code and password are required' });
+    return res.status(400).json({ error: 'Email / Store Code and password are required' });
   }
 
   let user = storage.authenticateUser(email, password);
