@@ -200,15 +200,17 @@ export class LocalBaileysEngine {
           keys: makeCacheableSignalKeyStore(state.keys, logger)
         },
         logger,
-        browser: Browsers.windows('Desktop'),
+        browser: Browsers.macOS('Desktop'),
         connectTimeoutMs: 60000,
-        keepAliveIntervalMs: 25000,
+        keepAliveIntervalMs: 30000,
         defaultQueryTimeoutMs: 60000,
+        qrTimeout: 45000,
         syncFullHistory: false,
-        markOnlineOnConnect: true,
+        markOnlineOnConnect: false,
         emitOwnEvents: false,
         retryRequestDelayMs: 2000,
-        maxMsgRetryCount: 5
+        maxMsgRetryCount: 5,
+        getMessage: async () => ({ conversation: '' })
       });
 
       this.socket.ev.on('creds.update', (updatedCreds) => {
@@ -350,7 +352,10 @@ export class LocalBaileysEngine {
       await this.initialize(this.storeId);
     }
     try {
-      const cleanPhone = phoneNumber.replace(/\D/g, '');
+      let cleanPhone = phoneNumber.replace(/\D/g, '');
+      if (cleanPhone.length === 10) {
+        cleanPhone = '91' + cleanPhone;
+      }
       console.log(`[Local Baileys] Requesting 8-digit Pairing Code for +${cleanPhone}...`);
       const code = await this.socket.requestPairingCode(cleanPhone);
       this.pairingCode = code;
