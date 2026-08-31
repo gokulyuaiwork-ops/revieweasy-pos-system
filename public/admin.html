@@ -355,24 +355,24 @@
   <div class="modal-overlay" id="addModal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>➕ Add New Merchant Account</h3>
+        <h3>Add New Merchant Account</h3>
         <button class="btn-close-modal" onclick="closeAddModal()">✕</button>
       </div>
       <form onsubmit="handleAddClient(event)">
         <div class="modal-body">
           <div class="input-group">
-            <label>Store Code (Unique Identifier, e.g. STORE_MUM_004)</label>
-            <input type="text" id="add_storeCode" required placeholder="STORE_MUM_004">
+            <label>Store Code (Unique Identifier)</label>
+            <input type="text" id="add_storeCode" required placeholder="e.g. STORE_MUM_004">
           </div>
           <div class="input-group">
             <label>Business / Store Name</label>
-            <input type="text" id="add_storeName" required placeholder="Third Wave Coffee Roasters">
+            <input type="text" id="add_storeName" required placeholder="e.g. Third Wave Coffee Roasters">
           </div>
 
           <!-- Business Category Selector -->
           <div class="input-group">
-            <label>🏢 Business Category / Industry Type</label>
-            <select id="add_businessCategory" onchange="handleCategoryChange('add')" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #38bdf8; font-weight: 700; padding: 10px; border-radius: 8px; font-size: 13px;">
+            <label>Business Category / Industry Type</label>
+            <select id="add_businessCategory" onchange="handleCategoryChange('add')">
               <option value="RESTAURANT_CAFE">🍽️ Restaurant / Cafe / Bakery / QSR</option>
               <option value="RETAIL_FASHION">🛍️ Retail / Clothing / Fashion & Footwear</option>
               <option value="SALON_SPA">💇 Salon / Spa / Beauty & Wellness</option>
@@ -385,16 +385,16 @@
 
           <!-- Custom Category Message Template Editor -->
           <div class="input-group">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <label>💬 WhatsApp Message Copy (Auto-Tailored to Category)</label>
-              <button type="button" class="chip-btn" onclick="resetCategoryTemplate('add')">🔄 Reset to Category Default</button>
-            </div>
-            <textarea id="add_customMessageTemplate" rows="4" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #f8fafc; font-family: inherit; font-size: 11px; padding: 8px; border-radius: 6px; resize: vertical; line-height: 1.4;"></textarea>
-            <span style="font-size: 10px; color: var(--text-sub);">Placeholders: <code>{{name}}</code>, <code>{{store_name}}</code>, <code>{{invoice_no}}</code>, <code>{{total_amount}}</code>, <code>{{review_link}}</code>, <code>{{ebill_url}}</code></span>
+            <label>
+              <span>WhatsApp Message Copy</span>
+              <button type="button" class="chip-btn" onclick="resetCategoryTemplate('add')">🔄 Reset to Default</button>
+            </label>
+            <textarea id="add_customMessageTemplate" rows="4"></textarea>
+            <span style="font-size: 11px; color: var(--text-sub);">Variables: <code>{{name}}</code>, <code>{{store_name}}</code>, <code>{{invoice_no}}</code>, <code>{{total_amount}}</code>, <code>{{review_link}}</code>, <code>{{ebill_url}}</code></span>
           </div>
 
           <div class="input-group">
-            <label>Store Helpline Mobile (Blacklisted from Customer Spam)</label>
+            <label>Store Owner Mobile</label>
             <input type="text" id="add_storePhone" required placeholder="9812345678">
           </div>
           <div class="input-group">
@@ -403,11 +403,11 @@
           </div>
           <div class="input-group">
             <label>Google Maps 5-Star Review URL</label>
-            <input type="url" id="add_reviewUrl" required placeholder="https://g.page/r/thirdwave/review">
+            <input type="url" id="add_reviewUrl" required placeholder="https://g.page/r/example/review">
           </div>
           <div class="input-group">
-            <label>Merchant Login Email (Used to Unlock Installed Setup)</label>
-            <input type="email" id="add_clientEmail" placeholder="owner@thirdwave.com">
+            <label>Merchant Login Email</label>
+            <input type="email" id="add_clientEmail" placeholder="owner@store.com">
           </div>
           <div class="input-group">
             <label>Merchant Login Password</label>
@@ -417,8 +417,8 @@
           <!-- Dynamic Personalized Flyer Personalization Studio -->
           <div class="flyer-studio-card">
             <div class="flyer-studio-header">
-              <h4>🎨 Dynamic Customer Name Flyer Studio</h4>
-              <label style="font-size: 11px; color: #38bdf8; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <h4>Dynamic Customer Name Flyer Studio</h4>
+              <label style="font-size: 11.5px; color: var(--apple-blue); display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="add_flyerPersonalizeEnabled" checked onchange="updateAddFlyerStudioPreview()">
                 Personalize Name on Image
               </label>
@@ -426,9 +426,9 @@
 
             <!-- Image Uploader -->
             <div class="input-group">
-              <label>Brand Flyer Image (JPEG / PNG)</label>
-              <input type="file" id="add_flyerFile" accept="image/*" onchange="previewFlyerImage(this, 'add_flyerCanvasImg', 'add_flyerUrl', updateAddFlyerStudioPreview)" style="font-size: 11px; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
-              <input type="text" id="add_flyerUrl" value="/assets/default-review-flyer.jpg" onchange="updateAddFlyerImgSrc(this.value)" placeholder="Image URL (e.g. /assets/default-review-flyer.jpg)" style="font-size: 11px; margin-top: 4px;">
+              <label>Brand Flyer Image</label>
+              <input type="file" id="add_flyerFile" accept="image/*" onchange="previewFlyerImage(this, 'add_flyerCanvasImg', 'add_flyerUrl', updateAddFlyerStudioPreview)">
+              <input type="text" id="add_flyerUrl" value="/assets/default-review-flyer.jpg" onchange="updateAddFlyerImgSrc(this.value)" placeholder="Image URL (e.g. /assets/default-review-flyer.jpg)" style="margin-top: 4px;">
             </div>
 
             <!-- Interactive Visual Preview Canvas -->
@@ -441,7 +441,7 @@
 
             <!-- Template & Position Sliders -->
             <div class="input-group">
-              <label>Flyer Name Template (Use <code>{{name}}</code> or <code>{{first_name}}</code>)</label>
+              <label>Flyer Name Template</label>
               <input type="text" id="add_flyerTemplate" value="Freshly prepared for {{name}}! 🍽️" oninput="updateAddFlyerStudioPreview()">
               <div class="template-chips" id="add_templateChips">
                 <button type="button" class="chip-btn" onclick="setAddTemplate('Freshly prepared for {{name}}! 🍽️')">Freshly prepared for {{name}}! 🍽️</button>
@@ -452,12 +452,12 @@
 
             <div class="studio-controls-grid">
               <div class="studio-slider-group">
-                <label>Horizontal (X): <strong id="add_lblPosX">50%</strong></label>
+                <label>Horizontal: <strong id="add_lblPosX">50%</strong></label>
                 <input type="range" id="add_flyerPosX" min="5" max="95" value="50" oninput="updateAddFlyerStudioPreview()">
               </div>
 
               <div class="studio-slider-group">
-                <label>Vertical (Y): <strong id="add_lblPosY">18%</strong></label>
+                <label>Vertical: <strong id="add_lblPosY">18%</strong></label>
                 <input type="range" id="add_flyerPosY" min="5" max="95" value="18" oninput="updateAddFlyerStudioPreview()">
               </div>
 
@@ -468,21 +468,21 @@
 
               <div class="studio-slider-group">
                 <label>Text Color</label>
-                <input type="color" id="add_flyerTextColor" value="#FFFFFF" oninput="updateAddFlyerStudioPreview()" style="height: 32px; padding: 2px; background: transparent; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;">
+                <input type="color" id="add_flyerTextColor" value="#FFFFFF" oninput="updateAddFlyerStudioPreview()" style="height: 32px; padding: 2px; background: transparent; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; width: 100%;">
               </div>
             </div>
           </div>
 
-          <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin-top: 8px; background: rgba(56, 189, 248, 0.06); padding: 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);">
-            <input type="checkbox" id="add_enableDigitalReceipts" checked style="width: 18px; height: 18px; cursor: pointer;">
-            <label for="add_enableDigitalReceipts" style="margin-bottom: 0; cursor: pointer; color: #38bdf8; font-weight: 600; font-size: 12px;">
-              📄 Enable Digital PDF Invoicing & E-Bills on WhatsApp
+          <div class="input-group" style="display: flex; flex-direction: row; align-items: center; gap: 8px; margin-top: 4px; background: rgba(0, 113, 227, 0.05); padding: 10px 12px; border-radius: var(--radius-sm);">
+            <input type="checkbox" id="add_enableDigitalReceipts" checked style="width: 16px; height: 16px; cursor: pointer;">
+            <label for="add_enableDigitalReceipts" style="margin-bottom: 0; cursor: pointer; color: var(--apple-blue); font-weight: 600; font-size: 12.5px;">
+              Enable Digital Invoicing & E-Bills on WhatsApp
             </label>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-sm btn-secondary" onclick="closeAddModal()">Cancel</button>
-          <button type="submit" class="btn-sm btn-primary">Create Store & Generate Credentials</button>
+          <button type="submit" class="btn-sm btn-primary">Create Store</button>
         </div>
       </form>
     </div>
@@ -492,7 +492,7 @@
   <div class="modal-overlay" id="editModal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>✏️ Edit Merchant Account</h3>
+        <h3>Edit Merchant Account</h3>
         <button class="btn-close-modal" onclick="closeEditModal()">✕</button>
       </div>
       <form onsubmit="handleEditClient(event)">
@@ -505,8 +505,8 @@
 
           <!-- Business Category Selector -->
           <div class="input-group">
-            <label>🏢 Business Category / Industry Type</label>
-            <select id="edit_businessCategory" onchange="handleCategoryChange('edit')" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #38bdf8; font-weight: 700; padding: 10px; border-radius: 8px; font-size: 13px;">
+            <label>Business Category / Industry Type</label>
+            <select id="edit_businessCategory" onchange="handleCategoryChange('edit')">
               <option value="RESTAURANT_CAFE">🍽️ Restaurant / Cafe / Bakery / QSR</option>
               <option value="RETAIL_FASHION">🛍️ Retail / Clothing / Fashion & Footwear</option>
               <option value="SALON_SPA">💇 Salon / Spa / Beauty & Wellness</option>
@@ -519,12 +519,12 @@
 
           <!-- Custom Category Message Template Editor -->
           <div class="input-group">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <label>💬 WhatsApp Message Copy (Auto-Tailored to Category)</label>
-              <button type="button" class="chip-btn" onclick="resetCategoryTemplate('edit')">🔄 Reset to Category Default</button>
-            </div>
-            <textarea id="edit_customMessageTemplate" rows="4" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #f8fafc; font-family: inherit; font-size: 11px; padding: 8px; border-radius: 6px; resize: vertical; line-height: 1.4;"></textarea>
-            <span style="font-size: 10px; color: var(--text-sub);">Placeholders: <code>{{name}}</code>, <code>{{store_name}}</code>, <code>{{invoice_no}}</code>, <code>{{total_amount}}</code>, <code>{{review_link}}</code>, <code>{{ebill_url}}</code></span>
+            <label>
+              <span>WhatsApp Message Copy</span>
+              <button type="button" class="chip-btn" onclick="resetCategoryTemplate('edit')">🔄 Reset to Default</button>
+            </label>
+            <textarea id="edit_customMessageTemplate" rows="4"></textarea>
+            <span style="font-size: 11px; color: var(--text-sub);">Variables: <code>{{name}}</code>, <code>{{store_name}}</code>, <code>{{invoice_no}}</code>, <code>{{total_amount}}</code>, <code>{{review_link}}</code>, <code>{{ebill_url}}</code></span>
           </div>
 
           <div class="input-group">
@@ -537,7 +537,7 @@
           </div>
           <div class="input-group">
             <label>Account Status</label>
-            <select id="edit_status" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: white; padding: 8px; border-radius: 6px;">
+            <select id="edit_status">
               <option value="ACTIVE">ACTIVE</option>
               <option value="PAUSED">PAUSED</option>
               <option value="SUSPENDED">SUSPENDED</option>
@@ -547,8 +547,8 @@
           <!-- Dynamic Personalized Flyer Studio in Edit Modal -->
           <div class="flyer-studio-card">
             <div class="flyer-studio-header">
-              <h4>🎨 Dynamic Customer Name Flyer Studio</h4>
-              <label style="font-size: 11px; color: #38bdf8; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <h4>Dynamic Customer Name Flyer Studio</h4>
+              <label style="font-size: 11.5px; color: var(--apple-blue); display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="edit_flyerPersonalizeEnabled" checked onchange="updateEditFlyerStudioPreview()">
                 Personalize Name on Image
               </label>
@@ -556,8 +556,8 @@
 
             <div class="input-group">
               <label>Brand Flyer Image</label>
-              <input type="file" id="edit_flyerFile" accept="image/*" onchange="previewFlyerImage(this, 'edit_flyerCanvasImg', 'edit_flyerUrl', updateEditFlyerStudioPreview)" style="font-size: 11px; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
-              <input type="text" id="edit_flyerUrl" onchange="updateEditFlyerImgSrc(this.value)" placeholder="Image URL (e.g. /assets/default-review-flyer.jpg)" style="font-size: 11px; margin-top: 4px;">
+              <input type="file" id="edit_flyerFile" accept="image/*" onchange="previewFlyerImage(this, 'edit_flyerCanvasImg', 'edit_flyerUrl', updateEditFlyerStudioPreview)">
+              <input type="text" id="edit_flyerUrl" onchange="updateEditFlyerImgSrc(this.value)" placeholder="Image URL (e.g. /assets/default-review-flyer.jpg)" style="margin-top: 4px;">
             </div>
 
             <!-- Interactive Preview Canvas -->
@@ -569,7 +569,7 @@
             </div>
 
             <div class="input-group">
-              <label>Flyer Name Template (Use <code>{{name}}</code> or <code>{{first_name}}</code>)</label>
+              <label>Flyer Name Template</label>
               <input type="text" id="edit_flyerTemplate" value="Specially for {{name}}! ✨" oninput="updateEditFlyerStudioPreview()">
               <div class="template-chips" id="edit_templateChips">
                 <button type="button" class="chip-btn" onclick="setEditTemplate('Specially for {{name}}! ✨')">Specially for {{name}}! ✨</button>
@@ -579,12 +579,12 @@
 
             <div class="studio-controls-grid">
               <div class="studio-slider-group">
-                <label>Horizontal (X): <strong id="edit_lblPosX">50%</strong></label>
+                <label>Horizontal: <strong id="edit_lblPosX">50%</strong></label>
                 <input type="range" id="edit_flyerPosX" min="5" max="95" value="50" oninput="updateEditFlyerStudioPreview()">
               </div>
 
               <div class="studio-slider-group">
-                <label>Vertical (Y): <strong id="edit_lblPosY">18%</strong></label>
+                <label>Vertical: <strong id="edit_lblPosY">18%</strong></label>
                 <input type="range" id="edit_flyerPosY" min="5" max="95" value="18" oninput="updateEditFlyerStudioPreview()">
               </div>
 
@@ -595,15 +595,15 @@
 
               <div class="studio-slider-group">
                 <label>Text Color</label>
-                <input type="color" id="edit_flyerTextColor" value="#FFFFFF" oninput="updateEditFlyerStudioPreview()" style="height: 32px; padding: 2px; background: transparent; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;">
+                <input type="color" id="edit_flyerTextColor" value="#FFFFFF" oninput="updateEditFlyerStudioPreview()" style="height: 32px; padding: 2px; background: transparent; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; width: 100%;">
               </div>
             </div>
           </div>
 
-          <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin-top: 8px; background: rgba(56, 189, 248, 0.06); padding: 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);">
-            <input type="checkbox" id="edit_enableDigitalReceipts" style="width: 18px; height: 18px; cursor: pointer;">
-            <label for="edit_enableDigitalReceipts" style="margin-bottom: 0; cursor: pointer; color: #38bdf8; font-weight: 600; font-size: 12px;">
-              📄 Enable Digital PDF Invoicing & E-Bills on WhatsApp
+          <div class="input-group" style="display: flex; flex-direction: row; align-items: center; gap: 8px; margin-top: 4px; background: rgba(0, 113, 227, 0.05); padding: 10px 12px; border-radius: var(--radius-sm);">
+            <input type="checkbox" id="edit_enableDigitalReceipts" style="width: 16px; height: 16px; cursor: pointer;">
+            <label for="edit_enableDigitalReceipts" style="margin-bottom: 0; cursor: pointer; color: var(--apple-blue); font-weight: 600; font-size: 12.5px;">
+              Enable Digital Invoicing & E-Bills on WhatsApp
             </label>
           </div>
         </div>
