@@ -868,7 +868,7 @@ class ResilientStorage {
   }
 
   getTransactions(limit = 50, storeCode = null, todayOnly = false) {
-    let list = this.state.transactions || [];
+    let list = (this.state.transactions || []).filter(t => t.source !== 'AGENT_HEARTBEAT' && !(t.invoiceNo && t.invoiceNo.startsWith('HB-')));
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
