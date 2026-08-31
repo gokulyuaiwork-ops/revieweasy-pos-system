@@ -279,58 +279,60 @@ export class SupabaseSyncEngine {
     const isConnected = await this.checkConnectivity();
     if (!isConnected || !this.client) return;
 
-    const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-    try {
-      const { data: cloudBills, error } = await this.client
-        .from('bills')
-        .select('*')
-        .eq('store_code', code)
-        .order('created_at', { ascending: false });
+    const stores = storeCode ? [storeCode.toUpperCase()] : (storage.state.clientStores || [{ storeCode: 'STORE_DEMO_01' }]).map(s => s.storeCode.toUpperCase());
+    for (const code of stores) {
+      try {
+        const { data: cloudBills, error } = await this.client
+          .from('bills')
+          .select('*')
+          .eq('store_code', code)
+          .order('created_at', { ascending: false });
 
-      if (!error && cloudBills && cloudBills.length > 0) {
-        let newCount = 0;
-        for (const b of cloudBills) {
-          if (b.source === 'AGENT_HEARTBEAT' || (b.invoice_no && b.invoice_no.startsWith('HB-'))) continue;
-          
-          const billTime = b.local_created_at || b.created_at || new Date().toISOString();
-          let existing = storage.state.transactions.find(t => t.id === b.id || (t.invoiceNo === b.invoice_no && (t.storeCode || '').toUpperCase() === (b.store_code || '').toUpperCase()));
-          
-          if (!existing) {
-            storage.state.transactions.unshift({
-              id: b.id || getBillUuid(b.store_code, b.invoice_no),
-              storeCode: b.store_code,
-              invoiceNo: b.invoice_no,
-              customerName: b.customer_name || 'Valued Customer',
-              customerPhone: b.customer_phone || 'N/A',
-              formattedPhone: b.customer_phone ? (b.customer_phone.startsWith('+') ? b.customer_phone : `+91 ${b.customer_phone}`) : 'N/A',
-              totalAmount: (b.total_amount || 0).toFixed(2),
-              status: b.status || 'DELIVERED',
-              source: b.source || 'PRINT_SPOOLER',
-              rawText: b.raw_text || '',
-              timestamp: billTime,
-              synced: 1,
-              syncStatus: 'SYNCED_TO_SUPABASE'
-            });
-            newCount++;
-          } else {
-            existing.id = b.id;
-            if (existing.status !== b.status) existing.status = b.status;
-            if (b.total_amount) existing.totalAmount = (b.total_amount || 0).toFixed(2);
-            if (b.customer_phone) existing.customerPhone = b.customer_phone;
-            if (b.customer_name) existing.customerName = b.customer_name;
+        if (!error && cloudBills && cloudBills.length > 0) {
+          let newCount = 0;
+          for (const b of cloudBills) {
+            if (b.source === 'AGENT_HEARTBEAT' || (b.invoice_no && b.invoice_no.startsWith('HB-'))) continue;
+            
+            const billTime = b.local_created_at || b.created_at || new Date().toISOString();
+            let existing = storage.state.transactions.find(t => t.id === b.id);
+            
+            if (!existing) {
+              storage.state.transactions.push({
+                id: b.id || getBillUuid(b.store_code, b.invoice_no),
+                storeCode: b.store_code,
+                invoiceNo: b.invoice_no,
+                customerName: b.customer_name || 'Valued Customer',
+                customerPhone: b.customer_phone || 'N/A',
+                formattedPhone: b.customer_phone ? (b.customer_phone.startsWith('+') ? b.customer_phone : `+91 ${b.customer_phone}`) : 'N/A',
+                totalAmount: (b.total_amount || 0).toFixed(2),
+                status: b.status || 'DELIVERED',
+                source: b.source || 'PRINT_SPOOLER',
+                rawText: b.raw_text || '',
+                timestamp: billTime,
+                synced: 1,
+                syncStatus: 'SYNCED_TO_SUPABASE'
+              });
+              newCount++;
+            } else {
+              if (existing.status !== b.status) existing.status = b.status;
+              if (b.total_amount) existing.totalAmount = (b.total_amount || 0).toFixed(2);
+              if (b.customer_phone) existing.customerPhone = b.customer_phone;
+              if (b.customer_name) existing.customerName = b.customer_name;
+              if (b.local_created_at || b.created_at) existing.timestamp = b.local_created_at || b.created_at;
+            }
+          }
+          if (newCount > 0) {
+            // Sort by timestamp descending
+            storage.state.transactions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            storage.save();
+            console.log(`[Supabase Sync] 📥 Pulled ${newCount} cloud bills into local database for ${code}! Total: ${storage.state.transactions.length}`);
+            this.broadcast('TRANSACTION_UPDATED', {});
+            this.broadcast('METRICS_UPDATED', storage.getMetrics());
           }
         }
-        if (newCount > 0) {
-          // Sort by timestamp descending
-          storage.state.transactions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-          storage.save();
-          console.log(`[Supabase Sync] 📥 Pulled ${newCount} cloud bills into local database! Total: ${storage.state.transactions.length}`);
-          this.broadcast('TRANSACTION_UPDATED', {});
-          this.broadcast('METRICS_UPDATED', storage.getMetrics());
-        }
+      } catch (e) {
+        console.warn(`[Supabase Sync] Pull error note for ${code}:`, e.message);
       }
-    } catch (e) {
-      console.warn('[Supabase Sync] Pull error note:', e.message);
     }
   }
 
@@ -382,62 +384,64 @@ export class SupabaseSyncEngine {
     const isConnected = await this.checkConnectivity();
     if (!isConnected || !this.client) return;
 
-    try {
-      const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-      const { data, error } = await this.client
-        .from('review_dispatches')
-        .select('*')
-        .eq('store_code', code)
-        .in('dispatch_status', ['PRIVATE_FEEDBACK', 'GOOGLE_REDIRECT'])
-        .order('created_at', { ascending: false });
+    const stores = storeCode ? [storeCode.toUpperCase()] : (storage.state.clientStores || [{ storeCode: 'STORE_DEMO_01' }]).map(s => s.storeCode.toUpperCase());
+    for (const code of stores) {
+      try {
+        const { data, error } = await this.client
+          .from('review_dispatches')
+          .select('*')
+          .eq('store_code', code)
+          .in('dispatch_status', ['PRIVATE_FEEDBACK', 'GOOGLE_REDIRECT'])
+          .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        let newCount = 0;
-        for (const r of data) {
-          const isPositive = (Number(r.rating_given) >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
-          const action = isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK';
+        if (!error && data && data.length > 0) {
+          let newCount = 0;
+          for (const r of data) {
+            const isPositive = (Number(r.rating_given) >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
+            const action = isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK';
 
-          const exists = storage.state.privateFeedback.some(f => f.id === r.id || (f.customerPhone === r.customer_phone && Math.abs(new Date(f.timestamp).getTime() - new Date(r.created_at).getTime()) < 5000));
-          if (!exists) {
-            let category = isPositive ? 'Satisfied Customer' : 'General Grievance';
-            let comment = r.message_text || '';
-            if (comment.includes(' - ') && comment.includes(': ')) {
-              const parts = comment.split(' - ');
-              if (parts.length > 1) {
-                const subParts = parts[1].split(': ');
-                category = subParts[0] || category;
-                comment = subParts.slice(1).join(': ') || comment;
+            let existing = storage.state.privateFeedback.find(f => f.id === r.id);
+            if (!existing) {
+              let category = isPositive ? 'Satisfied Customer' : 'General Grievance';
+              let comment = r.message_text || '';
+              if (comment.includes(' - ') && comment.includes(': ')) {
+                const parts = comment.split(' - ');
+                if (parts.length > 1) {
+                  const subParts = parts[1].split(': ');
+                  category = subParts[0] || category;
+                  comment = subParts.slice(1).join(': ') || comment;
+                }
               }
-            }
 
-            storage.state.privateFeedback.unshift({
-              id: r.id || `FB_${Date.now()}_${Math.floor(Math.random()*1000)}`,
-              billId: r.bill_id || null,
-              storeCode: r.store_code,
-              invoiceNo: 'INV-4920',
-              customerName: r.customer_name || 'Customer',
-              customerPhone: r.customer_phone || '9876543210',
-              rating: r.rating_given || (isPositive ? 5 : 2),
-              action: action,
-              category: category,
-              comment: comment,
-              requestCallback: !isPositive,
-              status: 'OPEN',
-              timestamp: r.created_at || new Date().toISOString()
-            });
-            newCount++;
+              storage.state.privateFeedback.push({
+                id: r.id || `FB_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+                billId: r.bill_id || null,
+                storeCode: r.store_code,
+                invoiceNo: 'INV-4920',
+                customerName: r.customer_name || 'Customer',
+                customerPhone: r.customer_phone || '9876543210',
+                rating: r.rating_given || (isPositive ? 5 : 2),
+                action: action,
+                category: category,
+                comment: comment,
+                requestCallback: !isPositive,
+                status: 'OPEN',
+                timestamp: r.created_at || new Date().toISOString()
+              });
+              newCount++;
+            }
+          }
+          if (newCount > 0) {
+            storage.state.privateFeedback.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            storage.save();
+            console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s)/complaint(s) from cloud for ${code}! Total: ${storage.state.privateFeedback.length}`);
+            this.broadcast('FEEDBACK_RECEIVED', {});
+            this.broadcast('METRICS_UPDATED', storage.getMetrics());
           }
         }
-        if (newCount > 0) {
-          storage.state.privateFeedback.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-          storage.save();
-          console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s)/complaint(s) from cloud into local store! Total: ${storage.state.privateFeedback.length}`);
-          this.broadcast('FEEDBACK_RECEIVED', {});
-          this.broadcast('METRICS_UPDATED', storage.getMetrics());
-        }
+      } catch (e) {
+        console.warn(`[Supabase Sync] Feedback pull note for ${code}:`, e.message);
       }
-    } catch (e) {
-      console.warn('[Supabase Sync] Feedback pull note:', e.message);
     }
   }
 
