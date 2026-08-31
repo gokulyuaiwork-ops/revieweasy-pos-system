@@ -72,7 +72,8 @@ async function getStoreBills(storeCode) {
         .from('bills')
         .select('*')
         .eq('store_code', code)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('invoice_no', { ascending: false });
 
       if (!error && data && data.length > 0) {
         bills = data.map(b => ({
@@ -276,10 +277,17 @@ app.get('/api/state', async (req, res) => {
     const validBills = (rawBills || []).filter(b => b.source !== 'AGENT_HEARTBEAT' && !(b.invoiceNo && b.invoiceNo.startsWith('HB-')));
     const startOfTodayUtc = getStartOfTodayIst();
 
-    const displayBills = validBills.filter(b => {
-      const bTime = new Date(b.timestamp || b.created_at || 0).getTime();
-      return bTime >= startOfTodayUtc;
-    });
+    const displayBills = validBills
+      .filter(b => {
+        const bTime = new Date(b.timestamp || b.created_at || 0).getTime();
+        return bTime >= startOfTodayUtc;
+      })
+      .sort((a, b) => {
+        const timeA = new Date(a.timestamp || a.created_at || 0).getTime();
+        const timeB = new Date(b.timestamp || b.created_at || 0).getTime();
+        if (timeB !== timeA) return timeB - timeA;
+        return String(b.invoiceNo || '').localeCompare(String(a.invoiceNo || ''));
+      });
 
     let cloudDispatches = [];
     if (supabaseSync && supabaseSync.client) {

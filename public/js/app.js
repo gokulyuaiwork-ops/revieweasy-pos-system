@@ -465,13 +465,20 @@ function renderTransactions(txList) {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-  // STRICT FILTER: Show only today's intercepted receipts
-  const filteredList = txList.filter(tx => {
-    const isStore = (tx.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode;
-    if (!isStore) return false;
-    const txTime = new Date(tx.timestamp || tx.created_at || 0).getTime();
-    return txTime >= startOfToday;
-  });
+  // STRICT FILTER: Show only today's intercepted receipts with deterministic tie-breaking
+  const filteredList = txList
+    .filter(tx => {
+      const isStore = (tx.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode;
+      if (!isStore) return false;
+      const txTime = new Date(tx.timestamp || tx.created_at || 0).getTime();
+      return txTime >= startOfToday;
+    })
+    .sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.created_at || 0).getTime();
+      const timeB = new Date(b.timestamp || b.created_at || 0).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return String(b.invoiceNo || '').localeCompare(String(a.invoiceNo || ''));
+    });
 
   const currentHash = filteredList.map(tx => `${tx.id || tx.invoiceNo}:${tx.status}:${tx.synced}:${tx.totalAmount}`).join('|');
   if (currentHash === lastRenderedTxsHash) {
@@ -992,19 +999,24 @@ function renderFeedbackTable(feedbacks) {
   // STRICT FILTER: Only display negative / 1-3 star deflected private complaints in the Review Shield
   const negativeList = (feedbacks || []).filter(fb => (parseInt(fb.rating, 10) <= 3) || fb.action === 'PRIVATE_FEEDBACK');
 
-  const currentHash = negativeList.map(fb => `${fb.id}:${fb.status}:${fb.rating}:${fb.comment || ''}`).join('|');
+  // Always ensure newest feedback is at the top with deterministic tie-breaker
+  const sortedFeedbacks = negativeList.slice().sort((a, b) => {
+    const timeA = new Date(a.timestamp || a.created_at || 0).getTime();
+    const timeB = new Date(b.timestamp || b.created_at || 0).getTime();
+    if (timeB !== timeA) return timeB - timeA;
+    return String(b.id || b.invoiceNo || '').localeCompare(String(a.id || a.invoiceNo || ''));
+  });
+
+  const currentHash = sortedFeedbacks.map(fb => `${fb.id}:${fb.status}:${fb.rating}:${fb.comment || ''}`).join('|');
   if (currentHash === lastRenderedFeedbackHash) {
     return; // No change in feedback complaints, skip DOM rewrite
   }
   lastRenderedFeedbackHash = currentHash;
 
-  if (negativeList.length === 0) {
+  if (sortedFeedbacks.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #0f172a; padding: 24px; font-weight: 600;">No private complaints or shielded feedback yet. 100% customer satisfaction! 🎉</td></tr>`;
     return;
   }
-
-  // Always ensure newest feedback is at the top (Strict Descending Order)
-  const sortedFeedbacks = negativeList.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   tbody.innerHTML = sortedFeedbacks.map(fb => {
     const timeStr = new Date(fb.timestamp).toLocaleTimeString();
