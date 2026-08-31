@@ -710,7 +710,26 @@ function renderSupabaseStatus(sbData) {
 
 function renderHealth(health) {
   if (!health) return;
-  document.getElementById('spoolerStatusText').innerText = health.spoolerStatus || 'Active';
+  const chip = document.getElementById('spoolerStatusChip');
+  const text = document.getElementById('spoolerStatusText');
+  const prefix = document.getElementById('spoolerPrefix');
+
+  if (health.printerName) {
+    const status = health.printerStatus || 'Healthy';
+    if (text) text.innerText = `${health.printerName} (${status})`;
+    if (prefix) prefix.innerText = 'Printer:';
+    if (chip) {
+      chip.title = `Connected Printer: ${health.printerName} | Status: ${status} | Port: ${health.printerPort || 'USB'}`;
+      if (status.toLowerCase().includes('offline') || status.toLowerCase().includes('stopped') || status.toLowerCase().includes('error')) {
+        chip.className = 'status-chip chip-amber';
+      } else {
+        chip.className = 'status-chip chip-green';
+      }
+    }
+  } else if (health.spoolerStatus) {
+    if (text) text.innerText = health.spoolerStatus;
+    if (chip) chip.className = 'status-chip chip-green';
+  }
 }
 
 

@@ -9,9 +9,22 @@ export class SystemResilienceEngine {
     this.timeOffsetMs = 0;
     this.lastSyncedAt = null;
     this.spoolerStatus = 'HEALTHY';
+    this.activePrinterName = 'POS-80 Thermal';
+    this.activePrinterStatus = 'Healthy';
+    this.activePrinterPort = 'USB001';
+    this.detectedPrinters = [];
     this.usbDevices = [
       { name: "POS-80 Thermal Printer", vid: "0483", pid: "5743", port: "USB001", status: "ONLINE" }
     ];
+
+    this.detectInstalledPrinters();
+    this.checkSpoolerHealth();
+
+    // Periodically re-check printer status every 30 seconds
+    setInterval(() => {
+      this.detectInstalledPrinters();
+      this.checkSpoolerHealth();
+    }, 30000);
   }
 
   /**
@@ -79,9 +92,37 @@ export class SystemResilienceEngine {
         }
       });
     } else {
-      this.spoolerStatus = 'HEALTHY (VIRTUAL_SPOOLER)';
+      this.spoolerStatus = 'HEALTHY';
     }
     return this.spoolerStatus;
+  }
+
+  /**
+   * Detect real connected/configured Windows printers
+   */
+  detectInstalledPrinters() {
+    if (process.platform === 'win32') {
+      exec('powershell -Command "Get-CimInstance Win32_Printer | Select-Object Name, Default, PortName, PrinterStatus, WorkOffline | ConvertTo-Json"', (err, stdout) => {
+        if (!err && stdout) {
+          try {
+            const parsed = JSON.parse(stdout);
+            const printers = Array.isArray(parsed) ? parsed : [parsed];
+            this.detectedPrinters = printers;
+
+            // Look for POS / Thermal / Receipt printer, or default printer
+            const posPrinter = printers.find(p => /pos|thermal|receipt|80|tm-|epson|tvs|citizen|star|bixolon|rpp|bill/i.test(p.Name));
+            const defaultPrinter = printers.find(p => p.Default === true);
+            const chosen = posPrinter || defaultPrinter || printers[0];
+
+            if (chosen) {
+              this.activePrinterName = chosen.Name;
+              this.activePrinterStatus = chosen.WorkOffline ? 'Offline' : 'Healthy';
+              this.activePrinterPort = chosen.PortName || 'USB001';
+            }
+          } catch (e) {}
+        }
+      });
+    }
   }
 
   /**
@@ -99,10 +140,16 @@ export class SystemResilienceEngine {
   }
 
   getHealthSummary() {
+    const config = storage.getConfig();
+    const printerName = config.printerName || this.activePrinterName || 'POS-80 Thermal';
+    const printerStatus = this.spoolerStatus === 'STOPPED' ? 'Stopped' : (this.activePrinterStatus || 'Healthy');
     return {
       clockOffsetMs: this.timeOffsetMs,
       lastSyncedAt: this.lastSyncedAt,
-      spoolerStatus: this.spoolerStatus,
+      spoolerStatus: `${printerName}: ${printerStatus}`,
+      printerName: printerName,
+      printerStatus: printerStatus,
+      printerPort: this.activePrinterPort || 'USB001',
       usbDevices: this.usbDevices,
       correctedTime: this.getCorrectedTimestamp().toISOString()
     };

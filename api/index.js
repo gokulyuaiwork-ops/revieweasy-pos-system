@@ -308,7 +308,12 @@ app.get('/api/state', async (req, res) => {
       analytics: cloudAnalytics,
       quota: storage.getTodayQuotaUsage(storeCode),
       transactions: displayBills.slice(0, 50),
-      health: { spoolerStatus: 'Cloud SaaS Mode' },
+      health: {
+        spoolerStatus: 'Cloud SaaS Mode',
+        printerName: (store && store.printerName) || 'POS Spooler',
+        printerStatus: 'Cloud Ready',
+        printerPort: 'Cloud Pipe'
+      },
       whatsapp: {
         status: whatsappStatus,
         phoneNumber: whatsappPhone,

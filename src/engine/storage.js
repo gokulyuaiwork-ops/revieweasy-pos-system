@@ -659,7 +659,11 @@ class ResilientStorage {
       return txCode === code;
     });
 
-    const storeFeedbacks = this.getFeedback(code);
+    // Filter feedbacks for this store (both positive reviews and private grievances)
+    const allStoreFeedbacks = (this.state.privateFeedback || []).filter(f => {
+      const fbCode = (f.storeCode || 'STORE_DEMO_01').toUpperCase();
+      return fbCode === code;
+    });
 
     const aggregate = (txList, minTimestamp = 0) => {
       let sentCount = 0;
@@ -669,11 +673,11 @@ class ResilientStorage {
       let dummyFiltered = 0;
 
       for (const t of txList) {
-        if (!['IGNORED_KOT', 'DUPLICATE_SUPPRESSED', 'ANONYMOUS_WALKIN'].includes(t.status)) {
+        if (!['IGNORED_KOT', 'DUPLICATE_SUPPRESSED', 'ANONYMOUS_WALKIN', 'DUMMY_PHONE_REJECTED', 'STORE_OWNER_FILTERED'].includes(t.status)) {
           totalBills++;
           totalSales += parseFloat(t.totalAmount) || 0;
         }
-        if (t.status === 'DELIVERED') {
+        if (t.status === 'DELIVERED' || t.status === 'WHATSAPP_SENT') {
           sentCount++;
         }
         if (t.status === 'IGNORED_KOT') {
@@ -685,9 +689,9 @@ class ResilientStorage {
       }
 
       // Filter feedbacks for this specific time window
-      const periodFeedbacks = storeFeedbacks.filter(f => new Date(f.timestamp).getTime() >= minTimestamp);
-      const positiveRedirects = periodFeedbacks.filter(f => f.action === 'GOOGLE_REDIRECT').length;
-      const shieldedGrievances = periodFeedbacks.filter(f => f.action === 'PRIVATE_FEEDBACK').length;
+      const periodFeedbacks = allStoreFeedbacks.filter(f => new Date(f.timestamp || f.created_at || 0).getTime() >= minTimestamp);
+      const positiveRedirects = periodFeedbacks.filter(f => f.action === 'GOOGLE_REDIRECT' || Number(f.rating) >= 4).length;
+      const shieldedGrievances = periodFeedbacks.filter(f => f.action === 'PRIVATE_FEEDBACK' || (f.rating && Number(f.rating) <= 3)).length;
 
       const reachRate = totalBills > 0 ? Math.round((sentCount / totalBills) * 100) : 0;
 
@@ -703,15 +707,15 @@ class ResilientStorage {
       };
     };
 
-    const todayTxs = storeTxs.filter(t => new Date(t.timestamp).getTime() >= startOfToday);
-    const weekTxs = storeTxs.filter(t => new Date(t.timestamp).getTime() >= sevenDaysAgo);
-    const monthTxs = storeTxs.filter(t => new Date(t.timestamp).getTime() >= thirtyDaysAgo);
+    const todayTxs = storeTxs.filter(t => new Date(t.timestamp || t.created_at || 0).getTime() >= startOfToday);
+    const weekTxs = storeTxs.filter(t => new Date(t.timestamp || t.created_at || 0).getTime() >= sevenDaysAgo);
+    const monthTxs = storeTxs.filter(t => new Date(t.timestamp || t.created_at || 0).getTime() >= thirtyDaysAgo);
 
-    const shieldedCount = storeFeedbacks.filter(f => f.action === 'PRIVATE_FEEDBACK').length;
-    const redirectedCount = storeFeedbacks.filter(f => f.action === 'GOOGLE_REDIRECT').length;
-    const totalRatingsCount = storeFeedbacks.length;
+    const shieldedCount = allStoreFeedbacks.filter(f => f.action === 'PRIVATE_FEEDBACK' || (f.rating && Number(f.rating) <= 3)).length;
+    const redirectedCount = allStoreFeedbacks.filter(f => f.action === 'GOOGLE_REDIRECT' || Number(f.rating) >= 4).length;
+    const totalRatingsCount = shieldedCount + redirectedCount;
     const avgRating = totalRatingsCount > 0 
-      ? (storeFeedbacks.reduce((acc, f) => acc + (Number(f.rating) || 0), 0) / totalRatingsCount).toFixed(1)
+      ? (allStoreFeedbacks.reduce((acc, f) => acc + (Number(f.rating) || 0), 0) / totalRatingsCount).toFixed(1)
       : '5.0';
 
     return {
@@ -725,7 +729,7 @@ class ResilientStorage {
         shieldedNegative: shieldedCount,
         redirectedPositive: redirectedCount,
         averageRating: Number(avgRating),
-        openComplaints: storeFeedbacks.filter(f => f.action === 'PRIVATE_FEEDBACK' && f.status === 'OPEN').length
+        openComplaints: allStoreFeedbacks.filter(f => (f.action === 'PRIVATE_FEEDBACK' || Number(f.rating) <= 3) && f.status === 'OPEN').length
       },
       recentTransactions: storeTxs.slice(0, 50)
     };

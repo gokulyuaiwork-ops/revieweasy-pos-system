@@ -268,14 +268,13 @@ export class SupabaseSyncEngine {
   }
 
   /**
-   * Bi-Directional: Pull bills from Supabase Cloud into local database
+   * Bi-Directional: Pull all bills from Supabase Cloud into local database
    */
   async pullCloudBills(storeCode = null) {
     const isConnected = await this.checkConnectivity();
     if (!isConnected || !this.client) return;
 
     const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-    const clearedAt = storage.state.clearedAt && storage.state.clearedAt[code] ? storage.state.clearedAt[code] : 0;
     try {
       const { data: cloudBills, error } = await this.client
         .from('bills')
@@ -287,12 +286,13 @@ export class SupabaseSyncEngine {
         let newCount = 0;
         for (const b of cloudBills) {
           if (b.source === 'AGENT_HEARTBEAT' || (b.invoice_no && b.invoice_no.startsWith('HB-'))) continue;
-          const billTime = new Date(b.created_at || b.local_created_at || 0).getTime();
-          if (billTime <= clearedAt) continue;
-          const exists = storage.state.transactions.find(t => t.invoiceNo === b.invoice_no);
+          
+          const billTime = b.local_created_at || b.created_at || new Date().toISOString();
+          const exists = storage.state.transactions.find(t => t.id === b.id || (t.invoiceNo === b.invoice_no && t.storeCode === b.store_code));
+          
           if (!exists) {
             storage.state.transactions.unshift({
-              id: b.id || `TX_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+              id: b.id || getBillUuid(b.store_code, b.invoice_no),
               storeCode: b.store_code,
               invoiceNo: b.invoice_no,
               customerName: b.customer_name || 'Valued Customer',
@@ -302,17 +302,25 @@ export class SupabaseSyncEngine {
               status: b.status || 'DELIVERED',
               source: b.source || 'PRINT_SPOOLER',
               rawText: b.raw_text || '',
-              timestamp: b.created_at || b.local_created_at || new Date().toISOString(),
+              timestamp: billTime,
               synced: 1,
               syncStatus: 'SYNCED_TO_SUPABASE'
             });
             newCount++;
+          } else {
+            // Update status if changed in cloud
+            if (exists.status !== b.status) {
+              exists.status = b.status;
+            }
           }
         }
         if (newCount > 0) {
+          // Sort by timestamp descending
+          storage.state.transactions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
           storage.save();
-          console.log(`[Supabase Sync] 📥 Pulled ${newCount} cloud bills into local database!`);
+          console.log(`[Supabase Sync] 📥 Pulled ${newCount} cloud bills into local database! Total: ${storage.state.transactions.length}`);
           this.broadcast('TRANSACTION_UPDATED', {});
+          this.broadcast('METRICS_UPDATED', storage.getMetrics());
         }
       }
     } catch (e) {
@@ -370,26 +378,22 @@ export class SupabaseSyncEngine {
 
     try {
       const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-      const clearedAt = storage.state.clearedAt && storage.state.clearedAt[code] ? storage.state.clearedAt[code] : 0;
       const { data, error } = await this.client
         .from('review_dispatches')
         .select('*')
         .eq('store_code', code)
-        .eq('dispatch_status', 'PRIVATE_FEEDBACK')
+        .in('dispatch_status', ['PRIVATE_FEEDBACK', 'GOOGLE_REDIRECT'])
         .order('created_at', { ascending: false });
 
       if (!error && data && data.length > 0) {
         let newCount = 0;
         for (const r of data) {
-          // STRICT GUARD: Skip outbound WhatsApp dispatches and positive Google reviews
-          if (r.rating_given && r.rating_given >= 4) continue;
-          if (r.dispatch_status !== 'PRIVATE_FEEDBACK') continue;
+          const isPositive = (Number(r.rating_given) >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
+          const action = isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK';
 
-          const fbTime = new Date(r.created_at || 0).getTime();
-          if (fbTime <= clearedAt) continue;
           const exists = storage.state.privateFeedback.some(f => f.id === r.id || (f.customerPhone === r.customer_phone && Math.abs(new Date(f.timestamp).getTime() - new Date(r.created_at).getTime()) < 5000));
           if (!exists) {
-            let category = 'General Grievance';
+            let category = isPositive ? 'Satisfied Customer' : 'General Grievance';
             let comment = r.message_text || '';
             if (comment.includes(' - ') && comment.includes(': ')) {
               const parts = comment.split(' - ');
@@ -408,7 +412,7 @@ export class SupabaseSyncEngine {
               customerName: r.customer_name || 'Customer',
               customerPhone: r.customer_phone || '9876543210',
               rating: r.rating_given || (isPositive ? 5 : 2),
-              action: isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK',
+              action: action,
               category: category,
               comment: comment,
               requestCallback: !isPositive,
@@ -421,7 +425,7 @@ export class SupabaseSyncEngine {
         if (newCount > 0) {
           storage.state.privateFeedback.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
           storage.save();
-          console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s)/complaint(s) from cloud into local store!`);
+          console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s)/complaint(s) from cloud into local store! Total: ${storage.state.privateFeedback.length}`);
           this.broadcast('FEEDBACK_RECEIVED', {});
           this.broadcast('METRICS_UPDATED', storage.getMetrics());
         }
