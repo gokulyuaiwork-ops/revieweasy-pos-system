@@ -153,7 +153,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.835Z"
+        "updatedAt": "2026-08-31T13:43:13.525Z"
       }
     },
     {
@@ -173,7 +173,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.836Z"
+        "updatedAt": "2026-08-31T13:43:13.526Z"
       }
     },
     {
@@ -193,67 +193,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.837Z"
-      }
-    },
-    {
-      "id": "9e45979f-34a5-4a05-85b8-2629b2a09aeb",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "TEST_DEL",
-      "customerName": "Walk-in Customer",
-      "customerPhone": "123",
-      "formattedPhone": "+91 123",
-      "totalAmount": "0.00",
-      "status": "DELIVERED",
-      "source": "RAW_TCP_9100",
-      "rawText": "",
-      "timestamp": "2026-08-31T09:14:21.838988+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.839Z"
-      }
-    },
-    {
-      "id": "5650e3f2-6914-4423-80e3-afc6f6ce6445",
-      "storeCode": "STORE_BLR_002",
-      "invoiceNo": "CFG-STORE_BLR_002",
-      "customerName": "Blue Tokai Coffee Roasters",
-      "customerPhone": "9812345678",
-      "formattedPhone": "+91 9812345678",
-      "totalAmount": "0.00",
-      "status": "ACTIVE",
-      "source": "STORE_CONFIG",
-      "rawText": "{\"id\":\"STORE_BLR_002\",\"storeCode\":\"STORE_BLR_002\",\"storeName\":\"Blue Tokai Coffee Roasters\",\"storePhone\":\"9812345678\",\"storeGstin\":\"29AABCB8819L1Z2\",\"googleReviewUrl\":\"https://g.page/r/bluetokai/review\",\"secretKey\":\"SEC_BLUETOKAI_8819\",\"status\":\"ACTIVE\",\"plan\":\"ENTERPRISE\",\"createdAt\":\"2026-08-15T04:15:05.598Z\",\"clientEmail\":\"client@bluetokai.com\",\"clientPassword\":\"client123\"}",
-      "timestamp": "2026-08-31T08:33:52.953+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.840Z"
-      }
-    },
-    {
-      "id": "b20c7891-81c1-4533-8fd3-06929b7c2782",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "CFG-STORE_DEMO_01",
-      "customerName": "Sunshine Cafe & Bistro",
-      "customerPhone": "9840012345",
-      "formattedPhone": "+91 9840012345",
-      "totalAmount": "0.00",
-      "status": "DELETED",
-      "source": "STORE_CONFIG",
-      "rawText": "{\"id\":\"STORE_DEMO_01\",\"storeCode\":\"STORE_DEMO_01\",\"storeName\":\"Sunshine Cafe & Bistro\",\"storePhone\":\"9840012345\",\"storeGstin\":\"33AABCS1429B1ZB\",\"googleReviewUrl\":\"https://g.page/r/sunshine-cafe/review\",\"secretKey\":\"SEC_SUNSHINE_4920\",\"status\":\"ACTIVE\",\"plan\":\"PRO_UNLIMITED\",\"enableDigitalReceipts\":true,\"enableImageMessage\":true,\"flyerImageUrl\":\"/assets/default-review-flyer.jpg\",\"createdAt\":\"2026-08-15T04:15:05.597Z\",\"clientEmail\":\"client@sunshine.com\",\"clientPassword\":\"client123\"}",
-      "timestamp": "2026-08-31T08:33:52.674+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.841Z"
+        "updatedAt": "2026-08-31T13:43:13.527Z"
       }
     },
     {
@@ -273,27 +213,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.843Z"
-      }
-    },
-    {
-      "id": "f1e4d193-3f49-40b9-8afe-79c3bb45da73",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "CFG-STORE_DEMO_01",
-      "customerName": "Sunshine Cafe & Bistro",
-      "customerPhone": "9840012345",
-      "formattedPhone": "+91 9840012345",
-      "totalAmount": "0.00",
-      "status": "STORE_PROFILE",
-      "source": "STORE_CONFIG",
-      "rawText": "{\"storeCode\":\"STORE_DEMO_01\",\"storeName\":\"Sunshine Cafe & Bistro\",\"email\":\"client@sunshine.com\",\"password\":\"client123\"}",
-      "timestamp": "2026-08-31T08:31:13.25873+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.844Z"
+        "updatedAt": "2026-08-31T13:43:13.528Z"
       }
     },
     {
@@ -313,67 +233,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.845Z"
-      }
-    },
-    {
-      "id": "f1fd1119-a64c-476d-8469-a435cb3befee",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-9917",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "QUEUED_QUIET_HOURS",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:31:04\nBill #: INV-9917\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.846Z"
-      }
-    },
-    {
-      "id": "982de9b4-6642-4bae-8838-4eb034eef46f",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-WINBACK-RECOVERE",
-      "customerName": "Arjun Kapoor",
-      "customerPhone": "9840119732",
-      "formattedPhone": "+91 9840119732",
-      "totalAmount": "950.00",
-      "status": "PENDING_WHATSAPP_LINK",
-      "source": "VIRTUAL_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 17/8/2026      Bill #: INV-WINBACK-RECOVERED\nCustomer: Arjun Kapoor\nMobile: 9840119732\n----------------------------------------\n2x Signature Hazelnut Cold Brew       ₹380.00\n1x Avocado Sourdough Toast            ₹320.00\n1x Blueberry Cheesecake               ₹250.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹950.00\n========================================\n    TAX INVOICE - RECOVERED WIN-BACK    \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.847Z"
-      }
-    },
-    {
-      "id": "b5f157b6-8fcb-4a8d-8e80-3dca5a1f9015",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-HIST-490",
-      "customerName": "Arjun Kapoor",
-      "customerPhone": "9840119732",
-      "formattedPhone": "+91 9840119732",
-      "totalAmount": "400.00",
-      "status": "PENDING_WHATSAPP_LINK",
-      "source": "VIRTUAL_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/07/2026      Bill #: INV-HIST-490\nCustomer: Arjun Kapoor\nMobile: 9840119732\n----------------------------------------\n1x Cold Brew Coffee                   ₹220.00\n1x Blueberry Muffin                   ₹180.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹400.00\n========================================\n              TAX INVOICE               \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.849Z"
+        "updatedAt": "2026-08-31T13:43:13.529Z"
       }
     },
     {
@@ -393,287 +253,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.850Z"
-      }
-    },
-    {
-      "id": "498d8046-9911-4215-8a6b-6987b402ed3e",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8300",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:34:32\nBill #: INV-8300\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.851Z"
-      }
-    },
-    {
-      "id": "e0aa1982-11fd-4446-815b-b77e400ea923",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-TEST-FLYER",
-      "customerName": "Test Customer",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "0.00",
-      "status": "DELIVERED",
-      "source": "VIRTUAL_POS_LAB",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n========================================\nDate: 19/08/2026 21:44:30\nBill #: INV-TEST-FLYER\nCustomer: Test Customer\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza               ?350.00\n1x Cold Brew Coffee               ?180.00\n----------------------------------------\nTOTAL AMOUNT:                     ?530.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.852Z"
-      }
-    },
-    {
-      "id": "ae52e2f4-c42a-44df-8e3f-721a071c5402",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8390",
-      "customerName": "Gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "346.50",
-      "status": "QUEUED_QUIET_HOURS",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 26/08/2026 22:33:02\nBill #: INV-8390\nCustomer: Gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.854Z"
-      }
-    },
-    {
-      "id": "cc312b1d-185d-4619-88be-dc70f0f918b2",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-2296",
-      "customerName": "Gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "346.50",
-      "status": "QUEUED_QUIET_HOURS",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 26/08/2026 22:29:08\nBill #: INV-2296\nCustomer: Gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.856Z"
-      }
-    },
-    {
-      "id": "d742fe85-e557-484f-8b60-9041d99057d0",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-9610",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:47:25\nBill #: INV-9610\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.857Z"
-      }
-    },
-    {
-      "id": "ed034a78-e06b-4ca4-8ea3-24dfcc894ae1",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-TEST-01",
-      "customerName": "Walk-in Customer",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "100.00",
-      "status": "DELIVERED",
-      "source": "RAW_TCP_9100",
-      "rawText": "",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.858Z"
-      }
-    },
-    {
-      "id": "054031dc-ae8b-4688-813f-ab11864a6c15",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-CLOUD-SYNC-9138",
-      "customerName": "Aarav Patel",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "1250.00",
-      "status": "DELIVERED",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.860Z"
-      }
-    },
-    {
-      "id": "55edd37c-de87-4bea-8fe6-f2f924625ec7",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-PACE-2-1787771541231",
-      "customerName": "Valued Customer",
-      "customerPhone": "9840223344",
-      "formattedPhone": "+91 9840223344",
-      "totalAmount": "650.00",
-      "status": "PENDING_WHATSAPP_LINK",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.861Z"
-      }
-    },
-    {
-      "id": "6572f520-702f-4b3b-8d20-a862aad44354",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-PACE-1-1787771541226",
-      "customerName": "Valued Customer",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "450.00",
-      "status": "PENDING_WHATSAPP_LINK",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.862Z"
-      }
-    },
-    {
-      "id": "8b9ad783-7571-4dd8-82bd-9d499b601365",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-3225",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "QUEUED_QUIET_HOURS",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 08:16:55\nBill #: INV-3225\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.864Z"
-      }
-    },
-    {
-      "id": "94fdb151-a2be-4f76-837c-6db72a1f91ed",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-9154",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 11:32:13\nBill #: INV-9154\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.865Z"
-      }
-    },
-    {
-      "id": "e1c6731e-a5a6-4cb5-8bb5-a5a0e35b9460",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8172",
-      "customerName": "Rahul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "346.50",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 12:25:47\nBill #: INV-8172\nCustomer: Rahul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.866Z"
-      }
-    },
-    {
-      "id": "e723edbd-047a-4ac9-825b-9127a1508868",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8128",
-      "customerName": "gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "504.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 13:00:08\nBill #: INV-8128\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹480.00\nCGST (2.5%):                       ₹12.00\nSGST (2.5%):                       ₹12.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹504.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.867Z"
-      }
-    },
-    {
-      "id": "7c08ec4c-0724-408a-8fbf-6f7170bc4dfa",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4693",
-      "customerName": "gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "882.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 13:10:42\nBill #: INV-4693\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n3x Cold Brew Coffee     ₹  540.00\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹840.00\nCGST (2.5%):                       ₹21.00\nSGST (2.5%):                       ₹21.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹882.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-31T02:33:02.416133+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.868Z"
+        "updatedAt": "2026-08-31T13:43:13.529Z"
       }
     },
     {
@@ -693,7 +273,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.870Z"
+        "updatedAt": "2026-08-31T13:43:13.530Z"
       }
     },
     {
@@ -713,7 +293,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.871Z"
+        "updatedAt": "2026-08-31T13:43:13.531Z"
       }
     },
     {
@@ -733,7 +313,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.872Z"
+        "updatedAt": "2026-08-31T13:43:13.531Z"
       }
     },
     {
@@ -753,7 +333,347 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.874Z"
+        "updatedAt": "2026-08-31T13:43:13.532Z"
+      }
+    },
+    {
+      "id": "ae52e2f4-c42a-44df-8e3f-721a071c5402",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-8390",
+      "customerName": "Gokul",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "346.50",
+      "status": "QUEUED_QUIET_HOURS",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 26/08/2026 22:33:02\nBill #: INV-8390\nCustomer: Gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.532Z"
+      }
+    },
+    {
+      "id": "cc312b1d-185d-4619-88be-dc70f0f918b2",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-2296",
+      "customerName": "Gokul",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "346.50",
+      "status": "QUEUED_QUIET_HOURS",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 26/08/2026 22:29:08\nBill #: INV-2296\nCustomer: Gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.533Z"
+      }
+    },
+    {
+      "id": "d742fe85-e557-484f-8b60-9041d99057d0",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-9610",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "714.00",
+      "status": "DELIVERED",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:47:25\nBill #: INV-9610\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.533Z"
+      }
+    },
+    {
+      "id": "8b9ad783-7571-4dd8-82bd-9d499b601365",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-3225",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "714.00",
+      "status": "QUEUED_QUIET_HOURS",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 08:16:55\nBill #: INV-3225\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.534Z"
+      }
+    },
+    {
+      "id": "94fdb151-a2be-4f76-837c-6db72a1f91ed",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-9154",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "714.00",
+      "status": "DELIVERED",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 11:32:13\nBill #: INV-9154\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.534Z"
+      }
+    },
+    {
+      "id": "e1c6731e-a5a6-4cb5-8bb5-a5a0e35b9460",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-8172",
+      "customerName": "Rahul",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "346.50",
+      "status": "DELIVERED",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 12:25:47\nBill #: INV-8172\nCustomer: Rahul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.535Z"
+      }
+    },
+    {
+      "id": "e723edbd-047a-4ac9-825b-9127a1508868",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-8128",
+      "customerName": "gokul",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "504.00",
+      "status": "DELIVERED",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 13:00:08\nBill #: INV-8128\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹480.00\nCGST (2.5%):                       ₹12.00\nSGST (2.5%):                       ₹12.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹504.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.536Z"
+      }
+    },
+    {
+      "id": "7c08ec4c-0724-408a-8fbf-6f7170bc4dfa",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-4693",
+      "customerName": "gokul",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "882.00",
+      "status": "DELIVERED",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 13:10:42\nBill #: INV-4693\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n3x Cold Brew Coffee     ₹  540.00\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹840.00\nCGST (2.5%):                       ₹21.00\nSGST (2.5%):                       ₹21.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹882.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.536Z"
+      }
+    },
+    {
+      "id": "f1fd1119-a64c-476d-8469-a435cb3befee",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-9917",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "714.00",
+      "status": "QUEUED_QUIET_HOURS",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:31:04\nBill #: INV-9917\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.537Z"
+      }
+    },
+    {
+      "id": "982de9b4-6642-4bae-8838-4eb034eef46f",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-WINBACK-RECOVERE",
+      "customerName": "Arjun Kapoor",
+      "customerPhone": "9840119732",
+      "formattedPhone": "+91 9840119732",
+      "totalAmount": "950.00",
+      "status": "PENDING_WHATSAPP_LINK",
+      "source": "VIRTUAL_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 17/8/2026      Bill #: INV-WINBACK-RECOVERED\nCustomer: Arjun Kapoor\nMobile: 9840119732\n----------------------------------------\n2x Signature Hazelnut Cold Brew       ₹380.00\n1x Avocado Sourdough Toast            ₹320.00\n1x Blueberry Cheesecake               ₹250.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹950.00\n========================================\n    TAX INVOICE - RECOVERED WIN-BACK    \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.538Z"
+      }
+    },
+    {
+      "id": "b5f157b6-8fcb-4a8d-8e80-3dca5a1f9015",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-HIST-490",
+      "customerName": "Arjun Kapoor",
+      "customerPhone": "9840119732",
+      "formattedPhone": "+91 9840119732",
+      "totalAmount": "400.00",
+      "status": "PENDING_WHATSAPP_LINK",
+      "source": "VIRTUAL_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/07/2026      Bill #: INV-HIST-490\nCustomer: Arjun Kapoor\nMobile: 9840119732\n----------------------------------------\n1x Cold Brew Coffee                   ₹220.00\n1x Blueberry Muffin                   ₹180.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹400.00\n========================================\n              TAX INVOICE               \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.538Z"
+      }
+    },
+    {
+      "id": "498d8046-9911-4215-8a6b-6987b402ed3e",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-8300",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "714.00",
+      "status": "DELIVERED",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:34:32\nBill #: INV-8300\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.539Z"
+      }
+    },
+    {
+      "id": "e0aa1982-11fd-4446-815b-b77e400ea923",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-TEST-FLYER",
+      "customerName": "Test Customer",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "0.00",
+      "status": "DELIVERED",
+      "source": "VIRTUAL_POS_LAB",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n========================================\nDate: 19/08/2026 21:44:30\nBill #: INV-TEST-FLYER\nCustomer: Test Customer\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza               ?350.00\n1x Cold Brew Coffee               ?180.00\n----------------------------------------\nTOTAL AMOUNT:                     ?530.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n========================================",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.539Z"
+      }
+    },
+    {
+      "id": "ed034a78-e06b-4ca4-8ea3-24dfcc894ae1",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-TEST-01",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "9840112233",
+      "formattedPhone": "+91 9840112233",
+      "totalAmount": "100.00",
+      "status": "DELIVERED",
+      "source": "RAW_TCP_9100",
+      "rawText": "",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.540Z"
+      }
+    },
+    {
+      "id": "054031dc-ae8b-4688-813f-ab11864a6c15",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-CLOUD-SYNC-9138",
+      "customerName": "Aarav Patel",
+      "customerPhone": "9840112233",
+      "formattedPhone": "+91 9840112233",
+      "totalAmount": "1250.00",
+      "status": "DELIVERED",
+      "source": "PRINT_SPOOLER",
+      "rawText": "",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.540Z"
+      }
+    },
+    {
+      "id": "55edd37c-de87-4bea-8fe6-f2f924625ec7",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-PACE-2-1787771541231",
+      "customerName": "Valued Customer",
+      "customerPhone": "9840223344",
+      "formattedPhone": "+91 9840223344",
+      "totalAmount": "650.00",
+      "status": "PENDING_WHATSAPP_LINK",
+      "source": "PRINT_SPOOLER",
+      "rawText": "",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.541Z"
+      }
+    },
+    {
+      "id": "6572f520-702f-4b3b-8d20-a862aad44354",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "INV-PACE-1-1787771541226",
+      "customerName": "Valued Customer",
+      "customerPhone": "9840112233",
+      "formattedPhone": "+91 9840112233",
+      "totalAmount": "450.00",
+      "status": "PENDING_WHATSAPP_LINK",
+      "source": "PRINT_SPOOLER",
+      "rawText": "",
+      "timestamp": "2026-08-31T02:33:02.416133+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-08-31T13:43:13.541Z"
       }
     },
     {
@@ -773,7 +693,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.875Z"
+        "updatedAt": "2026-08-31T13:43:13.542Z"
       }
     },
     {
@@ -793,7 +713,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.876Z"
+        "updatedAt": "2026-08-31T13:43:13.542Z"
       }
     },
     {
@@ -813,7 +733,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.877Z"
+        "updatedAt": "2026-08-31T13:43:13.543Z"
       }
     },
     {
@@ -833,7 +753,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.878Z"
+        "updatedAt": "2026-08-31T13:43:13.543Z"
       }
     },
     {
@@ -850,26 +770,6 @@
       "timestamp": "2026-08-31T01:43:53.831706+00:00",
       "synced": 1,
       "syncStatus": "SYNCED_TO_SUPABASE"
-    },
-    {
-      "id": "a1e68735-8fde-40c8-98cd-f60f25ada1bb",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-2388",
-      "customerName": "gomrul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "472.50",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 30/08/2026 20:01:13\nBill #: INV-2388\nCustomer: gomrul\nMobile: 9342350747\n----------------------------------------\n3x Chocolate Brownie    ₹  450.00\n----------------------------------------\nSubtotal:                         ₹450.00\nCGST (2.5%):                       ₹11.25\nSGST (2.5%):                       ₹11.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹472.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-30T14:31:13.471006+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.880Z"
-      }
     },
     {
       "id": "TX_1788100273107_53",
@@ -891,7 +791,7 @@
         "queuePosition": 1,
         "delaySeconds": 15,
         "scheduledTime": "2026-08-30T14:31:28.108Z",
-        "updatedAt": "2026-08-31T13:39:31.881Z",
+        "updatedAt": "2026-08-31T13:43:13.544Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T14:31:31.503Z",
@@ -899,46 +799,6 @@
         "messagePreview": "Hi gomrul! ✨ Thank you for dining with us at Sunshine Cafe & Bistro today.\n\n🧾 *Bill #INV-2388* | Total: ₹472.50\n🌐 View Digital E-Bill: https://pos.revieweasy.in/bill.html?id=TX_1788100273107_53&store=STORE_DEMO_01\n\nDid you enjoy your meal and service? We would love your feedback on Google:\n⭐⭐⭐⭐⭐\n👉 https://pos.revieweasy.in/review.html?id=TX_1788100273107_53&store=STORE_DEMO_01\n\n(Reply STOP to unsubscribe)",
         "hasImageAttachment": true,
         "transport": "LIVE_BAILEYS_SOCKET"
-      }
-    },
-    {
-      "id": "ed1e1ccb-4702-4064-8583-baffd66432c9",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-2388",
-      "customerName": "gomrul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "472.50",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 30/08/2026 20:01:13\nBill #: INV-2388\nCustomer: gomrul\nMobile: 9342350747\n----------------------------------------\n3x Chocolate Brownie    ₹  450.00\n----------------------------------------\nSubtotal:                         ₹450.00\nCGST (2.5%):                       ₹11.25\nSGST (2.5%):                       ₹11.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹472.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-30T14:31:13.106+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.882Z"
-      }
-    },
-    {
-      "id": "9bebd524-1b9a-49d2-9437-93d9f717af62",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-9972",
-      "customerName": "asd",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "840.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 30/08/2026 17:54:19\nBill #: INV-9972\nCustomer: asd1\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n3x Chocolate Brownie    ₹  450.00\n----------------------------------------\nSubtotal:                         ₹800.00\nCGST (2.5%):                       ₹20.00\nSGST (2.5%):                       ₹20.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹840.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-30T12:24:19.888219+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.883Z"
       }
     },
     {
@@ -961,7 +821,7 @@
         "queuePosition": 1,
         "delaySeconds": 14,
         "scheduledTime": "2026-08-30T12:24:33.575Z",
-        "updatedAt": "2026-08-31T13:39:31.885Z",
+        "updatedAt": "2026-08-31T13:43:13.545Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T12:24:35.529Z",
@@ -969,46 +829,6 @@
         "messagePreview": "Hi asd! ✨ Thank you for dining with us at Sunshine Cafe & Bistro today.\n\n🧾 *Bill #INV-9972* | Total: ₹840.00\n🌐 View Digital E-Bill: https://pos.revieweasy.in/bill.html?id=TX_1788092659574_531&store=STORE_DEMO_01\n\nDid you enjoy your meal and service? We would love your feedback on Google:\n⭐⭐⭐⭐⭐\n👉 https://pos.revieweasy.in/review.html?id=TX_1788092659574_531&store=STORE_DEMO_01\n\n(Reply STOP to unsubscribe)",
         "hasImageAttachment": true,
         "transport": "LIVE_BAILEYS_SOCKET"
-      }
-    },
-    {
-      "id": "24b54b0e-ae1a-410c-8fc9-e0e03ce36b14",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-9972",
-      "customerName": "asd",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "840.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 30/08/2026 17:54:19\nBill #: INV-9972\nCustomer: asd1\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n3x Chocolate Brownie    ₹  450.00\n----------------------------------------\nSubtotal:                         ₹800.00\nCGST (2.5%):                       ₹20.00\nSGST (2.5%):                       ₹20.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹840.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-30T12:24:19.574+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.886Z"
-      }
-    },
-    {
-      "id": "82980a80-3542-4614-bf63-4be4e98859e0",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-7541",
-      "customerName": "asd",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "525.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 30/08/2026 17:16:49\nBill #: INV-7541\nCustomer: asd1\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹500.00\nCGST (2.5%):                       ₹12.50\nSGST (2.5%):                       ₹12.50\n----------------------------------------\nTOTAL AMOUNT:                     ₹525.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-30T11:46:49.753055+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.887Z"
       }
     },
     {
@@ -1031,7 +851,7 @@
         "queuePosition": 1,
         "delaySeconds": 14,
         "scheduledTime": "2026-08-30T11:47:03.467Z",
-        "updatedAt": "2026-08-31T13:39:31.888Z",
+        "updatedAt": "2026-08-31T13:43:13.545Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T11:47:04.894Z",
@@ -1039,46 +859,6 @@
         "messagePreview": "Hi asd! ✨ Thank you for dining with us at Sunshine Cafe & Bistro today.\n\n🧾 *Bill #INV-7541* | Total: ₹525.00\n🌐 View Digital E-Bill: https://pos.revieweasy.in/bill.html?id=TX_1788090409466_891&store=STORE_DEMO_01\n\nDid you enjoy your meal and service? We would love your feedback on Google:\n⭐⭐⭐⭐⭐\n👉 https://pos.revieweasy.in/review.html?id=TX_1788090409466_891&store=STORE_DEMO_01\n\n(Reply STOP to unsubscribe)",
         "hasImageAttachment": true,
         "transport": "LIVE_BAILEYS_SOCKET"
-      }
-    },
-    {
-      "id": "cc6ea890-9e7e-43be-8920-f6475cdb66a7",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-7541",
-      "customerName": "asd",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "525.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 30/08/2026 17:16:49\nBill #: INV-7541\nCustomer: asd1\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹500.00\nCGST (2.5%):                       ₹12.50\nSGST (2.5%):                       ₹12.50\n----------------------------------------\nTOTAL AMOUNT:                     ₹525.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-30T11:46:49.466+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.889Z"
-      }
-    },
-    {
-      "id": "990f4cc4-7a58-4f4b-a775-2f09e0a6610e",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-6652",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 30/08/2026 17:15:16\nBill #: INV-6652\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-30T11:45:17.147174+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.890Z"
       }
     },
     {
@@ -1101,7 +881,7 @@
         "queuePosition": 1,
         "delaySeconds": 12,
         "scheduledTime": "2026-08-30T11:45:28.834Z",
-        "updatedAt": "2026-08-31T13:39:31.891Z",
+        "updatedAt": "2026-08-31T13:43:13.546Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T11:45:30.483Z",
@@ -1109,26 +889,6 @@
         "messagePreview": "Hi Rahul Sharma! ✨ Thank you for dining with us at Sunshine Cafe & Bistro today.\n\n🧾 *Bill #INV-6652* | Total: ₹714.00\n🌐 View Digital E-Bill: https://pos.revieweasy.in/bill.html?id=TX_1788090316833_115&store=STORE_DEMO_01\n\nDid you enjoy your meal and service? We would love your feedback on Google:\n⭐⭐⭐⭐⭐\n👉 https://pos.revieweasy.in/review.html?id=TX_1788090316833_115&store=STORE_DEMO_01\n\n(Reply STOP to unsubscribe)",
         "hasImageAttachment": true,
         "transport": "LIVE_BAILEYS_SOCKET"
-      }
-    },
-    {
-      "id": "96d44adc-edee-4e22-8dd3-07bddfe54c70",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-6652",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 30/08/2026 17:15:16\nBill #: INV-6652\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-30T11:45:16.833+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.893Z"
       }
     },
     {
@@ -1148,27 +908,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.894Z"
-      }
-    },
-    {
-      "id": "4805cc4d-8ee0-4319-89f0-b8630797f79c",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-LIVE-4262",
-      "customerName": "Rahul Merchant",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "640.00",
-      "status": "DELIVERED",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-29T14:35:23.777236+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.895Z"
+        "updatedAt": "2026-08-31T13:43:13.546Z"
       }
     },
     {
@@ -1188,27 +928,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.897Z"
-      }
-    },
-    {
-      "id": "7a5c2384-3c4a-4d83-87ba-46e5fab44209",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-TEST-SYNC-1090",
-      "customerName": "Gokul Test",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "520.00",
-      "status": "DELIVERED",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-29T14:33:50.830334+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.898Z"
+        "updatedAt": "2026-08-31T13:43:13.546Z"
       }
     },
     {
@@ -1231,7 +951,7 @@
         "queuePosition": 1,
         "delaySeconds": 22,
         "scheduledTime": "2026-08-29T14:27:34.210Z",
-        "updatedAt": "2026-08-31T13:39:31.899Z",
+        "updatedAt": "2026-08-31T13:43:13.547Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "reason": "WhatsApp phone not paired yet. Scan QR in dashboard to deliver real message.",
@@ -1258,27 +978,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.900Z"
-      }
-    },
-    {
-      "id": "040defb7-5884-48cf-8274-f576b9c5fca4",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "N/A",
-      "customerName": "Valued Customer",
-      "customerPhone": "N/A",
-      "formattedPhone": "+91 N/A",
-      "totalAmount": "0.00",
-      "status": "IGNORED_KOT",
-      "source": "PRINT_SPOOLER",
-      "rawText": "KITCHEN ORDER TICKET (KOT)\nTable: 4 | Server: Amit\n1x Woodfired Margherita Pizza\nDO NOT BILL - KITCHEN USE ONLY",
-      "timestamp": "2026-08-29T14:27:09.205+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.902Z"
+        "updatedAt": "2026-08-31T13:43:13.547Z"
       }
     },
     {
@@ -1301,7 +1001,7 @@
         "queuePosition": 1,
         "delaySeconds": 11,
         "scheduledTime": "2026-08-29T13:32:08.120Z",
-        "updatedAt": "2026-08-31T13:39:31.903Z",
+        "updatedAt": "2026-08-31T13:43:13.548Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-29T13:32:09.946Z",
@@ -1309,46 +1009,6 @@
         "messagePreview": "Hi Rahul Sharma! ✨ Thank you for dining with us at Sunshine Cafe & Bistro today.\n\n🧾 *Bill #INV-7633* | Total: ₹714.00\n🌐 View Digital E-Bill: https://pos.revieweasy.in/bill.html?id=TX_1788010317119_978&store=STORE_DEMO_01\n\nDid you enjoy your meal and service? We would love your feedback on Google:\n⭐⭐⭐⭐⭐\n👉 https://pos.revieweasy.in/review.html?id=TX_1788010317119_978&store=STORE_DEMO_01\n\n(Reply STOP to unsubscribe)",
         "hasImageAttachment": true,
         "transport": "LIVE_BAILEYS_SOCKET"
-      }
-    },
-    {
-      "id": "8a55d596-c15e-4b6e-8371-c9d3c8505f04",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-7633",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 29/08/2026 19:01:57\nBill #: INV-7633\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-29T13:31:57.119+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.905Z"
-      }
-    },
-    {
-      "id": "80c3a56e-927c-4387-863f-be8848aa0a74",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-7633",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 29/08/2026 19:01:57\nBill #: INV-7633\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-29T13:31:56.625248+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.906Z"
       }
     },
     {
@@ -1371,7 +1031,7 @@
         "queuePosition": 1,
         "delaySeconds": 12,
         "scheduledTime": "2026-08-30T02:00:09.836Z",
-        "updatedAt": "2026-08-31T13:39:31.907Z",
+        "updatedAt": "2026-08-31T13:43:13.548Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "reason": "WhatsApp phone not paired yet. Scan QR in dashboard to deliver real message.",
@@ -1380,526 +1040,6 @@
         "dispatchedAt": "2026-08-30T02:00:11.548Z",
         "hasImageAttachment": true,
         "transport": "LIVE_BAILEYS_SOCKET"
-      }
-    },
-    {
-      "id": "6f19d551-40cd-46dc-8d25-2bc5cf2ea2eb",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-5498",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 29/08/2026 18:47:08\nBill #: INV-5498\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-29T13:17:09.175+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.908Z"
-      }
-    },
-    {
-      "id": "d9eafdc8-ab19-464d-be97-81e8c0792c97",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-5498",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 29/08/2026 18:47:08\nBill #: INV-5498\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-29T13:17:08.659927+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.909Z"
-      }
-    },
-    {
-      "id": "8fccd80e-1aa8-4ec4-855e-6e99c2fe9e8b",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-5227",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 16:48:44\nBill #: INV-5227\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T11:18:44.240138+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.910Z"
-      }
-    },
-    {
-      "id": "57504894-9a50-4053-b7f7-884b340ed609",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4943",
-      "customerName": "gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "315.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 15:37:57\nBill #: INV-4943\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹300.00\nCGST (2.5%):                       ₹7.50\nSGST (2.5%):                       ₹7.50\n----------------------------------------\nTOTAL AMOUNT:                     ₹315.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T10:07:57.045728+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.911Z"
-      }
-    },
-    {
-      "id": "f2dfeb92-61ba-4031-b9eb-ef3be33216bb",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-5404",
-      "customerName": "gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "315.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 15:27:34\nBill #: INV-5404\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹300.00\nCGST (2.5%):                       ₹7.50\nSGST (2.5%):                       ₹7.50\n----------------------------------------\nTOTAL AMOUNT:                     ₹315.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T09:57:34.83892+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.912Z"
-      }
-    },
-    {
-      "id": "075c6e08-6849-42af-8728-b15114db8c33",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8723",
-      "customerName": "gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "693.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 13:43:52\nBill #: INV-8723\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n2x Cold Brew Coffee     ₹  360.00\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹660.00\nCGST (2.5%):                       ₹16.50\nSGST (2.5%):                       ₹16.50\n----------------------------------------\nTOTAL AMOUNT:                     ₹693.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T08:13:52.412775+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.913Z"
-      }
-    },
-    {
-      "id": "55d241a7-393d-4aef-aac7-5bbda3dbfa49",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4693",
-      "customerName": "gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "882.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 13:10:42\nBill #: INV-4693\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n3x Cold Brew Coffee     ₹  540.00\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹840.00\nCGST (2.5%):                       ₹21.00\nSGST (2.5%):                       ₹21.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹882.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T07:40:45.109943+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.913Z"
-      }
-    },
-    {
-      "id": "b89df39f-a33b-4e46-af92-895c6eaf838c",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8128",
-      "customerName": "gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "504.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 13:00:08\nBill #: INV-8128\nCustomer: gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n2x Chocolate Brownie    ₹  300.00\n----------------------------------------\nSubtotal:                         ₹480.00\nCGST (2.5%):                       ₹12.00\nSGST (2.5%):                       ₹12.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹504.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T07:30:08.513463+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.914Z"
-      }
-    },
-    {
-      "id": "1e629d64-d300-45a0-ab68-f5d539565dbe",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8172",
-      "customerName": "Rahul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "346.50",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 12:25:47\nBill #: INV-8172\nCustomer: Rahul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T06:55:47.988811+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.915Z"
-      }
-    },
-    {
-      "id": "2aef1d67-5965-4973-8ba0-9bac692fe2d1",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-9154",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 11:32:13\nBill #: INV-9154\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T06:02:13.18861+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.916Z"
-      }
-    },
-    {
-      "id": "f41e21ba-2983-4417-b957-bd663231da60",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-3225",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "QUEUED_QUIET_HOURS",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 27/08/2026 08:16:55\nBill #: INV-3225\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T02:46:55.495749+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.916Z"
-      }
-    },
-    {
-      "id": "2ea7e1dc-c203-4e0f-a254-200b7941240a",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-CLOUD-SYNC-1633",
-      "customerName": "Aarav Patel",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "1250.00",
-      "status": "DELIVERED",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-27T02:37:21.446995+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.917Z"
-      }
-    },
-    {
-      "id": "55761bfa-f332-492d-a052-8b2f497cb217",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-CLOUD-SYNC-7704",
-      "customerName": "Aarav Patel",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "1250.00",
-      "status": "DELIVERED",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-27T02:09:17.5316+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.918Z"
-      }
-    },
-    {
-      "id": "7128cdf1-bd45-4423-83ca-244544de459f",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-HIST-490",
-      "customerName": "Arjun Kapoor",
-      "customerPhone": "9840119732",
-      "formattedPhone": "+91 9840119732",
-      "totalAmount": "400.00",
-      "status": "PENDING_WHATSAPP_LINK",
-      "source": "VIRTUAL_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/07/2026      Bill #: INV-HIST-490\nCustomer: Arjun Kapoor\nMobile: 9840119732\n----------------------------------------\n1x Cold Brew Coffee                   ₹220.00\n1x Blueberry Muffin                   ₹180.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹400.00\n========================================\n              TAX INVOICE               \n========================================",
-      "timestamp": "2026-08-27T02:04:28.957372+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.918Z"
-      }
-    },
-    {
-      "id": "ed83c721-53f6-43e2-a9f0-8ea4aa491f93",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-WINBACK-RECOVERE",
-      "customerName": "Arjun Kapoor",
-      "customerPhone": "9840119732",
-      "formattedPhone": "+91 9840119732",
-      "totalAmount": "950.00",
-      "status": "PENDING_WHATSAPP_LINK",
-      "source": "VIRTUAL_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 17/8/2026      Bill #: INV-WINBACK-RECOVERED\nCustomer: Arjun Kapoor\nMobile: 9840119732\n----------------------------------------\n2x Signature Hazelnut Cold Brew       ₹380.00\n1x Avocado Sourdough Toast            ₹320.00\n1x Blueberry Cheesecake               ₹250.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹950.00\n========================================\n    TAX INVOICE - RECOVERED WIN-BACK    \n========================================",
-      "timestamp": "2026-08-27T02:04:28.83525+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.919Z"
-      }
-    },
-    {
-      "id": "35412c0b-9045-4f1f-b17b-61670c16f457",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-9917",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "QUEUED_QUIET_HOURS",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:31:04\nBill #: INV-9917\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T02:04:28.712752+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.920Z"
-      }
-    },
-    {
-      "id": "29f79491-c588-4768-8553-93b01e321f15",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8300",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:34:32\nBill #: INV-8300\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T02:04:28.58095+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.921Z"
-      }
-    },
-    {
-      "id": "a4fb9bfb-28ec-4853-833d-fa95a36eafa1",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-TEST-IMG",
-      "customerName": "Test Customer",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "0.00",
-      "status": "DELIVERED",
-      "source": "VIRTUAL_POS_LAB",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n========================================\nDate: 19/08/2026 21:44:00\nBill #: INV-TEST-IMG\nCustomer: Test Customer\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza               ?350.00\n1x Cold Brew Coffee               ?180.00\n----------------------------------------\nTOTAL AMOUNT:                     ?530.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n========================================",
-      "timestamp": "2026-08-27T02:04:28.48252+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.921Z"
-      }
-    },
-    {
-      "id": "f700ea30-195f-4f92-9f96-e0f88ed985ae",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-TEST-FLYER",
-      "customerName": "Test Customer",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "0.00",
-      "status": "DELIVERED",
-      "source": "VIRTUAL_POS_LAB",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n========================================\nDate: 19/08/2026 21:44:30\nBill #: INV-TEST-FLYER\nCustomer: Test Customer\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza               ?350.00\n1x Cold Brew Coffee               ?180.00\n----------------------------------------\nTOTAL AMOUNT:                     ?530.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n========================================",
-      "timestamp": "2026-08-27T02:04:28.350848+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.922Z"
-      }
-    },
-    {
-      "id": "2c0e64bf-8725-4612-9456-87275e2f0e19",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-9610",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "714.00",
-      "status": "DELIVERED",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 19/08/2026 21:47:25\nBill #: INV-9610\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T02:04:28.247965+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.923Z"
-      }
-    },
-    {
-      "id": "fe6c9d59-ed8e-452a-b903-7009455651d7",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-2296",
-      "customerName": "Gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "346.50",
-      "status": "QUEUED_QUIET_HOURS",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 26/08/2026 22:29:08\nBill #: INV-2296\nCustomer: Gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T02:04:28.133169+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.923Z"
-      }
-    },
-    {
-      "id": "31ccec3a-78a7-4372-b9dd-f5d2a7115958",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-8390",
-      "customerName": "Gokul",
-      "customerPhone": "9342350747",
-      "formattedPhone": "+91 9342350747",
-      "totalAmount": "346.50",
-      "status": "QUEUED_QUIET_HOURS",
-      "source": "WINDOWS_PRINT_SPOOLER",
-      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 26/08/2026 22:33:02\nBill #: INV-8390\nCustomer: Gokul\nMobile: 9342350747\n----------------------------------------\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹330.00\nCGST (2.5%):                       ₹8.25\nSGST (2.5%):                       ₹8.25\n----------------------------------------\nTOTAL AMOUNT:                     ₹346.50\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
-      "timestamp": "2026-08-27T02:04:28.033834+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.924Z"
-      }
-    },
-    {
-      "id": "3f2f2e7e-50b9-4b74-87cd-48f668d8a833",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-PACE-1-1787771541226",
-      "customerName": "Valued Customer",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "450.00",
-      "status": "PENDING_WHATSAPP_LINK",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-27T02:04:27.911241+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.925Z"
-      }
-    },
-    {
-      "id": "a029f69f-fed4-4336-bbf8-a79dd902ba7a",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-PACE-2-1787771541231",
-      "customerName": "Valued Customer",
-      "customerPhone": "9840223344",
-      "formattedPhone": "+91 9840223344",
-      "totalAmount": "650.00",
-      "status": "PENDING_WHATSAPP_LINK",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-27T02:04:27.436422+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.926Z"
-      }
-    },
-    {
-      "id": "aff218a5-8345-45e5-a4ed-72f39d09e55c",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-CLOUD-SYNC-9138",
-      "customerName": "Aarav Patel",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "1250.00",
-      "status": "DELIVERED",
-      "source": "PRINT_SPOOLER",
-      "rawText": "",
-      "timestamp": "2026-08-26T19:45:29.306048+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.927Z"
-      }
-    },
-    {
-      "id": "fd7b6480-afb8-4e8b-88e2-99e9fee7d3ff",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-TEST-01",
-      "customerName": "Walk-in Customer",
-      "customerPhone": "9840112233",
-      "formattedPhone": "+91 9840112233",
-      "totalAmount": "100.00",
-      "status": "DELIVERED",
-      "source": "RAW_TCP_9100",
-      "rawText": "",
-      "timestamp": "2026-08-26T18:38:25.559536+00:00",
-      "synced": 1,
-      "syncStatus": "SYNCED_TO_SUPABASE",
-      "statusDetails": {
-        "synced": 1,
-        "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-08-31T13:39:31.927Z"
       }
     }
   ],
@@ -1919,21 +1059,6 @@
       "requestCallback": true,
       "status": "OPEN",
       "timestamp": "2026-08-29T14:35:23.661927+00:00"
-    },
-    {
-      "id": "b8561dce-05a1-4362-9f3b-1494c6cb1fcf",
-      "billId": null,
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4920",
-      "customerName": "Gokul Dev",
-      "customerPhone": "9840112233",
-      "rating": 5,
-      "action": "GOOGLE_REDIRECT",
-      "category": "Satisfied Customer",
-      "comment": "Super fast delivery and delicious pizza!",
-      "requestCallback": false,
-      "status": "OPEN",
-      "timestamp": "2026-08-29T14:35:23.347218+00:00"
     },
     {
       "id": "FB_1788013629293_9036",
@@ -1969,51 +1094,6 @@
       "timestamp": "2026-08-29T14:27:09.292Z"
     },
     {
-      "id": "882470ef-e429-491f-92bf-d320d175cb1d",
-      "billId": null,
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4920",
-      "customerName": "Valued Customer",
-      "customerPhone": "9876543210",
-      "rating": 2,
-      "action": "PRIVATE_FEEDBACK",
-      "category": "Staff Behavior",
-      "comment": "sad",
-      "requestCallback": true,
-      "status": "OPEN",
-      "timestamp": "2026-08-27T11:20:26.380542+00:00"
-    },
-    {
-      "id": "e3fe6f9d-182f-483b-be72-d962dd923913",
-      "billId": null,
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4920",
-      "customerName": "Valued Customer",
-      "customerPhone": "9876543210",
-      "rating": 3,
-      "action": "PRIVATE_FEEDBACK",
-      "category": "Cleanliness",
-      "comment": "bad",
-      "requestCallback": true,
-      "status": "OPEN",
-      "timestamp": "2026-08-27T10:08:36.601493+00:00"
-    },
-    {
-      "id": "9cdde2cb-4e43-4210-b130-c9937ca9e587",
-      "billId": null,
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4920",
-      "customerName": "Rahul Sharma",
-      "customerPhone": "9342350747",
-      "rating": 2,
-      "action": "PRIVATE_FEEDBACK",
-      "category": "General Grievance",
-      "comment": "The soup was served cold and delayed.",
-      "requestCallback": true,
-      "status": "OPEN",
-      "timestamp": "2026-08-27T10:04:43.762297+00:00"
-    },
-    {
       "id": "02b80e24-674b-4cd8-8438-fb30aa818dca",
       "billId": null,
       "storeCode": "TEST_4127",
@@ -2027,51 +1107,6 @@
       "requestCallback": true,
       "status": "OPEN",
       "timestamp": "2026-08-27T10:01:02.271869+00:00"
-    },
-    {
-      "id": "0a5224ec-5d8f-4fb1-9529-f5f93f437db0",
-      "billId": null,
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4920",
-      "customerName": "Valued Customer",
-      "customerPhone": "9876543210",
-      "rating": 3,
-      "action": "PRIVATE_FEEDBACK",
-      "category": "General Grievance",
-      "comment": "abc",
-      "requestCallback": true,
-      "status": "OPEN",
-      "timestamp": "2026-08-27T09:58:27.347206+00:00"
-    },
-    {
-      "id": "2c859be3-9a96-4511-84b0-78a9607a135e",
-      "billId": null,
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4920",
-      "customerName": "Gokul",
-      "customerPhone": "9342350747",
-      "rating": 5,
-      "action": "GOOGLE_REDIRECT",
-      "category": "Satisfied Customer",
-      "comment": "Customer rated 5-stars and was routed to Google.",
-      "requestCallback": false,
-      "status": "OPEN",
-      "timestamp": "2026-08-27T08:35:13.55319+00:00"
-    },
-    {
-      "id": "ff24e2eb-32e8-42db-a82a-31f375cc7732",
-      "billId": null,
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "INV-4920",
-      "customerName": "Gokul",
-      "customerPhone": "9342350747",
-      "rating": 5,
-      "action": "GOOGLE_REDIRECT",
-      "category": "Satisfied Customer",
-      "comment": "5-Star Google Review Redirect",
-      "requestCallback": false,
-      "status": "OPEN",
-      "timestamp": "2026-08-27T08:34:24.823634+00:00"
     }
   ],
   "winBackDispatches": [],

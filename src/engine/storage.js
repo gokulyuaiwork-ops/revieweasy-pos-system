@@ -19,67 +19,24 @@ class ResilientStorage {
   constructor() {
     this.dbFile = DB_FILE;
     this.state = {
-      // Default Multi-Tenant Store & Superadmin Users
+      // Superadmin Users
       users: [
         {
           id: "USR_ADMIN_01",
           email: "admin@revieweasy.com",
-          password: "admin123", // In production: bcrypt hash
+          password: "admin123",
           name: "SaaS Administrator",
           role: "ADMIN"
-        },
-        {
-          id: "USR_CLIENT_01",
-          email: "client@sunshine.com",
-          password: "client123",
-          name: "Rahul Sharma (Sunshine Cafe)",
-          role: "CLIENT",
-          storeCode: "STORE_DEMO_01"
-        },
-        {
-          id: "USR_CLIENT_02",
-          email: "client@bluetokai.com",
-          password: "client123",
-          name: "Amit Patel (Blue Tokai)",
-          role: "CLIENT",
-          storeCode: "STORE_BLR_002"
         }
       ],
       // Multi-Tenant Client Stores
-      clientStores: [
-        {
-          id: "STORE_DEMO_01",
-          storeCode: "STORE_DEMO_01",
-          storeName: "Sunshine Cafe & Bistro",
-          storePhone: "9840012345",
-          storeGstin: "33AABCS1429B1ZB",
-          googleReviewUrl: "https://g.page/r/sunshine-cafe/review",
-          secretKey: "SEC_SUNSHINE_4920",
-          status: "ACTIVE",
-          plan: "PRO_UNLIMITED",
-          enableDigitalReceipts: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: "STORE_BLR_002",
-          storeCode: "STORE_BLR_002",
-          storeName: "Blue Tokai Coffee Roasters",
-          storePhone: "9812345678",
-          storeGstin: "29AABCB8819L1Z2",
-          googleReviewUrl: "https://g.page/r/bluetokai/review",
-          secretKey: "SEC_BLUETOKAI_8819",
-          status: "ACTIVE",
-          plan: "ENTERPRISE",
-          enableDigitalReceipts: true,
-          createdAt: new Date().toISOString()
-        }
-      ],
+      clientStores: [],
       config: {
-        storeName: "Sunshine Cafe & Bistro",
+        storeName: "ReviewEasy Store",
         storePhone: "9840012345",
-        storeGstin: "33AABCS1429B1ZB",
+        storeGstin: "",
         storeCode: "STORE_DEMO_01",
-        googleReviewUrl: "https://g.page/r/sunshine-cafe/review",
+        googleReviewUrl: "https://g.page/r/revieweasy/review",
         pacingDelaySeconds: 15,
         dailyDeliveryLimit: 70,
         enableDaypartingQuota: true,
@@ -98,45 +55,32 @@ class ResilientStorage {
         targetPrinterPort: 9100,
         monitoredPrinterName: "POS-80 Thermal Printer",
         isLiveWhatsAppEnabled: true,
-        smartShieldEnabled: true,
-        dailyDigestEnabled: true,
-        dailyDigestTime: "21:00",
-        appBaseUrl: "http://localhost:3000",
-        winBackEnabled: true,
-        winBackMinDays: 30,
-        winBackMaxDays: 60,
-        enableDigitalReceipts: true,
-        enableImageMessage: true,
-        flyerImageUrl: "/assets/default-review-flyer.jpg",
-        customerCooldownDays: 180,
-        supabaseUrl: "https://fzjjztbobwtuywohwmfe.supabase.co",
-        supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6amp6dGJvYnd0dXl3b2h3bWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3ODUxNDcsImV4cCI6MjEwMjM2MTE0N30.XVIo0uTuFd7p66DaufjLXu1PqGJuLVkEEfY5a32kQ28"
+        enableDuplicateFilter: true,
+        enableSmartReviewShield: true,
+        flyerOverlayConfig: {
+          enabled: true,
+          template: "Specially for {{name}}! ✨",
+          posX: 50,
+          posY: 18,
+          fontSize: 28,
+          color: "#FFFFFF",
+          badgeBg: "rgba(0, 0, 0, 0.70)",
+          fontFamily: "Plus Jakarta Sans, sans-serif"
+        }
       },
-      idempotencyKeys: {}, // Hash -> { invoiceNo, timestamp, phone }
       transactions: [],
-      queue: [],           // Delayed or quiet-hours queued items
-      privateFeedback: [], // Shielded 1-3 star feedback and 4-5 star redirect logs
-      winBackDispatches: [], // Lapsed customer win-back campaign logs
-      lastDigestDates: {}, // storeCode -> 'YYYY-MM-DD'
+      privateFeedback: [],
+      winBackDispatches: [],
+      lastDigestDates: {},
+      deletedStoreCodes: [],
       metrics: {
-        totalPrintsIntercepted: 0,
-        validInvoicesProcessed: 0,
-        kotsBlocked: 0,
-        dummyNumbersRejected: 0,
-        duplicatesSuppressed: 0,
-        storeOwnerNumbersFiltered: 0,
-        anonymousWalkins: 0,
-        quietHoursRescheduled: 0,
-        whatsAppDelivered: 0,
-        tcp9100Intercepted: 0,
-        rasterBitmapsParsed: 0,
-        offlineQueuedBills: 0,
-        negativeReviewsShielded: 0,
-        positiveReviewsRedirected: 0,
-        ownerDigestsSent: 0,
-        winBacksSent: 0,
-        customersRecovered: 0,
-        revenueRecovered: 0
+        totalIntercepted: 0,
+        todaySentCount: 0,
+        todayDeliveredCount: 0,
+        todaySuppressedCount: 0,
+        todayFailedCount: 0,
+        activeSpoolerCount: 0,
+        lastReceiptTime: null
       }
     };
     this.load();
@@ -157,11 +101,12 @@ class ResilientStorage {
         this.state = {
           ...this.state,
           ...data,
-          users: data.users && data.users.length > 0 ? data.users : this.state.users,
-          clientStores: data.clientStores && data.clientStores.length > 0 ? data.clientStores : this.state.clientStores,
+          users: Array.isArray(data.users) ? data.users : this.state.users,
+          clientStores: Array.isArray(data.clientStores) ? data.clientStores : this.state.clientStores,
           privateFeedback: cleanFeedback,
           winBackDispatches: data.winBackDispatches || [],
           lastDigestDates: data.lastDigestDates || {},
+          deletedStoreCodes: data.deletedStoreCodes || [],
           config: { ...this.state.config, ...(data.config || {}) },
           metrics: { ...this.state.metrics, ...(data.metrics || {}) }
         };
