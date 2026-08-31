@@ -352,23 +352,21 @@ export class SupabaseSyncEngine {
         .from('review_dispatches')
         .select('*')
         .eq('store_code', code)
-        .in('dispatch_status', ['PRIVATE_FEEDBACK', 'GOOGLE_REDIRECT'])
+        .eq('dispatch_status', 'PRIVATE_FEEDBACK')
         .order('created_at', { ascending: false });
 
       if (!error && data && data.length > 0) {
         let newCount = 0;
         for (const r of data) {
-          // STRICT GUARD: Skip outbound WhatsApp dispatch records (they are not customer reviews)
-          if (!r.rating_given && r.dispatch_status !== 'PRIVATE_FEEDBACK' && r.dispatch_status !== 'GOOGLE_REDIRECT') {
-            continue;
-          }
+          // STRICT GUARD: Skip outbound WhatsApp dispatches and positive Google reviews
+          if (r.rating_given && r.rating_given >= 4) continue;
+          if (r.dispatch_status !== 'PRIVATE_FEEDBACK') continue;
 
           const fbTime = new Date(r.created_at || 0).getTime();
           if (fbTime <= clearedAt) continue;
           const exists = storage.state.privateFeedback.some(f => f.id === r.id || (f.customerPhone === r.customer_phone && Math.abs(new Date(f.timestamp).getTime() - new Date(r.created_at).getTime()) < 5000));
           if (!exists) {
-            const isPositive = (r.rating_given && r.rating_given >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
-            let category = isPositive ? 'Satisfied Customer' : 'General Grievance';
+            let category = 'General Grievance';
             let comment = r.message_text || '';
             if (comment.includes(' - ') && comment.includes(': ')) {
               const parts = comment.split(' - ');

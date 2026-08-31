@@ -607,7 +607,8 @@ class ResilientStorage {
       .filter(f => {
         const isStoreMatch = (f.storeCode || 'STORE_DEMO_01').toUpperCase() === code;
         const fbTime = new Date(f.timestamp || f.created_at || 0).getTime();
-        return isStoreMatch && fbTime > clearedAt;
+        const isNegative = (parseInt(f.rating, 10) <= 3) || f.action === 'PRIVATE_FEEDBACK';
+        return isStoreMatch && fbTime > clearedAt && isNegative;
       })
       .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
   }

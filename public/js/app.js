@@ -936,13 +936,16 @@ function renderFeedbackTable(feedbacks) {
   const tbody = document.getElementById('feedbackTableBody');
   if (!tbody) return;
 
-  if (!feedbacks || feedbacks.length === 0) {
+  // STRICT FILTER: Only display negative / 1-3 star deflected private complaints in the Review Shield
+  const negativeList = (feedbacks || []).filter(fb => (parseInt(fb.rating, 10) <= 3) || fb.action === 'PRIVATE_FEEDBACK');
+
+  if (negativeList.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #0f172a; padding: 24px; font-weight: 600;">No private complaints or shielded feedback yet. 100% customer satisfaction! 🎉</td></tr>`;
     return;
   }
 
   // Always ensure newest feedback is at the top (Strict Descending Order)
-  const sortedFeedbacks = feedbacks.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const sortedFeedbacks = negativeList.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   tbody.innerHTML = sortedFeedbacks.map(fb => {
     const timeStr = new Date(fb.timestamp).toLocaleTimeString();
