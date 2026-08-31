@@ -666,26 +666,28 @@ function renderWhatsAppStatus(wsData) {
         <button onclick="resetWhatsAppSession()" class="btn-sm btn-secondary" style="font-size: 11px; padding: 5px 14px; color: var(--apple-red); border-color: rgba(255, 59, 48, 0.2); background: var(--apple-red-light); font-weight: 600; cursor: pointer;">Unlink Device</button>
       `;
     }
-    if (statusText) statusText.innerText = 'All systems normal';
+    if (statusText) {
+      statusText.innerText = wsData.phoneNumber ? `WhatsApp: Connected (+91 ${wsData.phoneNumber.slice(-10)})` : 'WhatsApp: Connected';
+    }
     if (dot) {
       dot.style.background = '#34c759';
       dot.style.boxShadow = '0 0 6px rgba(52, 199, 89, 0.6)';
     }
   } else if (wsData.qrDataUrl) {
     renderWhatsAppQR(wsData.qrDataUrl);
-    if (statusText) statusText.innerText = 'Scan QR to link';
+    if (statusText) statusText.innerText = 'WhatsApp: Scan QR';
     if (dot) {
       dot.style.background = '#ff9500';
       dot.style.boxShadow = '0 0 6px rgba(255, 149, 0, 0.6)';
     }
   } else if (status === 'RECONNECTING') {
-    if (statusText) statusText.innerText = 'Reconnecting...';
+    if (statusText) statusText.innerText = 'WhatsApp: Reconnecting...';
     if (dot) {
       dot.style.background = '#ff9500';
       dot.style.boxShadow = '0 0 6px rgba(255, 149, 0, 0.6)';
     }
   } else {
-    if (statusText) statusText.innerText = 'Link device';
+    if (statusText) statusText.innerText = 'WhatsApp: Link device';
     if (dot) {
       dot.style.background = '#ff9500';
       dot.style.boxShadow = '0 0 6px rgba(255, 149, 0, 0.6)';
