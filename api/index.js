@@ -219,6 +219,32 @@ app.get('/api/state', async (req, res) => {
 });
 
 // -------------------------------------------------------------
+// Customer Feedback & Review Shield Endpoints
+// -------------------------------------------------------------
+app.get('/api/feedback', async (req, res) => {
+  try {
+    const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+    if (supabaseSync && typeof supabaseSync.pullCloudFeedbacks === 'function') {
+      try { await supabaseSync.pullCloudFeedbacks(storeCode); } catch (e) {}
+    }
+    const feedback = storage.getFeedback(storeCode);
+    res.json({ success: true, feedback });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const feedback = storage.addFeedback(req.body);
+    if (supabaseSync) supabaseSync.syncFeedbackToCloud(feedback);
+    res.json({ success: true, feedback });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
 // Authentication Endpoints
 // -------------------------------------------------------------
 app.post('/api/auth/login', async (req, res) => {

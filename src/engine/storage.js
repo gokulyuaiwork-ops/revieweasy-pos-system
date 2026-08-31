@@ -147,17 +147,26 @@ class ResilientStorage {
       if (fs.existsSync(this.dbFile)) {
         const raw = fs.readFileSync(this.dbFile, 'utf8');
         const data = JSON.parse(raw);
+        const rawFeedback = data.privateFeedback || [];
+        const cleanFeedback = rawFeedback.filter(f => {
+          const comment = f.comment || '';
+          return !comment.includes('Digital E-Bill') && !comment.includes('Thank you for dining') && !comment.includes('Reply STOP');
+        });
+
         this.state = {
           ...this.state,
           ...data,
           users: data.users && data.users.length > 0 ? data.users : this.state.users,
           clientStores: data.clientStores && data.clientStores.length > 0 ? data.clientStores : this.state.clientStores,
-          privateFeedback: data.privateFeedback || [],
+          privateFeedback: cleanFeedback,
           winBackDispatches: data.winBackDispatches || [],
           lastDigestDates: data.lastDigestDates || {},
           config: { ...this.state.config, ...(data.config || {}) },
           metrics: { ...this.state.metrics, ...(data.metrics || {}) }
         };
+        if (cleanFeedback.length !== rawFeedback.length) {
+          this.save();
+        }
       } else {
         this.save();
       }

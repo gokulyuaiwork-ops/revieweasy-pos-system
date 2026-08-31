@@ -352,11 +352,17 @@ export class SupabaseSyncEngine {
         .from('review_dispatches')
         .select('*')
         .eq('store_code', code)
+        .in('dispatch_status', ['PRIVATE_FEEDBACK', 'GOOGLE_REDIRECT'])
         .order('created_at', { ascending: false });
 
       if (!error && data && data.length > 0) {
         let newCount = 0;
         for (const r of data) {
+          // STRICT GUARD: Skip outbound WhatsApp dispatch records (they are not customer reviews)
+          if (!r.rating_given && r.dispatch_status !== 'PRIVATE_FEEDBACK' && r.dispatch_status !== 'GOOGLE_REDIRECT') {
+            continue;
+          }
+
           const fbTime = new Date(r.created_at || 0).getTime();
           if (fbTime <= clearedAt) continue;
           const exists = storage.state.privateFeedback.some(f => f.id === r.id || (f.customerPhone === r.customer_phone && Math.abs(new Date(f.timestamp).getTime() - new Date(r.created_at).getTime()) < 5000));
