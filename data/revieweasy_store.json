@@ -37,7 +37,7 @@
         "template": "Ready for {{name}}! 🚘",
         "posX": 47,
         "posY": 46,
-        "fontSize": 28,
+        "fontSize": 35,
         "color": "#ffffff",
         "badgeBg": "rgba(0, 0, 0, 0.70)"
       },
@@ -78,7 +78,7 @@
       "template": "Ready for {{name}}! 🚘",
       "posX": 47,
       "posY": 46,
-      "fontSize": 28,
+      "fontSize": 35,
       "color": "#ffffff",
       "badgeBg": "rgba(0, 0, 0, 0.70)"
     },
@@ -109,6 +109,50 @@
     "customWhatsAppTemplate": "Hi {{name}}! 🚗 Your vehicle service at {{store_name}} is complete.\n\nPlease leave your feedback :\n{{review_link}}"
   },
   "transactions": [
+    {
+      "id": "TX_1788279950606_114",
+      "storeCode": "ABC STORE",
+      "timestamp": "2026-09-01T16:25:50.603Z",
+      "invoiceNo": "8244",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "N/A",
+      "formattedPhone": "N/A",
+      "totalAmount": "2183.00",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "isRaster": false,
+      "status": "ANONYMOUS_WALKIN",
+      "reason": "No valid Indian customer mobile number detected on bill",
+      "rawText": "========================================\n                        DEMO BUSINESS              \n     Ph: 9342350747 (Helpline)    \n       GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/09/2026 21:55:50\nBill #: INV-8244\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Periodic General Service ₹ 1850.00\n----------------------------------------\nSubtotal:                         ₹1850.00\nCGST (9.0%):                       ₹166.50\nSGST (9.0%):                       ₹166.50\n----------------------------------------\nTOTAL AMOUNT:                     ₹2183.00\n========================================\n          TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-09-01T16:25:50.708Z"
+      }
+    },
+    {
+      "id": "TX_1788279930816_267",
+      "storeCode": "ABC STORE",
+      "timestamp": "2026-09-01T16:25:30.813Z",
+      "invoiceNo": "8508",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "N/A",
+      "formattedPhone": "N/A",
+      "totalAmount": "3599.00",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "isRaster": false,
+      "status": "ANONYMOUS_WALKIN",
+      "reason": "No valid Indian customer mobile number detected on bill",
+      "rawText": "========================================\n                        DEMO BUSINESS              \n     Ph: 9342350747 (Helpline)    \n       GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/09/2026 21:55:30\nBill #: INV-8508\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Periodic General Service ₹ 1850.00\n1x Synthetic Engine Oil 5W30 ₹ 1200.00\n----------------------------------------\nSubtotal:                         ₹3050.00\nCGST (9.0%):                       ₹274.50\nSGST (9.0%):                       ₹274.50\n----------------------------------------\nTOTAL AMOUNT:                     ₹3599.00\n========================================\n          TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-09-01T16:25:30.953Z"
+      }
+    },
     {
       "id": "TX_1788278626025_608",
       "storeCode": "ABC STORE",
@@ -2328,13 +2372,13 @@
     "todayFailedCount": 0,
     "activeSpoolerCount": 0,
     "lastReceiptTime": null,
-    "totalPrintsIntercepted": 103,
-    "validInvoicesProcessed": 118,
+    "totalPrintsIntercepted": 105,
+    "validInvoicesProcessed": 119,
     "kotsBlocked": 27,
     "dummyNumbersRejected": 2,
     "duplicatesSuppressed": 20,
-    "storeOwnerNumbersFiltered": 0,
-    "anonymousWalkins": 2,
+    "storeOwnerNumbersFiltered": 4,
+    "anonymousWalkins": 4,
     "quietHoursRescheduled": 22,
     "whatsAppDelivered": 61,
     "tcp9100Intercepted": 3,
@@ -2348,11 +2392,11 @@
     "revenueRecovered": 5700
   },
   "idempotencyKeys": {
-    "7de17b041fb112a3920e4f551bde8d6232ef8a55b6a2ef799117173a9c8477aa": {
-      "invoiceNo": "4461",
+    "a8873cf05c3f267fd6346f48d5e145c4317ff8a2d3dec189cd82c928e0974b00": {
+      "invoiceNo": "8244",
       "phone": "9342350747",
-      "total": "2891.00",
-      "timestamp": 1788278626015
+      "total": "2183.00",
+      "timestamp": 1788280095591
     }
   },
   "queue": [],

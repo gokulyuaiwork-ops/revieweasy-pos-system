@@ -6,7 +6,7 @@ import { storage } from './storage.js';
  * Validates 10-digit telecom allocations, normalizes formatting,
  * applies Shannon entropy checks, and filters cashier dummy sequences.
  */
-export function validateIndianMobile(rawCandidate, storeOwnerPhone = '') {
+export function validateIndianMobile(rawCandidate, storeOwnerPhone = '', isHeaderZone = false) {
   if (!rawCandidate) return { valid: false, reason: 'EMPTY' };
 
   // Strip all non-digits
@@ -31,9 +31,9 @@ export function validateIndianMobile(rawCandidate, storeOwnerPhone = '') {
     return { valid: false, reason: 'NON_MOBILE_PREFIX (Landline / Invalid)', digits };
   }
 
-  // Check collision against configured store owner / helpline number
+  // Check collision against configured store owner / helpline number only in header zone
   const cleanStoreOwner = storeOwnerPhone.replace(/\D/g, '').slice(-10);
-  if (cleanStoreOwner && digits === cleanStoreOwner) {
+  if (isHeaderZone && cleanStoreOwner && digits === cleanStoreOwner) {
     return { valid: false, reason: 'STORE_OWNER_NUMBER_COLLISION', digits };
   }
 
@@ -385,7 +385,8 @@ export function extractCustomerPhone(lines, storePhone = '') {
   let validPhone = null;
 
   for (const item of candidateMatches) {
-    const validation = validateIndianMobile(item.phone, storePhone);
+    const isHeader = item.zone === 'HEADER_STORE';
+    const validation = validateIndianMobile(item.phone, storePhone, isHeader);
     if (validation.valid) {
       if (item.zone === 'BODY_FOOTER') {
         validPhone = validation;
