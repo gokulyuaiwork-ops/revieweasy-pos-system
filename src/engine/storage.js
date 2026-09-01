@@ -588,6 +588,27 @@ class ResilientStorage {
     return record;
   }
 
+  updateTransactionStatus(id, newStatus, details = {}) {
+    const tx = (this.state.transactions || []).find(t => t.id === id || t.invoiceNo === id);
+    if (tx) {
+      tx.status = newStatus;
+      if (details) {
+        tx.statusDetails = { ...(tx.statusDetails || {}), ...details, updatedAt: new Date().toISOString() };
+        if (details.reason !== undefined) tx.reason = details.reason;
+        if (details.recipient !== undefined) tx.recipient = details.recipient;
+        if (details.messagePreview !== undefined) tx.messagePreview = details.messagePreview;
+        if (details.hasImageAttachment !== undefined) tx.hasImageAttachment = details.hasImageAttachment;
+        if (details.transport !== undefined) tx.transport = details.transport;
+        if (details.dispatchedAt !== undefined) tx.dispatchedAt = details.dispatchedAt;
+        if (details.synced !== undefined) tx.synced = details.synced;
+        if (details.syncStatus !== undefined) tx.syncStatus = details.syncStatus;
+      }
+      this.save();
+      return tx;
+    }
+    return null;
+  }
+
   getTransactions(limit = 100, storeCode = null) {
     this.load();
     let txs = this.state.transactions || [];

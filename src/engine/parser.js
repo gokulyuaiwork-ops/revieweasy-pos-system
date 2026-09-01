@@ -77,20 +77,22 @@ export function classifyDocument(text) {
     }
   }
 
-  // Whitelist Tokens for valid settlement bills
+// Whitelist Tokens for valid settlement bills
   const whitelistTokens = [
     'TAX INVOICE', 'FINAL BILL', 'CASH MEMO', 'RETAIL INVOICE',
     'TOTAL AMOUNT', 'GRAND TOTAL', 'NET PAYABLE', 'NET AMOUNT',
-    'PAID VIA', 'GST INVOICE', 'INVOICE NO', 'BILL NO', 'BILL #', 'TOTAL:'
+    'PAID VIA', 'GST INVOICE', 'INVOICE NO', 'BILL NO', 'BILL #', 'TOTAL:',
+    'TOTAL', 'RECEIPT', 'CUSTOMER', 'MOBILE', 'PHONE', 'AMOUNT', 'INV'
   ];
 
   const matchedWhitelist = whitelistTokens.filter(token => upper.includes(token));
+  const hasPhonePattern = /(?:(?:\+|0{0,2})91[\s.-]?)?([6-9]\d{4}[\s.-]?\d{5}|[6-9]\d{9})/.test(upper);
 
-  if (matchedWhitelist.length >= 1) {
+  if (matchedWhitelist.length >= 1 || hasPhonePattern) {
     return {
       isFinalBill: true,
       docType: 'TAX_INVOICE',
-      matchedTokens: matchedWhitelist
+      matchedTokens: matchedWhitelist.length > 0 ? matchedWhitelist : ['PHONE_NUMBER_DETECTED']
     };
   }
 
@@ -129,10 +131,31 @@ export function parseReceiptStream(rawInput, storeConfig = null) {
   if (Buffer.isBuffer(rawInput)) {
     if (isRasterBitmapPayload(rawInput)) {
       isRaster = true;
-      // Simulated fast in-memory OCR un-packer for ESC/POS raster canvas
       text = rawInput.toString('latin1').replace(/[^\x20-\x7E\r\n\t]/g, ' ');
     } else {
-      text = rawInput.toString('utf8');
+      // 1. Try standard utf-8
+      const utf8Str = rawInput.toString('utf8');
+      const classUtf8 = classifyDocument(utf8Str);
+      
+      if (classUtf8.isFinalBill) {
+        text = utf8Str;
+      } else {
+        // 2. Try UTF-16LE (common in Windows GDI / Notepad spool EMF records)
+        let utf16Str = '';
+        try { utf16Str = rawInput.toString('utf16le').replace(/[^\x20-\x7E\r\n\t]/g, ' '); } catch (e) {}
+        const classUtf16 = classifyDocument(utf16Str);
+        
+        if (classUtf16.isFinalBill) {
+          text = utf16Str;
+        } else {
+          // 3. Extract contiguous printable ASCII strings from binary spool buffer
+          const rawLatin = rawInput.toString('latin1');
+          const matches = rawLatin.match(/[\x20-\x7E\r\n\t]{3,}/g) || [];
+          const extractedAscii = matches.join('\n');
+          const classAscii = classifyDocument(extractedAscii);
+          text = classAscii.isFinalBill ? extractedAscii : utf8Str;
+        }
+      }
     }
   } else {
     text = String(rawInput || '');
