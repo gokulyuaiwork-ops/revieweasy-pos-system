@@ -147,7 +147,7 @@ export class SupabaseSyncEngine {
 
       const pulled = [];
       for (const row of data) {
-        if (!row.raw_text || row.status === 'DELETED') continue;
+        if (!row.raw_text || row.status === 'DELETED' || row.status === 'STORE_PROFILE') continue;
         const code = (row.store_code || '').toUpperCase();
 
         try {
