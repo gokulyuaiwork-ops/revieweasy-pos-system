@@ -489,7 +489,8 @@ export class WhatsAppDispatcher {
       }
       seenPhones.add(phone);
 
-      // 4. Verify 180-day cooldown
+      // 4. Verify 180-day cooldown [TESTING OVERRIDE: COMMENTED OUT]
+      /*
       const cooldown = storage.checkCustomer180DayCooldown(tx.storeCode, phone, cooldownDays);
       if (cooldown.inCooldown) {
         storage.updateTransactionStatus(tx.id, 'SUPPRESSED_CUSTOMER_COOLDOWN', {
@@ -497,6 +498,7 @@ export class WhatsAppDispatcher {
         });
         continue;
       }
+      */
 
       eligibleTxs.push(tx);
     }
