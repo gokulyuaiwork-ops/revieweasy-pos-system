@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { storage } from './storage.js';
 import { parseReceiptStream } from './parser.js';
 
@@ -7,58 +8,54 @@ export class SpoolerWatcher {
   constructor(dispatcher, broadcastCallback) {
     this.dispatcher = dispatcher;
     this.broadcast = broadcastCallback || (() => {});
-    this.spoolDir = process.platform === 'win32' 
-      ? 'C:\\Windows\\System32\\spool\\PRINTERS' 
-      : path.resolve('./data/spool_virtual');
-    this.watcher = null;
+    this.spoolDirs = [
+      process.platform === 'win32' ? 'C:\\Windows\\System32\\spool\\PRINTERS' : null,
+      path.resolve('./data/spool_virtual'),
+      path.resolve('./data/spool_drop')
+    ].filter(Boolean);
+    this.watchers = [];
     this.isWatching = false;
-    this.processedSpoolFiles = new Map(); // filename -> timestamp
-    this.activePollers = new Set(); // filenames currently being polled
+    this.processedHashes = new Map(); // hash -> timestamp
+    this.activePollers = new Set(); // filePaths currently being polled
   }
 
   start() {
-    try {
-      if (!fs.existsSync(this.spoolDir)) {
-        fs.mkdirSync(this.spoolDir, { recursive: true });
-      }
-
-      this.watcher = fs.watch(this.spoolDir, (eventType, filename) => {
-        if (filename && filename.toLowerCase().endsWith('.spl')) {
-          this.handleSpoolFileEvent(filename);
+    for (const dir of this.spoolDirs) {
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
         }
-      });
 
-      this.isWatching = true;
-      console.log(`[Spooler Watcher] Actively monitoring: ${this.spoolDir}`);
-    } catch (err) {
-      console.warn(`[Spooler Watcher] Note on permissions: ${err.message}. Virtual spooler tap active.`);
-      this.isWatching = true;
+        const watcher = fs.watch(dir, (eventType, filename) => {
+          if (filename && (filename.toLowerCase().endsWith('.spl') || filename.toLowerCase().endsWith('.txt') || filename.toLowerCase().endsWith('.prn'))) {
+            this.handleSpoolFileEvent(path.join(dir, filename), filename);
+          }
+        });
+
+        this.watchers.push(watcher);
+        console.log(`[Spooler Watcher] 👁️ Actively monitoring: ${dir}`);
+      } catch (err) {
+        console.warn(`[Spooler Watcher] Note on ${dir}: ${err.message}.`);
+      }
     }
+    this.isWatching = true;
   }
 
   /**
    * Resilient Stabilization Poller for Windows Spooler Files
    * Handles 0-byte initial allocations, save dialog delays, and locked write streams
    */
-  handleSpoolFileEvent(filename) {
-    const now = Date.now();
+  handleSpoolFileEvent(filePath, filename) {
+    const key = `${filePath}_${Date.now()}`;
 
-    // 1. De-duplicate: If this file was already successfully processed in the last 30 seconds, ignore
-    const lastProcessed = this.processedSpoolFiles.get(filename);
-    if (lastProcessed && (now - lastProcessed < 30000)) {
+    // Prevent concurrent duplicate pollers on the exact same active path
+    if (this.activePollers.has(filePath)) {
       return;
     }
 
-    // 2. Prevent concurrent polling loops on the same file
-    if (this.activePollers.has(filename)) {
-      return;
-    }
-
-    this.activePollers.add(filename);
-    const filePath = path.join(this.spoolDir, filename);
-
+    this.activePollers.add(filePath);
     let attempts = 0;
-    const maxAttempts = 35; // 35 * 300ms = 10.5 seconds max wait window
+    const maxAttempts = 40; // 40 * 250ms = 10 seconds wait window
     let lastSize = -1;
     let stableCount = 0;
 
@@ -67,16 +64,15 @@ export class SpoolerWatcher {
 
       try {
         if (!fs.existsSync(filePath)) {
-          // File was deleted or moved by Windows spoolsv
           clearInterval(pollTimer);
-          this.activePollers.delete(filename);
+          this.activePollers.delete(filePath);
           return;
         }
 
         const stat = fs.statSync(filePath);
         const currentSize = stat.size;
 
-        // Check if file has data
+        // Check if file has flushed data
         if (currentSize > 0) {
           if (currentSize === lastSize) {
             stableCount++;
@@ -85,20 +81,28 @@ export class SpoolerWatcher {
             lastSize = currentSize;
           }
 
-          // When file size is stable for 2 consecutive checks (600ms) or reached max attempts
+          // When file size is stable for 2 consecutive polls (500ms) or reached max attempts
           if (stableCount >= 2 || attempts >= maxAttempts) {
             clearInterval(pollTimer);
-            this.activePollers.delete(filename);
+            this.activePollers.delete(filePath);
 
             try {
               const buffer = fs.readFileSync(filePath);
               if (buffer && buffer.length > 0) {
-                console.log(`[Spooler Watcher] 🖨️ Intercepted stabilized spool file: ${filename} (${buffer.length} bytes)`);
+                // Hash de-duplication: Only ignore if the exact same buffer was parsed in the last 10s
+                const hash = crypto.createHash('md5').update(buffer).digest('hex');
+                const lastProcessed = this.processedHashes.get(hash);
+                const now = Date.now();
+
+                if (lastProcessed && (now - lastProcessed < 10000)) {
+                  return; // Same print job duplicate event
+                }
+
+                this.processedHashes.set(hash, now);
+                console.log(`[Spooler Watcher] 🖨️ Intercepted print job: ${filename} (${buffer.length} bytes)`);
                 storage.incrementMetric('totalPrintsIntercepted');
 
                 const parsed = parseReceiptStream(buffer);
-                this.processedSpoolFiles.set(filename, Date.now());
-
                 const tx = this.dispatcher.processIncomingBill({
                   source: 'WINDOWS_PRINT_SPOOLER',
                   spoolFile: filename,
@@ -113,14 +117,14 @@ export class SpoolerWatcher {
           }
         }
       } catch (err) {
-        // EBUSY or locked by Windows spoolsv while writing
+        // EBUSY while Windows spoolsv is actively streaming bytes
       }
 
       if (attempts >= maxAttempts) {
         clearInterval(pollTimer);
-        this.activePollers.delete(filename);
+        this.activePollers.delete(filePath);
       }
-    }, 300);
+    }, 250);
   }
 
   /**
