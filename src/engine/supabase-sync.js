@@ -183,11 +183,12 @@ export class SupabaseSyncEngine {
           const storeData = JSON.parse(row.raw_text);
           if (storeData && (storeData.storeCode || code)) {
             const effectiveCode = (storeData.storeCode || code).toUpperCase();
-            if (row.status === 'DELETED') continue;
-
-            // Remove from deletedStoreCodes if active on cloud
-            if (storage.state.deletedStoreCodes) {
-              storage.state.deletedStoreCodes = storage.state.deletedStoreCodes.filter(c => String(c).toUpperCase() !== effectiveCode);
+            if (row.status === 'DELETED' || (storage.state.deletedStoreCodes || []).includes(effectiveCode) || effectiveCode === 'STORE_DEMO_01') {
+              if (this.client) {
+                this.client.from('bills').delete().eq('id', row.id).then(() => {}).catch(() => {});
+                this.client.from('bills').delete().eq('store_code', effectiveCode).then(() => {}).catch(() => {});
+              }
+              continue;
             }
 
             const rawEmail = storeData.clientEmail || `owner@${effectiveCode.toLowerCase()}.com`;
@@ -505,7 +506,7 @@ export class SupabaseSyncEngine {
     const isConnected = await this.checkConnectivity();
     if (!isConnected || !this.client) return;
 
-    const stores = storeCode ? [storeCode.toUpperCase()] : (storage.state.clientStores || [{ storeCode: 'STORE_DEMO_01' }]).map(s => s.storeCode.toUpperCase());
+    const stores = storeCode ? [storeCode.toUpperCase()] : (storage.state.clientStores || [{ storeCode: 'ABC STORE' }]).map(s => s.storeCode.toUpperCase());
     for (const code of stores) {
       try {
         const { data: cloudBills, error } = await this.client
@@ -614,7 +615,7 @@ export class SupabaseSyncEngine {
     const isConnected = await this.checkConnectivity();
     if (!isConnected || !this.client) return;
 
-    const stores = storeCode ? [storeCode.toUpperCase()] : (storage.state.clientStores || [{ storeCode: 'STORE_DEMO_01' }]).map(s => s.storeCode.toUpperCase());
+    const stores = storeCode ? [storeCode.toUpperCase()] : (storage.state.clientStores || [{ storeCode: 'ABC STORE' }]).map(s => s.storeCode.toUpperCase());
     for (const code of stores) {
       try {
         const { data, error } = await this.client

@@ -32,11 +32,11 @@ class ResilientStorage {
       // Multi-Tenant Client Stores
       clientStores: [],
       config: {
-        storeName: "ReviewEasy Store",
-        storePhone: "9840012345",
+        storeName: "Demo business",
+        storePhone: "9342350747",
         storeGstin: "",
-        storeCode: "STORE_DEMO_01",
-        googleReviewUrl: "https://g.page/r/revieweasy/review",
+        storeCode: "ABC STORE",
+        googleReviewUrl: "https://www.outbid.lol",
         pacingDelaySeconds: 15,
         dailyDeliveryLimit: 70,
         enableDaypartingQuota: true,
