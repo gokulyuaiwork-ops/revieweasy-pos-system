@@ -12,6 +12,8 @@ export class SpoolerWatcher {
       : path.resolve('./data/spool_virtual');
     this.watcher = null;
     this.isWatching = false;
+    this.processedSpoolFiles = new Map(); // filename -> timestamp
+    this.activePollers = new Set(); // filenames currently being polled
   }
 
   start() {
@@ -22,27 +24,7 @@ export class SpoolerWatcher {
 
       this.watcher = fs.watch(this.spoolDir, (eventType, filename) => {
         if (filename && filename.toLowerCase().endsWith('.spl')) {
-          const filePath = path.join(this.spoolDir, filename);
-          console.log(`[Spooler Watcher] Intercepted new raw print spool file: ${filename}`);
-          storage.incrementMetric('totalPrintsIntercepted');
-
-          // Read file after slight delay for Windows spoolsv to complete flush
-          setTimeout(() => {
-            if (fs.existsSync(filePath)) {
-              try {
-                const buffer = fs.readFileSync(filePath);
-                const parsed = parseReceiptStream(buffer);
-                const tx = this.dispatcher.processIncomingBill({
-                  source: 'WINDOWS_PRINT_SPOOLER',
-                  spoolFile: filename,
-                  ...parsed
-                });
-                this.broadcast('NEW_PRINT_JOB', { source: 'SPOOLER', tx });
-              } catch (err) {
-                console.error(`[Spooler Watcher] Failed to read ${filename}:`, err.message);
-              }
-            }
-          }, 300);
+          this.handleSpoolFileEvent(filename);
         }
       });
 
@@ -52,6 +34,93 @@ export class SpoolerWatcher {
       console.warn(`[Spooler Watcher] Note on permissions: ${err.message}. Virtual spooler tap active.`);
       this.isWatching = true;
     }
+  }
+
+  /**
+   * Resilient Stabilization Poller for Windows Spooler Files
+   * Handles 0-byte initial allocations, save dialog delays, and locked write streams
+   */
+  handleSpoolFileEvent(filename) {
+    const now = Date.now();
+
+    // 1. De-duplicate: If this file was already successfully processed in the last 30 seconds, ignore
+    const lastProcessed = this.processedSpoolFiles.get(filename);
+    if (lastProcessed && (now - lastProcessed < 30000)) {
+      return;
+    }
+
+    // 2. Prevent concurrent polling loops on the same file
+    if (this.activePollers.has(filename)) {
+      return;
+    }
+
+    this.activePollers.add(filename);
+    const filePath = path.join(this.spoolDir, filename);
+
+    let attempts = 0;
+    const maxAttempts = 35; // 35 * 300ms = 10.5 seconds max wait window
+    let lastSize = -1;
+    let stableCount = 0;
+
+    const pollTimer = setInterval(() => {
+      attempts++;
+
+      try {
+        if (!fs.existsSync(filePath)) {
+          // File was deleted or moved by Windows spoolsv
+          clearInterval(pollTimer);
+          this.activePollers.delete(filename);
+          return;
+        }
+
+        const stat = fs.statSync(filePath);
+        const currentSize = stat.size;
+
+        // Check if file has data
+        if (currentSize > 0) {
+          if (currentSize === lastSize) {
+            stableCount++;
+          } else {
+            stableCount = 0;
+            lastSize = currentSize;
+          }
+
+          // When file size is stable for 2 consecutive checks (600ms) or reached max attempts
+          if (stableCount >= 2 || attempts >= maxAttempts) {
+            clearInterval(pollTimer);
+            this.activePollers.delete(filename);
+
+            try {
+              const buffer = fs.readFileSync(filePath);
+              if (buffer && buffer.length > 0) {
+                console.log(`[Spooler Watcher] 🖨️ Intercepted stabilized spool file: ${filename} (${buffer.length} bytes)`);
+                storage.incrementMetric('totalPrintsIntercepted');
+
+                const parsed = parseReceiptStream(buffer);
+                this.processedSpoolFiles.set(filename, Date.now());
+
+                const tx = this.dispatcher.processIncomingBill({
+                  source: 'WINDOWS_PRINT_SPOOLER',
+                  spoolFile: filename,
+                  ...parsed
+                });
+                this.broadcast('NEW_PRINT_JOB', { source: 'SPOOLER', tx });
+              }
+            } catch (readErr) {
+              console.warn(`[Spooler Watcher] Spool file read warning (${filename}):`, readErr.message);
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        // EBUSY or locked by Windows spoolsv while writing
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(pollTimer);
+        this.activePollers.delete(filename);
+      }
+    }, 300);
   }
 
   /**

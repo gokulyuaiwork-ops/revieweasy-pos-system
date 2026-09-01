@@ -1,3 +1,4 @@
+import zlib from 'zlib';
 import { storage } from './storage.js';
 
 /**
@@ -152,7 +153,7 @@ export function isRasterBitmapPayload(buffer) {
 /**
  * Universal Multi-Encoding De-spooler
  * Extracts clean, human-readable ASCII/UTF text from any raw print stream buffer
- * (UTF-8, UTF-16LE Windows EMF spool, UTF-16BE, PDF, XPS XML, and continuous ASCII runs)
+ * (XPS/OpenXPS ZIP XML, UTF-8, UTF-16LE Windows EMF spool, UTF-16BE, PDF, and continuous ASCII runs)
  */
 export function extractUniversalTextFromBuffer(rawInput) {
   if (!rawInput) return '';
@@ -161,7 +162,63 @@ export function extractUniversalTextFromBuffer(rawInput) {
 
   const buffer = rawInput;
 
-  // 1. PDF Stream Extraction (if PDF magic header %PDF- exists)
+  // 1. XPS / OpenXPS Spool File (.SPL from Microsoft Print to PDF or Windows V4 drivers)
+  // Check for ZIP magic bytes PK\x03\x04
+  if (buffer.length > 30 && buffer[0] === 0x50 && buffer[1] === 0x4B && buffer[2] === 0x03 && buffer[3] === 0x04) {
+    try {
+      const xpsLines = [];
+      let offset = 0;
+      while (offset < buffer.length - 30) {
+        if (buffer[offset] === 0x50 && buffer[offset+1] === 0x4B && buffer[offset+2] === 0x03 && buffer[offset+3] === 0x04) {
+          const compressionMethod = buffer.readUInt16LE(offset + 8);
+          const compressedSize = buffer.readUInt32LE(offset + 18);
+          const fileNameLength = buffer.readUInt16LE(offset + 26);
+          const extraFieldLength = buffer.readUInt16LE(offset + 28);
+          
+          const fileNameStart = offset + 30;
+          const fileNameEnd = fileNameStart + fileNameLength;
+          const dataStart = fileNameEnd + extraFieldLength;
+          const dataEnd = dataStart + compressedSize;
+
+          if (dataEnd <= buffer.length && compressedSize > 0) {
+            const rawData = buffer.slice(dataStart, dataEnd);
+            let uncompressedXml = '';
+
+            if (compressionMethod === 0) {
+              uncompressedXml = rawData.toString('utf8');
+            } else if (compressionMethod === 8) { // DEFLATE
+              try {
+                uncompressedXml = zlib.inflateRawSync(rawData).toString('utf8');
+              } catch (e) {}
+            }
+
+            if (uncompressedXml) {
+              const unicodeStringRegex = /UnicodeString=["']([^"']+)["']/g;
+              let m;
+              while ((m = unicodeStringRegex.exec(uncompressedXml)) !== null) {
+                if (!xpsLines.includes(m[1])) {
+                  xpsLines.push(m[1]);
+                }
+              }
+            }
+          }
+          offset = dataEnd > offset ? dataEnd : offset + 1;
+        } else {
+          offset++;
+        }
+      }
+
+      if (xpsLines.length > 0) {
+        const xpsText = xpsLines.join('\n');
+        const classXps = classifyDocument(xpsText);
+        if (classXps.isFinalBill) {
+          return xpsText;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2. PDF Stream Extraction (if PDF magic header %PDF- exists)
   if (buffer.length > 8 && buffer.slice(0, 5).toString('ascii').startsWith('%PDF')) {
     try {
       const pdfString = buffer.toString('latin1');
@@ -177,14 +234,14 @@ export function extractUniversalTextFromBuffer(rawInput) {
     } catch (e) {}
   }
 
-  // 2. Standard UTF-8 decoding with ESC/POS binary strip
+  // 3. Standard UTF-8 decoding with ESC/POS binary strip
   const utf8Candidate = buffer.toString('utf8').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ');
   const classUtf8 = classifyDocument(utf8Candidate);
   if (classUtf8.isFinalBill) {
     return utf8Candidate;
   }
 
-  // 3. UTF-16LE Decoding (Windows GDI / EMF / Notepad spoolers)
+  // 4. UTF-16LE Decoding (Windows GDI / EMF / Notepad spoolers)
   let utf16Candidate = '';
   try {
     utf16Candidate = buffer.toString('utf16le').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ');
@@ -194,7 +251,7 @@ export function extractUniversalTextFromBuffer(rawInput) {
     }
   } catch (e) {}
 
-  // 4. Extract contiguous printable ASCII / Latin-1 text chunks from binary spool blob
+  // 5. Extract contiguous printable ASCII / Latin-1 text chunks from binary spool blob
   const rawLatin = buffer.toString('latin1');
   const asciiChunks = rawLatin.match(/[\x20-\x7E\r\n\t]{3,}/g) || [];
   const extractedAscii = asciiChunks.join('\n');
