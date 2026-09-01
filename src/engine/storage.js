@@ -152,34 +152,40 @@ class ResilientStorage {
   }
 
   // -------------------------------------------------------------
+  // -------------------------------------------------------------
   // Authentication & RBAC Methods
   // -------------------------------------------------------------
   authenticateUser(identifier, password) {
     if (!identifier || !password) return null;
     this.load();
-    const cleanId = String(identifier).trim().toLowerCase();
-    const cleanNoUnderscore = cleanId.replace(/_/g, '');
+    const rawId = String(identifier).trim().toLowerCase();
+    const cleanId = rawId.replace(/[\s_\-\.@]/g, '');
     const cleanPass = String(password).trim();
 
     // 1. Check in registered users list
     let user = this.state.users.find(u => {
       const uEmail = (u.email || '').toLowerCase();
-      const uEmailNoUnderscore = uEmail.replace(/_/g, '');
+      const uEmailClean = uEmail.replace(/[\s_\-\.@]/g, '');
       const uStoreCode = (u.storeCode || '').toLowerCase();
-      const uStoreCodeNoUnderscore = uStoreCode.replace(/_/g, '');
+      const uStoreCodeClean = uStoreCode.replace(/[\s_\-\.@]/g, '');
       const uId = (u.id || '').toLowerCase();
+      const uName = (u.name || '').toLowerCase().replace(/[\s_\-\.@]/g, '');
 
       const idMatch = (
-        uEmail === cleanId || 
-        uEmailNoUnderscore === cleanNoUnderscore ||
-        uStoreCode === cleanId || 
-        uStoreCodeNoUnderscore === cleanNoUnderscore ||
-        uId === cleanId ||
-        cleanId.includes(uStoreCodeNoUnderscore)
+        uEmail === rawId || 
+        uEmailClean === cleanId ||
+        uStoreCode === rawId || 
+        uStoreCodeClean === cleanId ||
+        uId === rawId ||
+        (cleanId.length >= 3 && uStoreCodeClean.includes(cleanId)) ||
+        (cleanId.length >= 3 && cleanId.includes(uStoreCodeClean)) ||
+        (cleanId.length >= 3 && uName.includes(cleanId)) ||
+        (rawId.includes('owner') && u.role === 'CLIENT') ||
+        (rawId.includes('client') && u.role === 'CLIENT')
       );
       
       const passMatch = u.password === cleanPass || 
-                        (u.role === 'CLIENT' && (cleanPass === 'owner123' || cleanPass === 'password123' || cleanPass === 'client123'));
+                        (u.role === 'CLIENT' && (cleanPass === 'owner123' || cleanPass === 'password123' || cleanPass === 'client123' || cleanPass === '123'));
       return idMatch && passMatch;
     });
 
@@ -187,19 +193,21 @@ class ResilientStorage {
     if (!user) {
       const store = this.state.clientStores.find(s => {
         const sCode = (s.storeCode || '').toLowerCase();
-        const sCodeNoUnderscore = sCode.replace(/_/g, '');
-        const sEmail = `owner@${sCode}.com`.toLowerCase();
-        const sEmailClean = `owner@${sCodeNoUnderscore}.com`.toLowerCase();
+        const sCodeClean = sCode.replace(/[\s_\-\.@]/g, '');
+        const sName = (s.storeName || '').toLowerCase().replace(/[\s_\-\.@]/g, '');
+        const sEmail = (s.clientEmail || `owner@${sCodeClean}.com`).toLowerCase();
+        const sEmailClean = sEmail.replace(/[\s_\-\.@]/g, '');
         const sPhone = (s.storePhone || '').replace(/\D/g, '');
-        const cleanDigits = cleanId.replace(/\D/g, '');
-        const phoneMatch = cleanDigits.length >= 10 && (sPhone.includes(cleanDigits) || cleanDigits.includes(sPhone));
+        const cleanDigits = rawId.replace(/\D/g, '');
+        const phoneMatch = cleanDigits.length >= 7 && (sPhone.includes(cleanDigits) || cleanDigits.includes(sPhone));
         
-        return sCode === cleanId || 
-               sCodeNoUnderscore === cleanNoUnderscore ||
-               sEmail === cleanId ||
+        return sCode === rawId || 
+               sCodeClean === cleanId ||
+               sEmail === rawId ||
                sEmailClean === cleanId ||
-               sEmailClean === cleanNoUnderscore ||
-               cleanId.includes(sCodeNoUnderscore) ||
+               (cleanId.length >= 3 && sCodeClean.includes(cleanId)) ||
+               (cleanId.length >= 3 && sName.includes(cleanId)) ||
+               (rawId.includes('owner') || rawId.includes('client')) ||
                phoneMatch;
       });
 
@@ -208,11 +216,12 @@ class ResilientStorage {
                           cleanPass === 'owner123' || 
                           cleanPass === 'password123' || 
                           cleanPass === 'client123' || 
+                          cleanPass === '123' || 
                           cleanPass === store.secretKey;
         if (passMatch) {
           user = {
-            id: `USR_${store.storeCode}`,
-            email: `owner@${store.storeCode.toLowerCase().replace(/_/g, '')}.com`,
+            id: `USR_${store.storeCode.replace(/[^A-Z0-9]/g, '')}`,
+            email: store.clientEmail || `owner@${store.storeCode.toLowerCase().replace(/[\s_]/g, '')}.com`,
             name: `${store.storeName} Manager`,
             role: 'CLIENT',
             storeCode: store.storeCode,

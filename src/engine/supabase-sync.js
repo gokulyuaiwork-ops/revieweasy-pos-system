@@ -145,25 +145,25 @@ export class SupabaseSyncEngine {
 
       if (error || !data) return [];
 
-      const deletedCodes = new Set((storage.state.deletedStoreCodes || []).map(c => String(c).toUpperCase()));
-
-      // Purge all deleted stores from local memory
-      for (const delCode of deletedCodes) {
-        storage.state.clientStores = (storage.state.clientStores || []).filter(s => (s.storeCode || s.id || '').toUpperCase() !== delCode);
-        storage.state.users = (storage.state.users || []).filter(u => (u.storeCode || '').toUpperCase() !== delCode);
-      }
-
       const pulled = [];
       for (const row of data) {
-        if (!row.raw_text) continue;
+        if (!row.raw_text || row.status === 'DELETED') continue;
         const code = (row.store_code || '').toUpperCase();
-        if (deletedCodes.has(code) || row.status === 'DELETED') continue;
 
         try {
           const storeData = JSON.parse(row.raw_text);
           if (storeData && (storeData.storeCode || code)) {
             const effectiveCode = (storeData.storeCode || code).toUpperCase();
-            if (deletedCodes.has(effectiveCode)) continue;
+            if (row.status === 'DELETED') continue;
+
+            // Remove from deletedStoreCodes if active on cloud
+            if (storage.state.deletedStoreCodes) {
+              storage.state.deletedStoreCodes = storage.state.deletedStoreCodes.filter(c => String(c).toUpperCase() !== effectiveCode);
+            }
+
+            const rawEmail = storeData.clientEmail || `owner@${effectiveCode.toLowerCase()}.com`;
+            const cleanEmail = rawEmail.toLowerCase().replace(/ /g, '');
+            const password = storeData.clientPassword || 'client123';
 
             // 1. Ensure store exists in local storage
             let existing = storage.state.clientStores.find(s => (s.storeCode || s.id || '').toUpperCase() === effectiveCode);
@@ -175,7 +175,7 @@ export class SupabaseSyncEngine {
                 storePhone: storeData.storePhone || row.customer_phone,
                 storeGstin: storeData.storeGstin || '',
                 googleReviewUrl: storeData.googleReviewUrl || 'https://g.page/review',
-                secretKey: storeData.secretKey || `SEC_${effectiveCode}_1234`,
+                secretKey: storeData.secretKey || `SEC_${effectiveCode.replace(/[^A-Z0-9]/g, '')}_1234`,
                 status: storeData.status || row.status || 'ACTIVE',
                 plan: storeData.plan || 'PRO_UNLIMITED',
                 businessCategory: storeData.businessCategory || 'RESTAURANT_CAFE',
@@ -184,18 +184,24 @@ export class SupabaseSyncEngine {
                 enableImageMessage: storeData.enableImageMessage !== false,
                 flyerImageUrl: storeData.flyerImageUrl || '/assets/default-review-flyer.jpg',
                 flyerOverlayConfig: storeData.flyerOverlayConfig,
-                createdAt: storeData.createdAt || row.created_at || new Date().toISOString()
+                createdAt: storeData.createdAt || row.created_at || new Date().toISOString(),
+                clientEmail: cleanEmail,
+                clientPassword: password
               });
+            } else {
+              existing.storeName = storeData.storeName || row.customer_name;
+              existing.storePhone = storeData.storePhone || row.customer_phone;
+              existing.googleReviewUrl = storeData.googleReviewUrl || existing.googleReviewUrl;
+              existing.clientEmail = cleanEmail;
+              existing.clientPassword = password;
             }
 
             // 2. Ensure user login exists
-            const email = (storeData.clientEmail || `owner@${effectiveCode.toLowerCase()}.com`).toLowerCase();
-            const password = storeData.clientPassword || 'client123';
-            let user = storage.state.users.find(u => (u.email || '').toLowerCase() === email || (u.storeCode || '').toUpperCase() === effectiveCode);
+            let user = storage.state.users.find(u => (u.email || '').toLowerCase() === cleanEmail || (u.storeCode || '').toUpperCase() === effectiveCode);
             if (!user) {
               storage.state.users.push({
-                id: `USR_${effectiveCode}`,
-                email: email,
+                id: `USR_${effectiveCode.replace(/[^A-Z0-9]/g, '')}`,
+                email: cleanEmail,
                 password: password,
                 name: storeData.storeName || row.customer_name,
                 role: 'CLIENT',
@@ -203,7 +209,7 @@ export class SupabaseSyncEngine {
               });
             } else {
               user.password = password;
-              user.email = email;
+              user.email = cleanEmail;
             }
             pulled.push(storeData);
           }
