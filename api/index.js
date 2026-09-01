@@ -420,12 +420,63 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // -------------------------------------------------------------
+// Authentication Endpoints
+// -------------------------------------------------------------
+app.post('/api/auth/login', async (req, res) => {
+  const email = (req.body.email || req.body.identifier || req.body.username || '').trim();
+  const password = (req.body.password || '').trim();
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email / Store Code and password are required' });
+  }
+
+  let user = storage.authenticateUser(email, password);
+
+  // Cloud Fallback: Pull registered stores & credentials from Supabase if local cache missed
+  if (!user && supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+    try {
+      await supabaseSync.pullCloudStores();
+      user = storage.authenticateUser(email, password);
+    } catch (e) {
+      console.warn('[Server Auth] Supabase cloud stores pull note:', e.message);
+    }
+  }
+
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid email/store code or password' });
+  }
+
+  // Determine redirect URL based on role
+  const redirectUrl = user.role === 'ADMIN' ? '/admin.html' : '/index.html';
+
+  res.json({
+    success: true,
+    user,
+    redirectUrl
+  });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.json({ authenticated: false });
+  }
+  res.json({ authenticated: true });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// -------------------------------------------------------------
 // SaaS Multi-Tenant Store Management (Admin API)
 // -------------------------------------------------------------
-app.get('/api/admin/clients', (req, res) => {
+app.get('/api/admin/clients', async (req, res) => {
   try {
+    if (supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+      try { await supabaseSync.pullCloudStores(); } catch (e) {}
+    }
     const clientsWithMetrics = storage.getAllClientsWithAnalytics();
-    res.json({ success: true, stores: clientsWithMetrics });
+    res.json({ success: true, stores: clientsWithMetrics, metrics: storage.getMetrics() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -444,8 +495,11 @@ app.get('/api/admin/clients/:storeCode/details', (req, res) => {
   }
 });
 
-app.get('/api/admin/analytics/summary', (req, res) => {
+app.get('/api/admin/analytics/summary', async (req, res) => {
   try {
+    if (supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+      try { await supabaseSync.pullCloudStores(); } catch (e) {}
+    }
     const clients = storage.getAllClientsWithAnalytics();
     const metrics = storage.getMetrics();
 
@@ -500,35 +554,79 @@ app.get('/api/admin/analytics/summary', (req, res) => {
   }
 });
 
-app.post('/api/admin/clients', (req, res) => {
+app.post('/api/admin/clients', async (req, res) => {
   try {
     const newStore = storage.createStore(req.body);
-    supabaseSync.syncStoreToCloud(newStore);
+    if (supabaseSync && typeof supabaseSync.syncStoreToCloud === 'function') {
+      await supabaseSync.syncStoreToCloud(newStore, {
+        email: req.body.clientEmail,
+        password: req.body.clientPassword
+      });
+    }
     res.json({ success: true, store: newStore });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.put('/api/admin/clients/:storeCode', (req, res) => {
+app.put('/api/admin/clients/:storeCode', async (req, res) => {
   try {
     const updated = storage.updateStore(req.params.storeCode, req.body);
-    supabaseSync.syncStoreToCloud(updated);
+    if (supabaseSync && typeof supabaseSync.syncStoreToCloud === 'function') {
+      await supabaseSync.syncStoreToCloud(updated, {
+        email: req.body.clientEmail,
+        password: req.body.clientPassword
+      });
+    }
     res.json({ success: true, store: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.delete('/api/admin/clients/:storeCode', (req, res) => {
+app.delete('/api/admin/clients/:storeCode', async (req, res) => {
   try {
-    const deleted = storage.deleteStore(req.params.storeCode);
+    const storeCode = req.params.storeCode;
+    const deleted = storage.deleteStore(storeCode);
     if (!deleted) {
       return res.status(404).json({ error: 'Store not found' });
+    }
+    if (supabaseSync && typeof supabaseSync.deleteStoreFromCloud === 'function') {
+      await supabaseSync.deleteStoreFromCloud(storeCode);
     }
     res.json({ success: true, storeCode: req.params.storeCode });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/upload-image', (req, res) => {
+  try {
+    const { storeCode, imageBase64, fileName } = req.body;
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'imageBase64 is required' });
+    }
+
+    const matches = imageBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    const buffer = matches ? Buffer.from(matches[2], 'base64') : Buffer.from(imageBase64, 'base64');
+    const ext = fileName ? path.extname(fileName) || '.jpg' : '.jpg';
+    const targetName = `${storeCode || 'flyer_' + Date.now()}${ext}`;
+
+    const uploadsDir = path.join(__dirname, '../public/uploads/flyers');
+    const dataDir = path.join(__dirname, '../data/flyers');
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+    const localPath = path.join(uploadsDir, targetName);
+    const dataPath = path.join(dataDir, targetName);
+
+    fs.writeFileSync(localPath, buffer);
+    fs.writeFileSync(dataPath, buffer);
+
+    const imageUrl = `/uploads/flyers/${targetName}`;
+    res.json({ success: true, imageUrl, filePath: localPath });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

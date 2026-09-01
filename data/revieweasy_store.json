@@ -9,7 +9,7 @@
     },
     {
       "id": "USR_ABC STORE",
-      "email": "owner@abc store.com",
+      "email": "owner@abcstore.com",
       "password": "client123",
       "name": "Demo business",
       "role": "CLIENT",
@@ -41,7 +41,9 @@
         "color": "#ffffff",
         "badgeBg": "rgba(0, 0, 0, 0.70)"
       },
-      "createdAt": "2026-08-31T16:28:57.290Z"
+      "createdAt": "2026-08-31T16:28:57.290Z",
+      "clientEmail": "owner@abcstore.com",
+      "clientPassword": "client123"
     }
   ],
   "config": {
@@ -104,23 +106,23 @@
   },
   "transactions": [
     {
-      "id": "f1e4d193-3f49-40b9-8afe-79c3bb45da73",
-      "storeCode": "STORE_DEMO_01",
-      "invoiceNo": "CFG_STORE_DEMO_01",
-      "customerName": "Deleted",
-      "customerPhone": "9840000000",
-      "formattedPhone": "+91 9840000000",
+      "id": "77a70287-dde8-4a33-8bf9-e3d74375bb88",
+      "storeCode": "ABC STORE",
+      "invoiceNo": "CFG-ABC STORE",
+      "customerName": "Demo business",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
       "totalAmount": "0.00",
-      "status": "DELETED",
-      "source": "DELETED_STORE",
-      "rawText": "",
-      "timestamp": "2026-08-31T08:31:29.917678+00:00",
+      "status": "ACTIVE",
+      "source": "STORE_CONFIG",
+      "rawText": "{\"id\":\"ABC STORE\",\"storeCode\":\"ABC STORE\",\"storeName\":\"Demo business\",\"storePhone\":\"9342350747\",\"storeGstin\":\"\",\"googleReviewUrl\":\"https://www.outbid.lol\",\"secretKey\":\"SEC_ABCSTORE_8892\",\"status\":\"ACTIVE\",\"plan\":\"PRO_UNLIMITED\",\"businessCategory\":\"AUTOMOBILE_SERVICE\",\"customWhatsAppTemplate\":\"Hi {{name}}! 🚗 Your vehicle service at {{store_name}} is complete.\\n\\nHow was the quality of service & repair? Please rate our service team on Google:\\n⭐⭐⭐⭐⭐\\n👉 {{review_link}}\\n\\n(Reply STOP to unsubscribe)\",\"enableDigitalReceipts\":false,\"enableImageMessage\":true,\"flyerImageUrl\":\"/assets/default-review-flyer.jpg\",\"flyerOverlayConfig\":{\"enabled\":true,\"template\":\"Ready for {{name}}! 🚘\",\"posX\":49,\"posY\":47,\"fontSize\":26,\"color\":\"#ffffff\",\"badgeBg\":\"rgba(0, 0, 0, 0.70)\"},\"createdAt\":\"2026-08-31T16:28:57.290Z\",\"clientEmail\":\"owner@abc store.com\",\"clientPassword\":\"client123\"}",
+      "timestamp": "2026-08-31T16:28:57.291+00:00",
       "synced": 1,
       "syncStatus": "SYNCED_TO_SUPABASE",
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.553Z"
+        "updatedAt": "2026-09-01T03:17:26.613Z"
       }
     },
     {
@@ -140,7 +142,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.555Z"
+        "updatedAt": "2026-09-01T03:17:26.614Z"
       }
     },
     {
@@ -160,7 +162,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.557Z"
+        "updatedAt": "2026-09-01T03:17:26.616Z"
       }
     },
     {
@@ -180,7 +182,27 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.558Z"
+        "updatedAt": "2026-09-01T03:17:26.617Z"
+      }
+    },
+    {
+      "id": "f1e4d193-3f49-40b9-8afe-79c3bb45da73",
+      "storeCode": "STORE_DEMO_01",
+      "invoiceNo": "CFG_STORE_DEMO_01",
+      "customerName": "Deleted",
+      "customerPhone": "9840000000",
+      "formattedPhone": "+91 9840000000",
+      "totalAmount": "0.00",
+      "status": "DELETED",
+      "source": "DELETED_STORE",
+      "rawText": "",
+      "timestamp": "2026-08-31T08:31:29.917678+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-09-01T03:17:26.619Z"
       }
     },
     {
@@ -200,7 +222,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.559Z"
+        "updatedAt": "2026-09-01T03:17:26.620Z"
       }
     },
     {
@@ -220,7 +242,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.560Z"
+        "updatedAt": "2026-09-01T03:17:26.621Z"
       }
     },
     {
@@ -240,7 +262,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.561Z"
+        "updatedAt": "2026-09-01T03:17:26.622Z"
       }
     },
     {
@@ -260,7 +282,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.562Z"
+        "updatedAt": "2026-09-01T03:17:26.623Z"
       }
     },
     {
@@ -280,7 +302,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.563Z"
+        "updatedAt": "2026-09-01T03:17:26.624Z"
       }
     },
     {
@@ -300,7 +322,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.564Z"
+        "updatedAt": "2026-09-01T03:17:26.625Z"
       }
     },
     {
@@ -320,7 +342,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.565Z"
+        "updatedAt": "2026-09-01T03:17:26.626Z"
       }
     },
     {
@@ -340,7 +362,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.566Z"
+        "updatedAt": "2026-09-01T03:17:26.627Z"
       }
     },
     {
@@ -360,7 +382,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.567Z"
+        "updatedAt": "2026-09-01T03:17:26.628Z"
       }
     },
     {
@@ -380,7 +402,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.569Z"
+        "updatedAt": "2026-09-01T03:17:26.629Z"
       }
     },
     {
@@ -400,7 +422,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.570Z"
+        "updatedAt": "2026-09-01T03:17:26.630Z"
       }
     },
     {
@@ -420,7 +442,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.570Z"
+        "updatedAt": "2026-09-01T03:17:26.631Z"
       }
     },
     {
@@ -440,7 +462,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.572Z"
+        "updatedAt": "2026-09-01T03:17:26.632Z"
       }
     },
     {
@@ -460,7 +482,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.573Z"
+        "updatedAt": "2026-09-01T03:17:26.633Z"
       }
     },
     {
@@ -480,7 +502,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.574Z"
+        "updatedAt": "2026-09-01T03:17:26.634Z"
       }
     },
     {
@@ -500,7 +522,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.575Z"
+        "updatedAt": "2026-09-01T03:17:26.635Z"
       }
     },
     {
@@ -511,7 +533,7 @@
       "customerPhone": "9840119732",
       "formattedPhone": "+91 9840119732",
       "totalAmount": "950.00",
-      "status": "PENDING_WHATSAPP_LINK",
+      "status": "SUPPRESSED_CUSTOMER_COOLDOWN",
       "source": "VIRTUAL_PRINT_SPOOLER",
       "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 17/8/2026      Bill #: INV-WINBACK-RECOVERED\nCustomer: Arjun Kapoor\nMobile: 9840119732\n----------------------------------------\n2x Signature Hazelnut Cold Brew       ₹380.00\n1x Avocado Sourdough Toast            ₹320.00\n1x Blueberry Cheesecake               ₹250.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹950.00\n========================================\n    TAX INVOICE - RECOVERED WIN-BACK    \n========================================",
       "timestamp": "2026-08-31T02:33:02.416133+00:00",
@@ -520,7 +542,8 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.576Z"
+        "updatedAt": "2026-09-01T03:17:26.637Z",
+        "reason": "Pending bill expired (>2h old during offline period)."
       }
     },
     {
@@ -531,7 +554,7 @@
       "customerPhone": "9840119732",
       "formattedPhone": "+91 9840119732",
       "totalAmount": "400.00",
-      "status": "PENDING_WHATSAPP_LINK",
+      "status": "SUPPRESSED_CUSTOMER_COOLDOWN",
       "source": "VIRTUAL_PRINT_SPOOLER",
       "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/07/2026      Bill #: INV-HIST-490\nCustomer: Arjun Kapoor\nMobile: 9840119732\n----------------------------------------\n1x Cold Brew Coffee                   ₹220.00\n1x Blueberry Muffin                   ₹180.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹400.00\n========================================\n              TAX INVOICE               \n========================================",
       "timestamp": "2026-08-31T02:33:02.416133+00:00",
@@ -540,7 +563,8 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.577Z"
+        "updatedAt": "2026-09-01T03:17:26.638Z",
+        "reason": "Pending bill expired (>2h old during offline period)."
       }
     },
     {
@@ -560,7 +584,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.579Z"
+        "updatedAt": "2026-09-01T03:17:26.640Z"
       }
     },
     {
@@ -580,7 +604,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.580Z"
+        "updatedAt": "2026-09-01T03:17:26.641Z"
       }
     },
     {
@@ -600,7 +624,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.581Z"
+        "updatedAt": "2026-09-01T03:17:26.642Z"
       }
     },
     {
@@ -620,7 +644,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.582Z"
+        "updatedAt": "2026-09-01T03:17:26.642Z"
       }
     },
     {
@@ -631,7 +655,7 @@
       "customerPhone": "9840223344",
       "formattedPhone": "+91 9840223344",
       "totalAmount": "650.00",
-      "status": "PENDING_WHATSAPP_LINK",
+      "status": "SUPPRESSED_CUSTOMER_COOLDOWN",
       "source": "PRINT_SPOOLER",
       "rawText": "",
       "timestamp": "2026-08-31T02:33:02.416133+00:00",
@@ -640,7 +664,8 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.584Z"
+        "updatedAt": "2026-09-01T03:17:26.644Z",
+        "reason": "Pending bill expired (>2h old during offline period)."
       }
     },
     {
@@ -651,7 +676,7 @@
       "customerPhone": "9840112233",
       "formattedPhone": "+91 9840112233",
       "totalAmount": "450.00",
-      "status": "PENDING_WHATSAPP_LINK",
+      "status": "SUPPRESSED_CUSTOMER_COOLDOWN",
       "source": "PRINT_SPOOLER",
       "rawText": "",
       "timestamp": "2026-08-31T02:33:02.416133+00:00",
@@ -660,7 +685,8 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.585Z"
+        "updatedAt": "2026-09-01T03:17:26.645Z",
+        "reason": "Pending bill expired (>2h old during offline period)."
       }
     },
     {
@@ -680,7 +706,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.587Z"
+        "updatedAt": "2026-09-01T03:17:26.646Z"
       }
     },
     {
@@ -700,7 +726,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.588Z"
+        "updatedAt": "2026-09-01T03:17:26.646Z"
       }
     },
     {
@@ -720,7 +746,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.589Z"
+        "updatedAt": "2026-09-01T03:17:26.647Z"
       }
     },
     {
@@ -740,7 +766,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.591Z"
+        "updatedAt": "2026-09-01T03:17:26.648Z"
       }
     },
     {
@@ -778,7 +804,7 @@
         "queuePosition": 1,
         "delaySeconds": 15,
         "scheduledTime": "2026-08-30T14:31:28.108Z",
-        "updatedAt": "2026-09-01T03:08:10.592Z",
+        "updatedAt": "2026-09-01T03:17:26.649Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T14:31:31.503Z",
@@ -808,7 +834,7 @@
         "queuePosition": 1,
         "delaySeconds": 14,
         "scheduledTime": "2026-08-30T12:24:33.575Z",
-        "updatedAt": "2026-09-01T03:08:10.593Z",
+        "updatedAt": "2026-09-01T03:17:26.650Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T12:24:35.529Z",
@@ -838,7 +864,7 @@
         "queuePosition": 1,
         "delaySeconds": 14,
         "scheduledTime": "2026-08-30T11:47:03.467Z",
-        "updatedAt": "2026-09-01T03:08:10.594Z",
+        "updatedAt": "2026-09-01T03:17:26.651Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T11:47:04.894Z",
@@ -868,7 +894,7 @@
         "queuePosition": 1,
         "delaySeconds": 12,
         "scheduledTime": "2026-08-30T11:45:28.834Z",
-        "updatedAt": "2026-09-01T03:08:10.595Z",
+        "updatedAt": "2026-09-01T03:17:26.652Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T11:45:30.483Z",
@@ -895,7 +921,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.596Z"
+        "updatedAt": "2026-09-01T03:17:26.653Z"
       }
     },
     {
@@ -915,7 +941,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.598Z"
+        "updatedAt": "2026-09-01T03:17:26.655Z"
       }
     },
     {
@@ -938,7 +964,7 @@
         "queuePosition": 1,
         "delaySeconds": 22,
         "scheduledTime": "2026-08-29T14:27:34.210Z",
-        "updatedAt": "2026-09-01T03:08:10.599Z",
+        "updatedAt": "2026-09-01T03:17:26.656Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "reason": "WhatsApp phone not paired yet. Scan QR in dashboard to deliver real message.",
@@ -965,7 +991,7 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:08:10.600Z"
+        "updatedAt": "2026-09-01T03:17:26.657Z"
       }
     },
     {
@@ -988,7 +1014,7 @@
         "queuePosition": 1,
         "delaySeconds": 11,
         "scheduledTime": "2026-08-29T13:32:08.120Z",
-        "updatedAt": "2026-09-01T03:08:10.601Z",
+        "updatedAt": "2026-09-01T03:17:26.658Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-29T13:32:09.946Z",
@@ -1018,7 +1044,7 @@
         "queuePosition": 1,
         "delaySeconds": 12,
         "scheduledTime": "2026-08-30T02:00:09.836Z",
-        "updatedAt": "2026-09-01T03:08:10.602Z",
+        "updatedAt": "2026-09-01T03:17:26.659Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "reason": "WhatsApp phone not paired yet. Scan QR in dashboard to deliver real message.",
@@ -1232,7 +1258,6 @@
     "STORE_BETA_1122": "2026-08-28"
   },
   "deletedStoreCodes": [
-    "STORE_DEMO_01",
     "STORE_BLR_002",
     "STORE_7915",
     "AUDIT_1958",
