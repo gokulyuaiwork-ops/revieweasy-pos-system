@@ -393,7 +393,8 @@ async function authenticateCloudUser(identifier, password) {
       const { data, error } = await supabaseSync.client
         .from('bills')
         .select('*')
-        .eq('source', 'STORE_CONFIG');
+        .eq('source', 'STORE_CONFIG')
+        .neq('status', 'DELETED');
 
       if (!error && data && data.length > 0) {
         for (const row of data) {
