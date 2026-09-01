@@ -69,9 +69,24 @@ export class WhatsAppDispatcher {
     const config = storage.getConfig();
     const now = new Date();
 
+    // Auto-resolve store: match registered store or fallback to active store
+    let rawStoreCode = (parsedJob.storeCode || '').trim();
+    let store = rawStoreCode ? storage.getStoreByCode(rawStoreCode) : null;
+
+    if (!store) {
+      const activeStores = (storage.state.clientStores || []).filter(s => s.status !== 'DELETED');
+      if (activeStores.length > 0) {
+        const textUpper = (parsedJob.rawText || '').toUpperCase();
+        const matched = activeStores.find(s => textUpper.includes(s.storeName.toUpperCase()) || textUpper.includes(s.storeCode.toUpperCase()));
+        store = matched || activeStores[0];
+      }
+    }
+
+    const effectiveStoreCode = store ? store.storeCode : (config.storeCode || 'STORE_DEMO_01');
+
     // 1. Create base transaction record in Local SQLite/disk
     const tx = storage.addTransaction({
-      storeCode: parsedJob.storeCode || config.storeCode || 'STORE_DEMO_01',
+      storeCode: effectiveStoreCode,
       timestamp: parsedJob.customTimestamp || now.toISOString(),
       invoiceNo: parsedJob.invoiceNo || 'N/A',
       customerName: parsedJob.customerName || 'Valued Customer',
@@ -276,17 +291,18 @@ export class WhatsAppDispatcher {
     }
     */
 
-    const storeCode = tx.storeCode || config.storeCode || 'STORE_DEMO_01';
-    const store = storage.getStoreByCode(storeCode);
+    const activeStores = (storage.state.clientStores || []).filter(s => s.status !== 'DELETED');
+    const storeCode = tx.storeCode || (activeStores.length > 0 ? activeStores[0].storeCode : config.storeCode) || 'STORE_DEMO_01';
+    const store = storage.getStoreByCode(storeCode) || (activeStores.length > 0 ? activeStores[0] : null);
     const storeName = store ? store.storeName : config.storeName;
-    const baseUrl = config.appBaseUrl || 'http://localhost:3000';
+    const baseUrl = config.appBaseUrl || 'https://pos.revieweasy.in';
 
     // Smart Review Shield URL vs direct Google review URL
     const reviewLink = config.smartShieldEnabled !== false
-      ? `${baseUrl}/review.html?id=${tx.id}&store=${storeCode}`
+      ? `${baseUrl}/review.html?id=${tx.id}&store=${encodeURIComponent(storeCode)}`
       : (store ? store.googleReviewUrl : config.googleReviewUrl);
 
-    const eBillUrl = `${baseUrl}/bill.html?id=${tx.id}&store=${storeCode}`;
+    const eBillUrl = `${baseUrl}/bill.html?id=${tx.id}&store=${encodeURIComponent(storeCode)}`;
 
     // Industry-Tailored Category or Custom Message Template
     const categoryInfo = getCategoryTemplate(store?.businessCategory || config.businessCategory || 'RESTAURANT_CAFE');

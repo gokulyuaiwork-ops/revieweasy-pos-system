@@ -136,8 +136,13 @@ class ResilientStorage {
 
   getStoreByCode(storeCode) {
     if (!storeCode) return null;
-    const code = storeCode.toUpperCase();
-    const store = (this.state.clientStores || []).find(s => (s.storeCode || s.id || '').toUpperCase() === code);
+    const cleanCode = String(storeCode).trim().toUpperCase();
+    const cleanNoSpaces = cleanCode.replace(/[\s_]/g, '');
+    const store = (this.state.clientStores || []).find(s => {
+      const sCode = (s.storeCode || s.id || '').toUpperCase();
+      const sCodeClean = sCode.replace(/[\s_]/g, '');
+      return sCode === cleanCode || sCodeClean === cleanNoSpaces || (cleanNoSpaces.length >= 3 && sCodeClean.includes(cleanNoSpaces));
+    });
     if (store) {
       return {
         ...this.state.config,
@@ -145,7 +150,9 @@ class ResilientStorage {
         storeCode: store.storeCode,
         storeName: store.storeName,
         storePhone: store.storePhone || this.state.config.storePhone,
-        googleReviewUrl: store.googleReviewUrl || this.state.config.googleReviewUrl
+        googleReviewUrl: store.googleReviewUrl || this.state.config.googleReviewUrl,
+        businessCategory: store.businessCategory || 'AUTOMOBILE_SERVICE',
+        customWhatsAppTemplate: store.customWhatsAppTemplate || null
       };
     }
     return null;
@@ -611,6 +618,21 @@ class ResilientStorage {
     }
     this.save();
     return record;
+  }
+
+  getTransactions(limit = 100, storeCode = null) {
+    this.load();
+    let txs = this.state.transactions || [];
+    if (storeCode) {
+      const cleanCode = String(storeCode).trim().toUpperCase();
+      const cleanNoSpaces = cleanCode.replace(/[\s_]/g, '');
+      txs = txs.filter(t => {
+        const tCode = (t.storeCode || '').toUpperCase();
+        const tCodeClean = tCode.replace(/[\s_]/g, '');
+        return tCode === cleanCode || tCodeClean === cleanNoSpaces || (cleanNoSpaces.length >= 3 && tCodeClean.includes(cleanNoSpaces));
+      });
+    }
+    return txs.slice(0, limit);
   }
 
   // -------------------------------------------------------------

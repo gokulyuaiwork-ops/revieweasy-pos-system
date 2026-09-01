@@ -14,6 +14,14 @@
       "name": "Demo business",
       "role": "CLIENT",
       "storeCode": "ABC STORE"
+    },
+    {
+      "id": "USR_STOREDEMO01",
+      "email": "owner@store_demo_01.com",
+      "password": "client123",
+      "name": "Sunshine Cafe & Bistro",
+      "role": "CLIENT",
+      "storeCode": "STORE_DEMO_01"
     }
   ],
   "clientStores": [
@@ -43,6 +51,25 @@
       },
       "createdAt": "2026-08-31T16:28:57.290Z",
       "clientEmail": "owner@abcstore.com",
+      "clientPassword": "client123"
+    },
+    {
+      "id": "STORE_DEMO_01",
+      "storeCode": "STORE_DEMO_01",
+      "storeName": "Sunshine Cafe & Bistro",
+      "storePhone": "9840012345",
+      "storeGstin": "",
+      "googleReviewUrl": "https://g.page/review",
+      "secretKey": "SEC_STOREDEMO01_1234",
+      "status": "STORE_PROFILE",
+      "plan": "PRO_UNLIMITED",
+      "businessCategory": "RESTAURANT_CAFE",
+      "customWhatsAppTemplate": null,
+      "enableDigitalReceipts": true,
+      "enableImageMessage": true,
+      "flyerImageUrl": "/assets/default-review-flyer.jpg",
+      "createdAt": "2026-08-31T08:31:13.25873+00:00",
+      "clientEmail": "owner@store_demo_01.com",
       "clientPassword": "client123"
     }
   ],
@@ -106,6 +133,170 @@
   },
   "transactions": [
     {
+      "id": "TX_1788256918558_438",
+      "storeCode": "ABC STORE",
+      "timestamp": "2026-09-01T10:01:58.558Z",
+      "invoiceNo": "INV-5436",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 93423 50747",
+      "totalAmount": "714.00",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "isRaster": false,
+      "status": "SCHEDULED_DISPATCH",
+      "reason": null,
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/09/2026 15:31:58\nBill #: INV-5436\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "synced": 0,
+      "syncStatus": "QUEUED_LOCAL",
+      "statusDetails": {
+        "queuePosition": 1,
+        "delaySeconds": 0,
+        "scheduledTime": "2026-09-01T10:01:58.859Z",
+        "updatedAt": "2026-09-01T10:02:01.275Z",
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "dispatchedAt": "2026-09-01T10:02:01.068Z",
+        "recipient": "9342350747",
+        "messagePreview": "Hi Rahul Sharma! ✨ Thank you for dining with us at Sunshine Cafe & Bistro today.\n\n🧾 *Bill #INV-5436* | Total: ₹714.00\n🌐 View Digital E-Bill: https://pos.revieweasy.in/bill.html?id=TX_1788256918558_438&store=FDSF\n\nDid you enjoy your meal and service? We would love your feedback on Google:\n⭐⭐⭐⭐⭐\n👉 https://pos.revieweasy.in/review.html?id=TX_1788256918558_438&store=FDSF\n\n(Reply STOP to unsubscribe)",
+        "hasImageAttachment": true,
+        "transport": "LIVE_BAILEYS_SOCKET"
+      }
+    },
+    {
+      "id": "91c0487d-86c9-4756-8ca3-b7b267b69360",
+      "storeCode": "ABC STORE",
+      "invoiceNo": "INV-5436",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 9342350747",
+      "totalAmount": "714.00",
+      "status": "DELIVERED",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/09/2026 15:31:58\nBill #: INV-5436\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "timestamp": "2026-09-01T10:01:58.558+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE"
+    },
+    {
+      "id": "TX_1788256878567_485",
+      "storeCode": "ABC STORE",
+      "timestamp": "2026-09-01T10:01:18.567Z",
+      "invoiceNo": "INV-5494",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9342350747",
+      "formattedPhone": "+91 93423 50747",
+      "totalAmount": "714.00",
+      "source": "WINDOWS_PRINT_SPOOLER",
+      "isRaster": false,
+      "status": "SCHEDULED_DISPATCH",
+      "reason": null,
+      "rawText": "========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/09/2026 15:31:18\nBill #: INV-5494\nCustomer: Rahul Sharma\nMobile: 9342350747\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n1x Chocolate Brownie    ₹  150.00\n----------------------------------------\nSubtotal:                         ₹680.00\nCGST (2.5%):                       ₹17.00\nSGST (2.5%):                       ₹17.00\n----------------------------------------\nTOTAL AMOUNT:                     ₹714.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "queuePosition": 1,
+        "delaySeconds": 0,
+        "scheduledTime": "2026-09-01T10:01:18.869Z",
+        "updatedAt": "2026-09-01T10:01:20.845Z",
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "dispatchedAt": "2026-09-01T10:01:20.636Z",
+        "recipient": "9342350747",
+        "messagePreview": "Hi Rahul Sharma! ✨ Thank you for dining with us at Sunshine Cafe & Bistro today.\n\n🧾 *Bill #INV-5494* | Total: ₹714.00\n🌐 View Digital E-Bill: https://pos.revieweasy.in/bill.html?id=TX_1788256878567_485&store=STORE_DEMO_01\n\nDid you enjoy your meal and service? We would love your feedback on Google:\n⭐⭐⭐⭐⭐\n👉 https://pos.revieweasy.in/review.html?id=TX_1788256878567_485&store=STORE_DEMO_01\n\n(Reply STOP to unsubscribe)",
+        "hasImageAttachment": true,
+        "transport": "LIVE_BAILEYS_SOCKET"
+      }
+    },
+    {
+      "id": "TX_1788244608222_84",
+      "storeCode": "ABC STORE",
+      "timestamp": "2026-09-01T06:36:48.222Z",
+      "invoiceNo": "INV-9876",
+      "customerName": "Rahul Sharma",
+      "customerPhone": "9876543219",
+      "formattedPhone": "+91 98765 43219",
+      "totalAmount": "530.00",
+      "source": "TCP_9100_NETWORK_STREAM",
+      "isRaster": false,
+      "status": "SCHEDULED_DISPATCH",
+      "reason": null,
+      "rawText": "\u001b@========================================\n           SUNSHINE CAFE & BISTRO       \n     Ph: 9840012345 (Store Helpline)    \n      GSTIN: 33AABCS1429B1ZB             \n========================================\nDate: 01/09/2026 12:00:00 PM\nBill #: INV-9876\nCustomer: Rahul Sharma\nMobile: 9876543219\n----------------------------------------\n1x Margherita Pizza     ₹  350.00\n1x Cold Brew Coffee     ₹  180.00\n----------------------------------------\nTOTAL AMOUNT:           ₹  530.00\n========================================\n         TAX INVOICE - PAID VIA UPI     \n        THANK YOU! VISIT AGAIN          \n========================================\u001bd\u0003\u001dVA\u0000",
+      "synced": 0,
+      "syncStatus": "OFFLINE_QUEUED_RETRY",
+      "statusDetails": {
+        "queuePosition": 1,
+        "delaySeconds": 0,
+        "scheduledTime": "2026-09-01T06:36:48.524Z",
+        "updatedAt": "2026-09-01T06:36:55.903Z",
+        "synced": 0,
+        "syncStatus": "OFFLINE_QUEUED_RETRY",
+        "dispatchedAt": "2026-09-01T06:36:55.601Z",
+        "recipient": "9876543219",
+        "messagePreview": "Hi Rahul Sharma! ✨ Thank you for dining with us at Sunshine Cafe & Bistro today.\n\n🧾 *Bill #INV-9876* | Total: ₹530.00\n🌐 View Digital E-Bill: https://pos.revieweasy.in/bill.html?id=TX_1788244608222_84&store=STORE_DEMO_01\n\nDid you enjoy your meal and service? We would love your feedback on Google:\n⭐⭐⭐⭐⭐\n👉 https://pos.revieweasy.in/review.html?id=TX_1788244608222_84&store=STORE_DEMO_01\n\n(Reply STOP to unsubscribe)",
+        "hasImageAttachment": true,
+        "transport": "LIVE_BAILEYS_SOCKET"
+      }
+    },
+    {
+      "id": "TX_1788244413078_757",
+      "storeCode": "ABC STORE",
+      "timestamp": "2026-09-01T06:33:33.078Z",
+      "invoiceNo": "N/A",
+      "customerName": "Valued Customer",
+      "customerPhone": "N/A",
+      "formattedPhone": "N/A",
+      "totalAmount": "0.00",
+      "source": "VIRTUAL_PRINT_SPOOLER",
+      "isRaster": false,
+      "status": "IGNORED_KOT",
+      "reason": "Document filtered as non-bill (UNKNOWN_OR_INSUFFICIENT_METADATA): No bill settlement markers",
+      "rawText": "TEST RECEIPT\n1x Margherita Pizza 350.00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-09-01T06:36:40.307Z"
+      }
+    },
+    {
+      "id": "9d43f72f-c219-4962-8448-e47cb53f3e7f",
+      "storeCode": "ABC STORE",
+      "invoiceNo": "N/A",
+      "customerName": "Valued Customer",
+      "customerPhone": "N/A",
+      "formattedPhone": "+91 N/A",
+      "totalAmount": "0.00",
+      "status": "IGNORED_KOT",
+      "source": "VIRTUAL_PRINT_SPOOLER",
+      "rawText": "TEST RECEIPT\n1x Margherita Pizza 350.00",
+      "timestamp": "2026-09-01T06:33:33.078+00:00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE"
+    },
+    {
+      "id": "TX_1788244409740_440",
+      "storeCode": "ABC STORE",
+      "timestamp": "2026-09-01T06:33:29.739Z",
+      "invoiceNo": "N/A",
+      "customerName": "Valued Customer",
+      "customerPhone": "N/A",
+      "formattedPhone": "N/A",
+      "totalAmount": "0.00",
+      "source": "VIRTUAL_PRINT_SPOOLER",
+      "isRaster": false,
+      "status": "IGNORED_KOT",
+      "reason": "Document filtered as non-bill (UNKNOWN_OR_INSUFFICIENT_METADATA): No bill settlement markers",
+      "rawText": "TEST RECEIPT\n1x Margherita Pizza 350.00",
+      "synced": 1,
+      "syncStatus": "SYNCED_TO_SUPABASE",
+      "statusDetails": {
+        "synced": 1,
+        "syncStatus": "SYNCED_TO_SUPABASE",
+        "updatedAt": "2026-09-01T06:36:40.309Z"
+      }
+    },
+    {
       "id": "77a70287-dde8-4a33-8bf9-e3d74375bb88",
       "storeCode": "ABC STORE",
       "invoiceNo": "CFG-ABC STORE",
@@ -122,12 +313,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.613Z"
+        "updatedAt": "2026-09-01T06:36:40.311Z"
       }
     },
     {
       "id": "de78641b-331f-486d-8baf-9e71e72ac94c",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-3211",
       "customerName": "Rahul Sharma",
       "customerPhone": "9342350747",
@@ -142,12 +333,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.614Z"
+        "updatedAt": "2026-09-01T06:36:40.315Z"
       }
     },
     {
       "id": "a0bc93db-9b9b-41de-87a4-dcbf79599414",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-7921",
       "customerName": "Rahul Sharma",
       "customerPhone": "9342350747",
@@ -162,12 +353,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.616Z"
+        "updatedAt": "2026-09-01T06:36:40.320Z"
       }
     },
     {
       "id": "8ef8fe46-9d6b-46b4-8c9d-705675a7fd7d",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "TEST_DEL",
       "customerName": "Walk-in Customer",
       "customerPhone": "123",
@@ -182,12 +373,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.617Z"
+        "updatedAt": "2026-09-01T06:36:40.322Z"
       }
     },
     {
       "id": "f1e4d193-3f49-40b9-8afe-79c3bb45da73",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "CFG_STORE_DEMO_01",
       "customerName": "Deleted",
       "customerPhone": "9840000000",
@@ -202,12 +393,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.619Z"
+        "updatedAt": "2026-09-01T06:36:40.327Z"
       }
     },
     {
       "id": "6543d1a9-0000-4000-8000-000000000001",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "CFG-STORE_DEMO_01",
       "customerName": "Sunshine Cafe & Bistro",
       "customerPhone": "9840012345",
@@ -222,12 +413,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.620Z"
+        "updatedAt": "2026-09-01T06:36:40.336Z"
       }
     },
     {
       "id": "d9b83d6f-18b2-464d-85d3-6f3ccd68015e",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-CLOUD-SYNC-7704",
       "customerName": "Aarav Patel",
       "customerPhone": "9840112233",
@@ -242,12 +433,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.621Z"
+        "updatedAt": "2026-09-01T06:36:40.341Z"
       }
     },
     {
       "id": "4b661901-c0e0-49a2-8a7c-6568022292b6",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-CLOUD-SYNC-1633",
       "customerName": "Aarav Patel",
       "customerPhone": "9840112233",
@@ -262,12 +453,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.622Z"
+        "updatedAt": "2026-09-01T06:36:40.343Z"
       }
     },
     {
       "id": "18b6f880-bd69-4b5f-8fb1-9a74afe2b361",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-8723",
       "customerName": "gokul",
       "customerPhone": "9342350747",
@@ -282,12 +473,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.623Z"
+        "updatedAt": "2026-09-01T06:36:40.347Z"
       }
     },
     {
       "id": "e47decfc-6ff4-4fe8-8ceb-172aad53c8cc",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-5404",
       "customerName": "gokul",
       "customerPhone": "9342350747",
@@ -302,12 +493,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.624Z"
+        "updatedAt": "2026-09-01T06:36:40.349Z"
       }
     },
     {
       "id": "88cfd4e9-ad59-4fcd-8c2d-946a6d2137db",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-4943",
       "customerName": "gokul",
       "customerPhone": "9342350747",
@@ -322,12 +513,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.625Z"
+        "updatedAt": "2026-09-01T06:36:40.352Z"
       }
     },
     {
       "id": "8f9ea477-d299-41df-856b-8efdb320a642",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-5227",
       "customerName": "Rahul Sharma",
       "customerPhone": "9342350747",
@@ -342,12 +533,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.626Z"
+        "updatedAt": "2026-09-01T06:36:40.356Z"
       }
     },
     {
       "id": "ae52e2f4-c42a-44df-8e3f-721a071c5402",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-8390",
       "customerName": "Gokul",
       "customerPhone": "9342350747",
@@ -362,12 +553,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.627Z"
+        "updatedAt": "2026-09-01T06:36:40.359Z"
       }
     },
     {
       "id": "cc312b1d-185d-4619-88be-dc70f0f918b2",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-2296",
       "customerName": "Gokul",
       "customerPhone": "9342350747",
@@ -382,12 +573,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.628Z"
+        "updatedAt": "2026-09-01T06:36:40.360Z"
       }
     },
     {
       "id": "d742fe85-e557-484f-8b60-9041d99057d0",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-9610",
       "customerName": "Rahul Sharma",
       "customerPhone": "9342350747",
@@ -402,12 +593,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.629Z"
+        "updatedAt": "2026-09-01T06:36:40.363Z"
       }
     },
     {
       "id": "8b9ad783-7571-4dd8-82bd-9d499b601365",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-3225",
       "customerName": "Rahul Sharma",
       "customerPhone": "9342350747",
@@ -422,12 +613,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.630Z"
+        "updatedAt": "2026-09-01T06:36:40.365Z"
       }
     },
     {
       "id": "94fdb151-a2be-4f76-837c-6db72a1f91ed",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-9154",
       "customerName": "Rahul Sharma",
       "customerPhone": "9342350747",
@@ -442,12 +633,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.631Z"
+        "updatedAt": "2026-09-01T06:36:40.369Z"
       }
     },
     {
       "id": "e1c6731e-a5a6-4cb5-8bb5-a5a0e35b9460",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-8172",
       "customerName": "Rahul",
       "customerPhone": "9342350747",
@@ -462,12 +653,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.632Z"
+        "updatedAt": "2026-09-01T06:36:40.372Z"
       }
     },
     {
       "id": "e723edbd-047a-4ac9-825b-9127a1508868",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-8128",
       "customerName": "gokul",
       "customerPhone": "9342350747",
@@ -482,12 +673,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.633Z"
+        "updatedAt": "2026-09-01T06:36:40.375Z"
       }
     },
     {
       "id": "7c08ec4c-0724-408a-8fbf-6f7170bc4dfa",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-4693",
       "customerName": "gokul",
       "customerPhone": "9342350747",
@@ -502,12 +693,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.634Z"
+        "updatedAt": "2026-09-01T06:36:40.377Z"
       }
     },
     {
       "id": "f1fd1119-a64c-476d-8469-a435cb3befee",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-9917",
       "customerName": "Rahul Sharma",
       "customerPhone": "9342350747",
@@ -522,12 +713,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.635Z"
+        "updatedAt": "2026-09-01T06:36:40.380Z"
       }
     },
     {
       "id": "982de9b4-6642-4bae-8838-4eb034eef46f",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-WINBACK-RECOVERE",
       "customerName": "Arjun Kapoor",
       "customerPhone": "9840119732",
@@ -542,13 +733,13 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.637Z",
+        "updatedAt": "2026-09-01T06:36:40.383Z",
         "reason": "Pending bill expired (>2h old during offline period)."
       }
     },
     {
       "id": "b5f157b6-8fcb-4a8d-8e80-3dca5a1f9015",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-HIST-490",
       "customerName": "Arjun Kapoor",
       "customerPhone": "9840119732",
@@ -563,13 +754,13 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.638Z",
+        "updatedAt": "2026-09-01T06:36:40.385Z",
         "reason": "Pending bill expired (>2h old during offline period)."
       }
     },
     {
       "id": "498d8046-9911-4215-8a6b-6987b402ed3e",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-8300",
       "customerName": "Rahul Sharma",
       "customerPhone": "9342350747",
@@ -584,12 +775,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.640Z"
+        "updatedAt": "2026-09-01T06:36:40.388Z"
       }
     },
     {
       "id": "e0aa1982-11fd-4446-815b-b77e400ea923",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-TEST-FLYER",
       "customerName": "Test Customer",
       "customerPhone": "9342350747",
@@ -604,12 +795,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.641Z"
+        "updatedAt": "2026-09-01T06:36:40.390Z"
       }
     },
     {
       "id": "ed034a78-e06b-4ca4-8ea3-24dfcc894ae1",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-TEST-01",
       "customerName": "Walk-in Customer",
       "customerPhone": "9840112233",
@@ -624,12 +815,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.642Z"
+        "updatedAt": "2026-09-01T06:36:40.392Z"
       }
     },
     {
       "id": "054031dc-ae8b-4688-813f-ab11864a6c15",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-CLOUD-SYNC-9138",
       "customerName": "Aarav Patel",
       "customerPhone": "9840112233",
@@ -644,12 +835,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.642Z"
+        "updatedAt": "2026-09-01T06:36:40.395Z"
       }
     },
     {
       "id": "55edd37c-de87-4bea-8fe6-f2f924625ec7",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-PACE-2-1787771541231",
       "customerName": "Valued Customer",
       "customerPhone": "9840223344",
@@ -664,13 +855,13 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.644Z",
+        "updatedAt": "2026-09-01T06:36:40.397Z",
         "reason": "Pending bill expired (>2h old during offline period)."
       }
     },
     {
       "id": "6572f520-702f-4b3b-8d20-a862aad44354",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-PACE-1-1787771541226",
       "customerName": "Valued Customer",
       "customerPhone": "9840112233",
@@ -685,13 +876,13 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.645Z",
+        "updatedAt": "2026-09-01T06:36:40.399Z",
         "reason": "Pending bill expired (>2h old during offline period)."
       }
     },
     {
       "id": "aac10cc5-6389-4b5d-8416-5d561d5de0da",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-TEST-IMG",
       "customerName": "Test Customer",
       "customerPhone": "9342350747",
@@ -706,12 +897,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.646Z"
+        "updatedAt": "2026-09-01T06:36:40.401Z"
       }
     },
     {
       "id": "e9aebce8-794d-424e-8423-11551c0a3871",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-TEST-1",
       "customerName": "Same Customer",
       "customerPhone": "9876599999",
@@ -726,12 +917,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.646Z"
+        "updatedAt": "2026-09-01T06:36:40.405Z"
       }
     },
     {
       "id": "38ffe93d-821e-466d-849e-997c64774075",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-TEST-3",
       "customerName": "Different Customer",
       "customerPhone": "9840188888",
@@ -746,12 +937,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.647Z"
+        "updatedAt": "2026-09-01T06:36:40.408Z"
       }
     },
     {
       "id": "642604e7-a93b-4e25-8d24-85717d993c91",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-TEST-2",
       "customerName": "Same Customer",
       "customerPhone": "9876599999",
@@ -766,12 +957,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.648Z"
+        "updatedAt": "2026-09-01T06:36:40.411Z"
       }
     },
     {
       "id": "11111111-1111-1111-1111-111111111111",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "HB-STORE_DEMO_01",
       "customerName": "Edge WhatsApp Agent",
       "customerPhone": "919342350747",
@@ -786,7 +977,7 @@
     },
     {
       "id": "TX_1788100273107_53",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "timestamp": "2026-08-30T14:31:13.106Z",
       "invoiceNo": "INV-2388",
       "customerName": "gomrul",
@@ -804,7 +995,7 @@
         "queuePosition": 1,
         "delaySeconds": 15,
         "scheduledTime": "2026-08-30T14:31:28.108Z",
-        "updatedAt": "2026-09-01T03:17:26.649Z",
+        "updatedAt": "2026-09-01T06:36:40.415Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T14:31:31.503Z",
@@ -816,7 +1007,7 @@
     },
     {
       "id": "TX_1788092659574_531",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "timestamp": "2026-08-30T12:24:19.574Z",
       "invoiceNo": "INV-9972",
       "customerName": "asd",
@@ -834,7 +1025,7 @@
         "queuePosition": 1,
         "delaySeconds": 14,
         "scheduledTime": "2026-08-30T12:24:33.575Z",
-        "updatedAt": "2026-09-01T03:17:26.650Z",
+        "updatedAt": "2026-09-01T06:36:40.418Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T12:24:35.529Z",
@@ -846,7 +1037,7 @@
     },
     {
       "id": "TX_1788090409466_891",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "timestamp": "2026-08-30T11:46:49.466Z",
       "invoiceNo": "INV-7541",
       "customerName": "asd",
@@ -864,7 +1055,7 @@
         "queuePosition": 1,
         "delaySeconds": 14,
         "scheduledTime": "2026-08-30T11:47:03.467Z",
-        "updatedAt": "2026-09-01T03:17:26.651Z",
+        "updatedAt": "2026-09-01T06:36:40.420Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T11:47:04.894Z",
@@ -876,7 +1067,7 @@
     },
     {
       "id": "TX_1788090316833_115",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "timestamp": "2026-08-30T11:45:16.833Z",
       "invoiceNo": "INV-6652",
       "customerName": "Rahul Sharma",
@@ -894,7 +1085,7 @@
         "queuePosition": 1,
         "delaySeconds": 12,
         "scheduledTime": "2026-08-30T11:45:28.834Z",
-        "updatedAt": "2026-09-01T03:17:26.652Z",
+        "updatedAt": "2026-09-01T06:36:40.422Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-30T11:45:30.483Z",
@@ -906,7 +1097,7 @@
     },
     {
       "id": "12946d52-7c79-4b03-a1ae-76603947dd5a",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-LIVE-4262",
       "customerName": "Rahul Merchant",
       "customerPhone": "9840112233",
@@ -921,12 +1112,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.653Z"
+        "updatedAt": "2026-09-01T06:36:40.425Z"
       }
     },
     {
       "id": "2baf66ab-70ef-4475-a9ac-6c6589dcb3a6",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "invoiceNo": "INV-TEST-SYNC-1090",
       "customerName": "Gokul Test",
       "customerPhone": "9840112233",
@@ -941,12 +1132,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.655Z"
+        "updatedAt": "2026-09-01T06:36:40.426Z"
       }
     },
     {
       "id": "TX_1788013629209_857",
-      "storeCode": "AUDIT_STORE_9142",
+      "storeCode": "ABC STORE",
       "timestamp": "2026-08-29T14:27:09.209Z",
       "invoiceNo": "INV-AUDIT-9148",
       "customerName": "Sunita Rao",
@@ -964,7 +1155,7 @@
         "queuePosition": 1,
         "delaySeconds": 22,
         "scheduledTime": "2026-08-29T14:27:34.210Z",
-        "updatedAt": "2026-09-01T03:17:26.656Z",
+        "updatedAt": "2026-09-01T06:36:40.429Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "reason": "WhatsApp phone not paired yet. Scan QR in dashboard to deliver real message.",
@@ -974,7 +1165,7 @@
     },
     {
       "id": "TX_1788013629206_306",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "timestamp": "2026-08-29T14:27:09.205Z",
       "invoiceNo": "N/A",
       "customerName": "Valued Customer",
@@ -991,12 +1182,12 @@
       "statusDetails": {
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
-        "updatedAt": "2026-09-01T03:17:26.657Z"
+        "updatedAt": "2026-09-01T06:36:40.431Z"
       }
     },
     {
       "id": "TX_1788010317119_978",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "timestamp": "2026-08-29T13:31:57.119Z",
       "invoiceNo": "INV-7633",
       "customerName": "Rahul Sharma",
@@ -1014,7 +1205,7 @@
         "queuePosition": 1,
         "delaySeconds": 11,
         "scheduledTime": "2026-08-29T13:32:08.120Z",
-        "updatedAt": "2026-09-01T03:17:26.658Z",
+        "updatedAt": "2026-09-01T06:36:40.433Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "dispatchedAt": "2026-08-29T13:32:09.946Z",
@@ -1026,7 +1217,7 @@
     },
     {
       "id": "TX_1788009429175_342",
-      "storeCode": "STORE_DEMO_01",
+      "storeCode": "ABC STORE",
       "timestamp": "2026-08-29T13:17:09.175Z",
       "invoiceNo": "INV-5498",
       "customerName": "Rahul Sharma",
@@ -1044,7 +1235,7 @@
         "queuePosition": 1,
         "delaySeconds": 12,
         "scheduledTime": "2026-08-30T02:00:09.836Z",
-        "updatedAt": "2026-09-01T03:17:26.659Z",
+        "updatedAt": "2026-09-01T06:36:40.435Z",
         "synced": 1,
         "syncStatus": "SYNCED_TO_SUPABASE",
         "reason": "WhatsApp phone not paired yet. Scan QR in dashboard to deliver real message.",
@@ -1274,16 +1465,16 @@
     "todayFailedCount": 0,
     "activeSpoolerCount": 0,
     "lastReceiptTime": null,
-    "totalPrintsIntercepted": 68,
-    "validInvoicesProcessed": 85,
-    "kotsBlocked": 14,
+    "totalPrintsIntercepted": 73,
+    "validInvoicesProcessed": 88,
+    "kotsBlocked": 16,
     "dummyNumbersRejected": 1,
     "duplicatesSuppressed": 20,
     "storeOwnerNumbersFiltered": 0,
     "anonymousWalkins": 1,
     "quietHoursRescheduled": 22,
-    "whatsAppDelivered": 33,
-    "tcp9100Intercepted": 1,
+    "whatsAppDelivered": 36,
+    "tcp9100Intercepted": 2,
     "rasterBitmapsParsed": 6,
     "offlineQueuedBills": 2,
     "negativeReviewsShielded": 39,
@@ -1294,29 +1485,11 @@
     "revenueRecovered": 5700
   },
   "idempotencyKeys": {
-    "501b90a4e96a8b0e8c3ffc46420a1faff4838eb25e7418b1e7376161b5e562d3": {
-      "invoiceNo": "INV-6652",
+    "7a68f85513fd65c949a5c486e20e1566740834b33e6e7f03527084108cdb87e9": {
+      "invoiceNo": "INV-5436",
       "phone": "9342350747",
       "total": "714.00",
-      "timestamp": 1788090316832
-    },
-    "6876cface4702e7a70355a612efa7313e6836a4d17334daaa422ba616bbc4758": {
-      "invoiceNo": "INV-7541",
-      "phone": "9342350747",
-      "total": "525.00",
-      "timestamp": 1788090409464
-    },
-    "5ec0e56caf08e5ad48d8c6e03c3ff3966e297ac2ccb052c2fecdb137016496f1": {
-      "invoiceNo": "INV-9972",
-      "phone": "9342350747",
-      "total": "840.00",
-      "timestamp": 1788092659573
-    },
-    "e2babb215127b915f205f5a92e3a5f737aaa9817c304dac89402da384cc9ec16": {
-      "invoiceNo": "INV-2388",
-      "phone": "9342350747",
-      "total": "472.50",
-      "timestamp": 1788100273105
+      "timestamp": 1788256918554
     }
   },
   "queue": [],

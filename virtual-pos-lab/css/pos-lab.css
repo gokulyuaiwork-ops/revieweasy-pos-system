@@ -595,3 +595,40 @@ body {
   color: #34d399;
   border: 1px solid var(--border);
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .receipt-paper, .receipt-paper * {
+    visibility: visible;
+  }
+  .receipt-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: "Courier New", Courier, monospace !important;
+    font-size: 11px !important;
+  }
+  .paper-header, .paper-footer {
+    display: block !important;
+  }
+  #paperReceiptContent {
+    color: #000000 !important;
+    font-family: "Courier New", Courier, monospace !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+  }
+}

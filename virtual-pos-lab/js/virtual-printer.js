@@ -70,33 +70,58 @@ class VirtualThermalPrinter {
       log.innerText = `[${selectedMode}] Flushed ${byteLength} bytes to ReviewEasy (${docType})...`;
     }
 
-    // 3. Dispatch stream to ReviewEasy Backend (:3000)
+    // 3. Dispatch stream to ReviewEasy Backend
     try {
-      const source = selectedMode === 'TCP_9100' ? 'TCP_9100_NETWORK_STREAM' : 'WINDOWS_PRINT_SPOOLER';
-      
-      const res = await fetch('http://localhost:3000/api/simulate-print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rawText: receiptText,
-          source: source,
-          storeCode: 'STORE_DEMO_01'
-        })
-      });
+      const storeCode = (window.getActiveStoreCode ? window.getActiveStoreCode() : document.getElementById('posStoreCode')?.value || 'STORE_DEMO_01').trim().toUpperCase();
 
-      const data = await res.json();
-      if (data.success) {
-        if (log) {
-          log.innerText = `✅ [Captured] Bill #${data.transaction.invoiceNo} | Phone: ${data.transaction.customerPhone || 'N/A'} | Status: ${data.transaction.status}`;
+      if (selectedMode === 'TCP_9100') {
+        // Send real raw binary ESC/POS stream across local TCP 127.0.0.1:9100 socket
+        const tcpRes = await fetch('/api/lab/send-raw-tcp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rawText: receiptText,
+            port: 9100,
+            host: '127.0.0.1'
+          })
+        });
+
+        const tcpData = await tcpRes.json();
+        if (tcpData.success) {
+          if (log) {
+            log.innerText = `📡 [Real Raw TCP:9100 Active] Streamed ${tcpData.bytesSent} bytes of ESC/POS commands directly to ReviewEasy Interceptor (127.0.0.1:9100)!`;
+          }
+        } else {
+          if (log) {
+            log.innerText = `⚠️ TCP 9100 Stream Error: ${tcpData.error}`;
+          }
         }
       } else {
-        if (log) {
-          log.innerText = `⚠️ ReviewEasy error: ${data.error || 'Unknown error'}`;
+        // Windows Spooler / Virtual Spooler Tap
+        const res = await fetch('http://localhost:3000/api/simulate-print', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rawText: receiptText,
+            source: 'WINDOWS_PRINT_SPOOLER',
+            storeCode: storeCode
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          if (log) {
+            log.innerText = `✅ [Spooler Intercepted] Bill #${data.transaction.invoiceNo} | Phone: ${data.transaction.customerPhone || 'N/A'} | Status: ${data.transaction.status}`;
+          }
+        } else {
+          if (log) {
+            log.innerText = `⚠️ ReviewEasy error: ${data.error || 'Unknown error'}`;
+          }
         }
       }
     } catch (err) {
       if (log) {
-        log.innerText = `⚠️ ReviewEasy (:3000) error: ${err.message}`;
+        log.innerText = `⚠️ ReviewEasy Error: ${err.message}`;
       }
     }
 
@@ -141,6 +166,15 @@ Status: Online (Buffer Cleared)
       log.innerText = `[Buffer Cleared] Ready for next invoice.`;
     }
   }
+
+  printViaWindowsSpooler() {
+    const receiptText = typeof generateReceiptText === 'function' ? generateReceiptText('TAX_INVOICE') : '';
+    const content = document.getElementById('paperReceiptContent');
+    if (content && receiptText) {
+      content.innerText = receiptText;
+    }
+    window.print();
+  }
 }
 
 window.VirtualPrinter = new VirtualThermalPrinter();
@@ -148,3 +182,5 @@ window.VirtualPrinter = new VirtualThermalPrinter();
 function printerFeed() { window.VirtualPrinter.feed(); }
 function printerCut() { window.VirtualPrinter.cut(); }
 function printerReset() { window.VirtualPrinter.reset(); }
+function printWindowsDialog() { window.VirtualPrinter.printViaWindowsSpooler(); }
+window.printWindowsDialog = printWindowsDialog;

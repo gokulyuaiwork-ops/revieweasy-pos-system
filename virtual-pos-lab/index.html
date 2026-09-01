@@ -22,8 +22,15 @@
         </div>
       </div>
 
-      <div class="header-links">
-        <a href="http://localhost:3000" target="_blank" class="btn-dashboard-link">
+      <div class="header-links" style="display: flex; align-items: center; gap: 12px;">
+        <div class="account-selector-box" style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+          <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Active Store:</span>
+          <select id="posStoreSelect" style="background: rgba(15,23,42,0.95); border: 1px solid #3b82f6; color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Select Merchant Account" onchange="onStoreCodeChanged(this.value)">
+            <option value="ABC STORE" selected>ABC STORE (Demo business)</option>
+          </select>
+          <input type="text" id="posStoreCode" value="ABC STORE" style="display: none;">
+        </div>
+        <a href="http://localhost:3000" id="dashLinkBtn" target="_blank" class="btn-dashboard-link">
           📊 Open ReviewEasy Dashboard (:3000) ↗
         </a>
       </div>
@@ -117,6 +124,7 @@
                 <button class="btn-sub btn-kot" onclick="triggerPrint('KOT')">🍳 Print KOT</button>
                 <button class="btn-sub btn-estimate" onclick="triggerPrint('ESTIMATE')">📋 Print Estimate</button>
                 <button class="btn-sub btn-reprint" onclick="triggerPrint('REPRINT')">🔁 Reprint Last</button>
+                <button class="btn-sub" style="background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #34d399;" onclick="printWindowsDialog()" title="Open actual Windows Print Spooler dialog to test real USB/Network thermal printer or PDF">🖨️ Windows OS Print</button>
               </div>
             </div>
 
