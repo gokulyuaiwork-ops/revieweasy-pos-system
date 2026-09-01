@@ -374,10 +374,6 @@ app.post('/api/feedback', async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// Authentication Endpoints
-// -------------------------------------------------------------
-app.post('/api/auth/login', async (req, res) => {
-// -------------------------------------------------------------
 // Authentication Endpoints (Supports Admin & All Client Stores)
 // -------------------------------------------------------------
 async function authenticateCloudUser(identifier, password) {
