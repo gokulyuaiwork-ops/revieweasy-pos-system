@@ -273,7 +273,7 @@ export class SupabaseSyncEngine {
       // OFFLINE-FIRST: Mark as pending sync in local storage
       tx.synced = 0;
       tx.syncStatus = isConnected ? 'PENDING_SUPABASE_CREDENTIALS' : 'OFFLINE_QUEUED';
-      storage.updateTransactionStatus(tx.id, tx.status, { synced: 0, syncStatus: tx.syncStatus });
+      storage.updateTransactionStatus(tx.id, null, { synced: 0, syncStatus: tx.syncStatus });
       storage.incrementMetric('offlineQueuedBills');
       this.pendingSyncCount++;
       console.log(`[Supabase Sync] [OFFLINE MODE] Bill #${tx.invoiceNo} queued in local SQLite/disk cache (0% data loss)`);
@@ -303,7 +303,7 @@ export class SupabaseSyncEngine {
 
       tx.synced = 1;
       tx.syncStatus = 'SYNCED_TO_SUPABASE';
-      storage.updateTransactionStatus(tx.id, tx.status, { synced: 1, syncStatus: 'SYNCED_TO_SUPABASE' });
+      storage.updateTransactionStatus(tx.id, null, { synced: 1, syncStatus: 'SYNCED_TO_SUPABASE' });
       this.lastSyncTimestamp = new Date().toISOString();
       console.log(`[Supabase Sync] ✅ Bill #${tx.invoiceNo} successfully synced to Supabase cloud!`);
       this.broadcast('CLOUD_SYNC_STATUS', { pending: this.pendingSyncCount, isOnline: this.isOnline, lastSync: this.lastSyncTimestamp });
@@ -312,7 +312,7 @@ export class SupabaseSyncEngine {
       console.warn(`[Supabase Sync] Push failed (${err.message}). Falling back to local offline queue.`);
       tx.synced = 0;
       tx.syncStatus = 'OFFLINE_QUEUED_RETRY';
-      storage.updateTransactionStatus(tx.id, tx.status, { synced: 0, syncStatus: 'OFFLINE_QUEUED_RETRY' });
+      storage.updateTransactionStatus(tx.id, null, { synced: 0, syncStatus: 'OFFLINE_QUEUED_RETRY' });
       return { success: false, mode: 'OFFLINE_QUEUED', error: err.message };
     }
   }
