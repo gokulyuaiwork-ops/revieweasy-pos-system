@@ -196,24 +196,16 @@ export class WhatsAppDispatcher {
   }
 
   /**
-   * Enqueues a transaction into the FIFO pacing queue (Immediate when idle, paced when back-to-back)
+   * Enqueues a transaction into the FIFO pacing queue with mandatory 10–15s anti-ban human jitter
    */
   enqueueForPacedDispatch(txId) {
-    const config = storage.getConfig();
     const now = Date.now();
-    const minSpacingMs = 10 * 1000;
     
-    // If last message was sent more than minSpacingMs ago and queue is empty, dispatch immediately (300ms)!
-    const timeSinceLastDispatch = now - (this.lastDispatchedTimestamp || 0);
-    const isIdle = this.pacingQueue.length === 0 && timeSinceLastDispatch >= minSpacingMs;
+    // Anti-Banning Protocol: Random human delay between 10 to 15 seconds
+    const randomDelayMs = (10 + Math.floor(Math.random() * 6)) * 1000; // 10s, 11s, 12s, 13s, 14s, or 15s
 
-    if (isIdle) {
-      this.nextAvailableDispatchTime = now + 300;
-    } else {
-      const baseTime = Math.max(now, this.nextAvailableDispatchTime || now);
-      const jitter = Math.floor(5 + Math.random() * 5) * 1000; // 5-10s safe pacing for burst
-      this.nextAvailableDispatchTime = baseTime + jitter;
-    }
+    const baseTime = Math.max(now, this.nextAvailableDispatchTime || now);
+    this.nextAvailableDispatchTime = baseTime + randomDelayMs;
 
     const estimatedWaitMs = Math.max(0, this.nextAvailableDispatchTime - now);
     const estimatedWaitSeconds = Math.round(estimatedWaitMs / 1000);
@@ -229,7 +221,7 @@ export class WhatsAppDispatcher {
     const tx = storage.state.transactions.find(t => t.id === txId);
     const invoiceNo = tx ? tx.invoiceNo : null;
     if (tx) {
-      console.log(`[Pacing Queue] 📥 Queued Bill #${tx.invoiceNo} (Position: #${queuePosition}, dispatch in ~${estimatedWaitSeconds}s)`);
+      console.log(`[Anti-Ban Protocol] 🛡️ Bill #${tx.invoiceNo} queued with natural human delay of ${estimatedWaitSeconds}s (Position: #${queuePosition})`);
       this.broadcast('TRANSACTION_UPDATED', tx);
     }
 
@@ -247,7 +239,7 @@ export class WhatsAppDispatcher {
       const waitMs = job.dispatchAt - now;
 
       if (waitMs > 0) {
-        console.log(`[Pacing Queue] ⏳ Throttling: Waiting ${(waitMs / 1000).toFixed(1)}s before dispatching next message (Strict 15s rate limit)...`);
+        console.log(`[Anti-Ban Protocol] ⏳ Holding: Waiting ${(waitMs / 1000).toFixed(1)}s before sending WhatsApp invite (Strict 10-15s anti-ban rate limit)...`);
         await new Promise(resolve => setTimeout(resolve, waitMs));
       }
 
