@@ -74,8 +74,12 @@ dispatcher.setEngines(localBaileys, supabaseSync);
 // Auto-retry pending receipts and sync cloud heartbeat when WhatsApp connects
 localBaileys.onConnected(() => {
   dispatcher.retryPendingMessages();
-  if (supabaseSync && typeof supabaseSync.syncWhatsAppStatusToCloud === 'function') {
-    supabaseSync.syncWhatsAppStatusToCloud(localBaileys.storeId, 'CONNECTED', localBaileys.phoneNumber);
+  if (supabaseSync && typeof supabaseSync.syncEdgeHeartbeatToCloud === 'function') {
+    supabaseSync.syncEdgeHeartbeatToCloud(localBaileys.storeId, {
+      whatsappStatus: 'CONNECTED',
+      phoneNumber: localBaileys.phoneNumber,
+      spoolerStatus: resilience.getHealthSummary().spoolerStatus
+    });
   }
 });
 
@@ -86,6 +90,17 @@ const autoUpdater = new AutoUpdaterEngine(broadcast, localBaileys);
 const spoolerWatcher = new SpoolerWatcher(dispatcher, broadcast);
 const tcpProxy = new Tcp9100ProxyServer(dispatcher, broadcast);
 const resilience = new SystemResilienceEngine(broadcast);
+
+// 10s Periodic Live Edge Telemetry Heartbeat Push to Cloud
+setInterval(() => {
+  if (supabaseSync && typeof supabaseSync.syncEdgeHeartbeatToCloud === 'function') {
+    supabaseSync.syncEdgeHeartbeatToCloud(localBaileys.storeId, {
+      whatsappStatus: localBaileys.status,
+      phoneNumber: localBaileys.phoneNumber,
+      spoolerStatus: resilience.getHealthSummary().spoolerStatus
+    });
+  }
+}, 10000);
 
 // WebSocket Connection Handler
 wss.on('connection', (ws) => {
@@ -118,6 +133,9 @@ app.get('/api/state', async (req, res) => {
   try {
     const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
     if (supabaseSync) {
+      if (typeof supabaseSync.pullCloudStores === 'function') {
+        try { await supabaseSync.pullCloudStores(); } catch (e) {}
+      }
       if (typeof supabaseSync.pullCloudFeedbacks === 'function') {
         try { await supabaseSync.pullCloudFeedbacks(storeCode); } catch (e) {}
       }

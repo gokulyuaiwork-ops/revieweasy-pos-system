@@ -246,6 +246,8 @@ app.get('/api/state', async (req, res) => {
 
     let whatsappStatus = 'NOT_LINKED';
     let whatsappPhone = null;
+    let spoolerStatus = 'Spooler Idle';
+    let printerName = (store && store.printerName) || 'Microsoft Print to PDF (Healthy)';
 
     // 1. Check if Supabase has an active edge agent heartbeat for this store
     if (supabaseSync && supabaseSync.client) {
@@ -257,9 +259,16 @@ app.get('/api/state', async (req, res) => {
           .eq('id', hbId)
           .maybeSingle();
 
-        if (hbRow && hbRow.status === 'CONNECTED') {
-          whatsappStatus = 'CONNECTED';
+        if (hbRow) {
+          whatsappStatus = hbRow.status || 'NOT_LINKED';
           whatsappPhone = hbRow.customer_phone || (store && store.storePhone) || '919342350747';
+          if (hbRow.raw_text) {
+            try {
+              const hbData = JSON.parse(hbRow.raw_text);
+              if (hbData.spoolerStatus) spoolerStatus = hbData.spoolerStatus;
+              if (hbData.printerName) printerName = hbData.printerName;
+            } catch (e) {}
+          }
         }
       } catch (e) {}
     }
@@ -317,15 +326,15 @@ app.get('/api/state', async (req, res) => {
       quota: storage.getTodayQuotaUsage(storeCode),
       transactions: displayBills.slice(0, 50),
       health: {
-        spoolerStatus: 'Cloud SaaS Mode',
-        printerName: (store && store.printerName) || 'POS Spooler',
-        printerStatus: 'Cloud Ready',
-        printerPort: 'Cloud Pipe'
+        spoolerStatus: spoolerStatus,
+        printerName: printerName,
+        printerStatus: whatsappStatus === 'CONNECTED' ? 'Healthy' : 'Edge Offline',
+        printerPort: 'Windows Spooler'
       },
       whatsapp: {
         status: whatsappStatus,
         phoneNumber: whatsappPhone,
-        mode: 'CLOUD_HOSTED'
+        mode: 'EDGE_DISPATCHER'
       },
       supabase: {
         isOnline: true,

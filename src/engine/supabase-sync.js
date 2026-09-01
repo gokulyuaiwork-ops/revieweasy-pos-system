@@ -29,11 +29,13 @@ export class SupabaseSyncEngine {
     
     this.initClient();
     if (!process.env.VERCEL) {
+      // 10s Fast Two-Way Telemetry & Cloud-to-Edge Heartbeat Loop
       this.syncInterval = setInterval(() => {
         if (this.isOnline) {
           this.flushOfflineSyncQueue().catch(() => {});
+          this.pullCloudStores().then(() => this.syncActiveStoreConfig()).catch(() => {});
         }
-      }, 30000);
+      }, 10000);
       if (this.syncInterval && this.syncInterval.unref) this.syncInterval.unref();
     }
   }
@@ -51,9 +53,36 @@ export class SupabaseSyncEngine {
         }
         this.client = createClient(url, anonKey, options);
         console.log('[Supabase Sync] ✅ Client connected to live cloud endpoint:', url);
+        this.subscribeToCloudRealtime();
       } catch (err) {
         console.warn('[Supabase Sync] Client init warning:', err.message);
       }
+    }
+  }
+
+  subscribeToCloudRealtime() {
+    if (!this.client || process.env.VERCEL) return;
+    try {
+      this.client
+        .channel('cloud-to-edge-sync')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'bills' },
+          async (payload) => {
+            if (payload.new && (payload.new.source === 'STORE_CONFIG' || payload.new.status === 'DELETED')) {
+              console.log('[Supabase Realtime] ⚡ Cloud store profile change received! Applying to localhost immediately...');
+              await this.pullCloudStores();
+              this.syncActiveStoreConfig();
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[Supabase Realtime] 🟢 Instant Cloud-to-Edge Realtime sync active!');
+          }
+        });
+    } catch (e) {
+      console.warn('[Supabase Realtime] Realtime subscription note:', e.message);
     }
   }
 
@@ -227,6 +256,7 @@ export class SupabaseSyncEngine {
         } catch (e) {}
       }
       storage.save();
+      this.syncActiveStoreConfig();
       return pulled;
     } catch (err) {
       console.warn('[Supabase Sync] pullCloudStores note:', err.message);
@@ -235,13 +265,65 @@ export class SupabaseSyncEngine {
   }
 
   /**
-   * Sync Edge WhatsApp connection heartbeat to Supabase Cloud
+   * Apply cloud merchant changes immediately to local active configuration
    */
-  async syncWhatsAppStatusToCloud(storeCode, status, phoneNumber) {
+  syncActiveStoreConfig() {
+    try {
+      const activeCode = (storage.getConfig().storeCode || 'ABC STORE').toUpperCase();
+      const activeStore = storage.getStoreByCode(activeCode);
+      if (activeStore) {
+        const prevName = storage.state.config.storeName;
+        const prevReview = storage.state.config.googleReviewUrl;
+        const prevFlyer = storage.state.config.flyerImageUrl;
+
+        storage.state.config = {
+          ...storage.state.config,
+          storeCode: activeStore.storeCode,
+          storeName: activeStore.storeName,
+          storePhone: activeStore.storePhone,
+          storeGstin: activeStore.storeGstin,
+          googleReviewUrl: activeStore.googleReviewUrl,
+          businessCategory: activeStore.businessCategory,
+          flyerImageUrl: activeStore.flyerImageUrl,
+          flyerOverlayConfig: activeStore.flyerOverlayConfig,
+          customWhatsAppTemplate: activeStore.customWhatsAppTemplate
+        };
+        storage.save();
+
+        if (prevName !== activeStore.storeName || prevReview !== activeStore.googleReviewUrl || prevFlyer !== activeStore.flyerImageUrl) {
+          console.log(`[Supabase Sync] 🔄 Local active store [${activeStore.storeName}] updated immediately from cloud!`);
+          this.broadcast('CONFIG_UPDATED', storage.getConfig());
+          this.broadcast('STORE_UPDATED', activeStore);
+        }
+      }
+    } catch (e) {}
+  }
+
+  /**
+   * Sync Edge WhatsApp + Spooler connection heartbeat and live telemetry to Supabase Cloud
+   */
+  async syncEdgeHeartbeatToCloud(storeCode, telemetry = {}) {
     if (!this.client) return;
     try {
-      const code = (storeCode || 'STORE_DEMO_01').toUpperCase();
+      const code = (storeCode || storage.getConfig().storeCode || 'ABC STORE').toUpperCase();
       const hbId = getStoreHeartbeatUuid(code);
+      const metrics = storage.getMetrics();
+      const analytics = storage.getClientAnalytics(code);
+
+      const payload = {
+        whatsappStatus: telemetry.whatsappStatus || 'CONNECTED',
+        phoneNumber: telemetry.phoneNumber || '919342350747',
+        spoolerStatus: telemetry.spoolerStatus || 'Healthy',
+        printerName: telemetry.printerName || 'Microsoft Print to PDF (Healthy)',
+        todayBills: analytics.today?.bills || metrics.todayInvoices || 0,
+        todaySent: analytics.today?.sent || metrics.todaySent || 0,
+        todayGoogleRedirects: analytics.today?.googleRedirects || 0,
+        todayShielded: analytics.today?.shieldedFeedback || 0,
+        allTimeBills: analytics.allTime?.bills || 0,
+        allTimeSent: analytics.allTime?.sent || 0,
+        lastHeartbeat: new Date().toISOString()
+      };
+
       await this.client
         .from('bills')
         .upsert({
@@ -249,16 +331,21 @@ export class SupabaseSyncEngine {
           invoice_no: `HB-${code}`,
           store_code: code,
           customer_name: 'Edge WhatsApp Agent',
-          customer_phone: phoneNumber || '919342350747',
+          customer_phone: payload.phoneNumber,
           total_amount: 0,
-          status: status || 'CONNECTED',
+          status: payload.whatsappStatus,
           source: 'AGENT_HEARTBEAT',
+          raw_text: JSON.stringify(payload),
           local_created_at: new Date().toISOString(),
           synced_at: new Date().toISOString()
         }, { onConflict: 'id' });
     } catch (err) {
       // Non-fatal background telemetry
     }
+  }
+
+  async syncWhatsAppStatusToCloud(storeCode, status, phoneNumber) {
+    return this.syncEdgeHeartbeatToCloud(storeCode, { whatsappStatus: status, phoneNumber });
   }
 
   /**
