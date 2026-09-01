@@ -368,8 +368,13 @@ export class WhatsAppDispatcher {
 
     // 1. Send locally from PC via Baileys Multi-Device Engine
     let sendResult = { success: false, mode: 'DISCONNECTED' };
-    if (this.localBaileys && this.localBaileys.status === 'CONNECTED') {
-      sendResult = await this.localBaileys.sendMessage(tx.customerPhone, messagePayload);
+    if (this.localBaileys) {
+      if (this.localBaileys.storeId !== storeCode && this.localBaileys.hasSavedCredentials(storeCode)) {
+        await this.localBaileys.switchStore(storeCode);
+      }
+      if (this.localBaileys.status === 'CONNECTED') {
+        sendResult = await this.localBaileys.sendMessage(tx.customerPhone, messagePayload);
+      }
     }
 
     if (sendResult.success && sendResult.mode === 'LIVE_BAILEYS_SOCKET') {
@@ -441,14 +446,14 @@ export class WhatsAppDispatcher {
    * Automatically re-process pending bills when WhatsApp connects or re-establishes socket
    */
   retryPendingMessages() {
-    const config = storage.getConfig();
-    const storeCode = (config.storeCode || 'STORE_DEMO_01').toUpperCase();
+    const activeStores = (storage.state.clientStores || []).filter(s => s.status !== 'DELETED');
+    const storeCode = (this.localBaileys?.storeId || (activeStores.length > 0 ? activeStores[0].storeCode : storage.getConfig().storeCode) || 'ABC STORE').toUpperCase();
     const now = Date.now();
     const MAX_PENDING_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours max freshness window
-    const cooldownDays = config.customerCooldownDays || 180;
+    const cooldownDays = storage.getConfig().customerCooldownDays || 180;
 
     const allPending = storage.getTransactions(200).filter(t => 
-      (t.storeCode || 'STORE_DEMO_01').toUpperCase() === storeCode &&
+      (t.storeCode || 'ABC STORE').toUpperCase() === storeCode &&
       t.status === 'PENDING_WHATSAPP_LINK'
     );
 

@@ -27,6 +27,26 @@ function getSessionsDir() {
 }
 
 export class LocalBaileysEngine {
+  resolveActiveStoreId() {
+    try {
+      const activeStores = (storage.state.clientStores || []).filter(s => s.status !== 'DELETED');
+      const sessionsDir = getSessionsDir();
+      for (const st of activeStores) {
+        const credPath = path.join(sessionsDir, `session_${st.storeCode}`, 'creds.json');
+        if (fs.existsSync(credPath)) {
+          return st.storeCode;
+        }
+      }
+      if (activeStores.length > 0) {
+        return activeStores[0].storeCode;
+      }
+      const cfgCode = storage.getConfig().storeCode;
+      return cfgCode || 'ABC STORE';
+    } catch (e) {
+      return 'ABC STORE';
+    }
+  }
+
   constructor(broadcastCallback) {
     this.broadcast = broadcastCallback || (() => { });
     this.socket = null;
@@ -34,7 +54,7 @@ export class LocalBaileysEngine {
     this.rawQr = null;
     this.qrDataUrl = null;
     this.pairingCode = null;
-    this.storeId = 'STORE_DEMO_01';
+    this.storeId = this.resolveActiveStoreId();
     this.phoneNumber = null;
     this.userName = null;
     this.authFolder = path.join(getSessionsDir(), `session_${this.storeId}`);
@@ -156,8 +176,7 @@ export class LocalBaileysEngine {
     }
     this.isInitializing = true;
 
-    const config = storage.getConfig();
-    this.storeId = (customStoreId || config.storeCode || this.storeId || 'STORE_DEMO_01').toUpperCase();
+    this.storeId = (customStoreId || this.resolveActiveStoreId()).toUpperCase();
     this.authFolder = path.join(getSessionsDir(), `session_${this.storeId}`);
     this.syncSessionDirectories(this.storeId);
 
