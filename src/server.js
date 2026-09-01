@@ -283,6 +283,69 @@ app.get('/api/admin/clients/:storeCode/details', (req, res) => {
   }
 });
 
+app.get('/api/admin/analytics/summary', async (req, res) => {
+  try {
+    if (supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+      try { await supabaseSync.pullCloudStores(); } catch (e) {}
+    }
+    const clients = storage.getAllClientsWithAnalytics();
+    const metrics = storage.getMetrics();
+
+    let totalTodaySent = 0;
+    let totalTodayBills = 0;
+    let totalTodaySales = 0;
+
+    let totalMonthSent = 0;
+    let totalMonthBills = 0;
+    let totalMonthSales = 0;
+
+    let totalAllTimeSent = 0;
+    let totalAllTimeBills = 0;
+    let totalAllTimeSales = 0;
+
+    for (const c of clients) {
+      const a = c.analytics || {};
+      totalTodaySent += a.todaySent || 0;
+      totalTodayBills += a.todayBills || 0;
+      totalTodaySales += (a.todaySales !== undefined ? a.todaySales : 0);
+
+      totalMonthSent += a.lastMonthSent || 0;
+      totalMonthBills += a.lastMonthBills || 0;
+      totalMonthSales += (a.lastMonthSales !== undefined ? a.lastMonthSales : 0);
+
+      totalAllTimeSent += a.allTimeSent || 0;
+      totalAllTimeBills += a.allTimeBills || 0;
+      totalAllTimeSales += (a.allTimeSales !== undefined ? a.allTimeSales : 0);
+    }
+
+    res.json({
+      success: true,
+      totalStores: clients.length,
+      today: {
+        sent: totalTodaySent,
+        bills: totalTodayBills,
+        sales: Math.round(totalTodaySales),
+        reachRate: totalTodayBills > 0 ? Math.round((totalTodaySent / totalTodayBills) * 100) : 0
+      },
+      lastMonth: {
+        sent: totalMonthSent,
+        bills: totalMonthBills,
+        sales: Math.round(totalMonthSales),
+        reachRate: totalMonthBills > 0 ? Math.round((totalMonthSent / totalMonthBills) * 100) : 0
+      },
+      allTime: {
+        sent: totalAllTimeSent,
+        bills: totalAllTimeBills,
+        sales: Math.round(totalAllTimeSales),
+        reachRate: totalAllTimeBills > 0 ? Math.round((totalAllTimeSent / totalAllTimeBills) * 100) : 0
+      },
+      metrics
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Dynamic Personalized Flyer Preview Endpoint
 app.post('/api/admin/flyer/preview', (req, res) => {
   try {

@@ -738,10 +738,12 @@ class ResilientStorage {
         analytics: {
           todaySent: analytics.today.sent,
           todayBills: analytics.today.bills,
+          todaySales: analytics.today.sales,
           lastWeekSent: analytics.lastWeek.sent,
           lastWeekBills: analytics.lastWeek.bills,
           lastMonthSent: analytics.lastMonth.sent,
           lastMonthBills: analytics.lastMonth.bills,
+          lastMonthSales: analytics.lastMonth.sales,
           allTimeSent: analytics.allTime.sent,
           allTimeBills: analytics.allTime.bills,
           allTimeSales: analytics.allTime.sales,

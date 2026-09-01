@@ -477,6 +477,100 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // -------------------------------------------------------------
+// -------------------------------------------------------------
+// Helper to aggregate store analytics directly from Supabase bills
+// -------------------------------------------------------------
+async function getCloudStoreAnalyticsMap() {
+  const storeAnalyticsMap = {};
+  const startOfTodayUtc = getStartOfTodayIst();
+  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+
+  if (supabaseSync && supabaseSync.client) {
+    try {
+      const { data: bills, error } = await supabaseSync.client
+        .from('bills')
+        .select('*')
+        .neq('status', 'DELETED');
+
+      if (!error && bills) {
+        for (const b of bills) {
+          if (b.source === 'AGENT_HEARTBEAT' || b.source === 'STORE_CONFIG') continue;
+          if (b.invoice_no && (b.invoice_no.startsWith('HB-') || b.invoice_no.startsWith('CFG-'))) continue;
+
+          const code = (b.store_code || 'STORE_DEMO_01').toUpperCase();
+          if (!storeAnalyticsMap[code]) {
+            storeAnalyticsMap[code] = {
+              todaySent: 0,
+              todayBills: 0,
+              todaySales: 0,
+              lastWeekSent: 0,
+              lastWeekBills: 0,
+              lastMonthSent: 0,
+              lastMonthBills: 0,
+              lastMonthSales: 0,
+              allTimeSent: 0,
+              allTimeBills: 0,
+              allTimeSales: 0
+            };
+          }
+
+          const bTime = new Date(b.local_created_at || b.created_at || 0).getTime();
+          const amount = parseFloat(b.total_amount) || 0;
+          const isDelivered = b.status === 'DELIVERED' || b.status === 'WHATSAPP_SENT';
+          const isBlocked = ['IGNORED_KOT', 'DUPLICATE_SUPPRESSED', 'ANONYMOUS_WALKIN', 'DUMMY_PHONE_REJECTED', 'STORE_OWNER_FILTERED'].includes(b.status);
+
+          // All time
+          if (!isBlocked) {
+            storeAnalyticsMap[code].allTimeBills++;
+            storeAnalyticsMap[code].allTimeSales += amount;
+          }
+          if (isDelivered) {
+            storeAnalyticsMap[code].allTimeSent++;
+          }
+
+          // Last 30 Days
+          if (bTime >= thirtyDaysAgo) {
+            if (!isBlocked) {
+              storeAnalyticsMap[code].lastMonthBills++;
+              storeAnalyticsMap[code].lastMonthSales += amount;
+            }
+            if (isDelivered) {
+              storeAnalyticsMap[code].lastMonthSent++;
+            }
+          }
+
+          // Last 7 Days
+          if (bTime >= sevenDaysAgo) {
+            if (!isBlocked) {
+              storeAnalyticsMap[code].lastWeekBills++;
+            }
+            if (isDelivered) {
+              storeAnalyticsMap[code].lastWeekSent++;
+            }
+          }
+
+          // Today
+          if (bTime >= startOfTodayUtc) {
+            if (!isBlocked) {
+              storeAnalyticsMap[code].todayBills++;
+              storeAnalyticsMap[code].todaySales += amount;
+            }
+            if (isDelivered) {
+              storeAnalyticsMap[code].todaySent++;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Admin Cloud Analytics] Supabase query error:', err.message);
+    }
+  }
+
+  return storeAnalyticsMap;
+}
+
+// -------------------------------------------------------------
 // SaaS Multi-Tenant Store Management (Admin API)
 // -------------------------------------------------------------
 app.get('/api/admin/clients', async (req, res) => {
@@ -485,6 +579,55 @@ app.get('/api/admin/clients', async (req, res) => {
       try { await supabaseSync.pullCloudStores(); } catch (e) {}
     }
     const clientsWithMetrics = storage.getAllClientsWithAnalytics();
+    const cloudAnalyticsMap = await getCloudStoreAnalyticsMap();
+
+    // Query live agent heartbeats from Supabase
+    let heartbeats = [];
+    if (supabaseSync && supabaseSync.client) {
+      try {
+        const { data: hbData } = await supabaseSync.client
+          .from('bills')
+          .select('*')
+          .eq('source', 'AGENT_HEARTBEAT');
+        if (hbData) heartbeats = hbData;
+      } catch (e) {}
+    }
+
+    for (const c of clientsWithMetrics) {
+      const code = (c.storeCode || '').toUpperCase();
+      if (cloudAnalyticsMap[code]) {
+        const ca = cloudAnalyticsMap[code];
+        c.analytics = {
+          ...c.analytics,
+          todaySent: ca.todaySent,
+          todayBills: ca.todayBills,
+          todaySales: Math.round(ca.todaySales),
+          lastWeekSent: ca.lastWeekSent,
+          lastWeekBills: ca.lastWeekBills,
+          lastMonthSent: ca.lastMonthSent,
+          lastMonthBills: ca.lastMonthBills,
+          lastMonthSales: Math.round(ca.lastMonthSales),
+          allTimeSent: ca.allTimeSent,
+          allTimeBills: ca.allTimeBills,
+          allTimeSales: Math.round(ca.allTimeSales),
+          reachRate: ca.allTimeBills > 0 ? Math.round((ca.allTimeSent / ca.allTimeBills) * 100) : 0
+        };
+      }
+
+      const hb = heartbeats.find(h => (h.store_code || '').toUpperCase() === code);
+      if (hb) {
+        c.whatsappStatus = hb.status || 'NOT_LINKED';
+        c.whatsappPhone = hb.customer_phone;
+        if (hb.raw_text) {
+          try {
+            const hbData = JSON.parse(hb.raw_text);
+            c.spoolerStatus = hbData.spoolerStatus || 'Healthy';
+            c.lastHeartbeat = hb.synced_at || hb.local_created_at;
+          } catch (e) {}
+        }
+      }
+    }
+
     res.json({ success: true, stores: clientsWithMetrics, metrics: storage.getMetrics() });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -510,6 +653,7 @@ app.get('/api/admin/analytics/summary', async (req, res) => {
       try { await supabaseSync.pullCloudStores(); } catch (e) {}
     }
     const clients = storage.getAllClientsWithAnalytics();
+    const cloudAnalyticsMap = await getCloudStoreAnalyticsMap();
     const metrics = storage.getMetrics();
 
     let totalTodaySent = 0;
@@ -525,14 +669,19 @@ app.get('/api/admin/analytics/summary', async (req, res) => {
     let totalAllTimeSales = 0;
 
     for (const c of clients) {
-      const a = c.analytics || {};
+      const code = (c.storeCode || '').toUpperCase();
+      const a = cloudAnalyticsMap[code] || c.analytics || {};
       totalTodaySent += a.todaySent || 0;
       totalTodayBills += a.todayBills || 0;
+      totalTodaySales += (a.todaySales !== undefined ? a.todaySales : 0);
+
       totalMonthSent += a.lastMonthSent || 0;
       totalMonthBills += a.lastMonthBills || 0;
+      totalMonthSales += (a.lastMonthSales !== undefined ? a.lastMonthSales : 0);
+
       totalAllTimeSent += a.allTimeSent || 0;
       totalAllTimeBills += a.allTimeBills || 0;
-      totalAllTimeSales += a.allTimeSales || 0;
+      totalAllTimeSales += (a.allTimeSales !== undefined ? a.allTimeSales : 0);
     }
 
     res.json({
