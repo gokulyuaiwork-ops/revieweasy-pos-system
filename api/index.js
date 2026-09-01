@@ -377,45 +377,94 @@ app.post('/api/feedback', async (req, res) => {
 // Authentication Endpoints
 // -------------------------------------------------------------
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email/Store Code and password are required' });
-  }
+// -------------------------------------------------------------
+// Authentication Endpoints (Supports Admin & All Client Stores)
+// -------------------------------------------------------------
+async function authenticateCloudUser(identifier, password) {
+  if (!identifier || !password) return null;
 
-  let user = storage.authenticateUser(email, password);
+  // 1. First attempt with local in-memory state
+  let user = storage.authenticateUser(identifier, password);
+  if (user) return user;
 
-  // Cloud Fallback: Check Supabase if local store cache missed
-  if (!user && supabaseSync.client) {
+  // 2. Hydrate from Supabase STORE_CONFIG rows (Serverless Resilience)
+  if (supabaseSync.client) {
     try {
-      const cleanId = String(email).trim().toUpperCase();
-      const { data: storeData } = await supabaseSync.client
-        .from('stores')
+      const { data, error } = await supabaseSync.client
+        .from('bills')
         .select('*')
-        .or(`store_code.eq.${cleanId},store_phone.eq.${cleanId}`)
-        .limit(1);
+        .eq('source', 'STORE_CONFIG');
 
-      if (storeData && storeData.length > 0) {
-        const s = storeData[0];
-        user = {
-          id: `USR_${s.store_code}`,
-          email: email,
-          name: `${s.store_name} Manager`,
-          role: 'CLIENT',
-          storeCode: s.store_code,
-          store: {
-            id: s.id,
-            storeCode: s.store_code,
-            storeName: s.store_name,
-            storePhone: s.store_phone,
-            googleReviewUrl: s.google_review_url
-          }
-        };
+      if (!error && data && data.length > 0) {
+        for (const row of data) {
+          try {
+            const configData = typeof row.raw_text === 'string' ? JSON.parse(row.raw_text) : row.raw_text;
+            if (configData) {
+              const sCode = (configData.storeCode || row.store_code || '').toUpperCase();
+              const sName = configData.storeName || sCode;
+              const sEmail = (configData.clientEmail || configData.email || `owner@${sCode.toLowerCase().replace(/\s+/g, '')}.com`).toLowerCase();
+              const sPass = configData.clientPassword || configData.password || 'client123';
+              const sPhone = configData.storePhone || '';
+
+              // Ingest or update into storage clientStores
+              const existingIdx = storage.state.clientStores.findIndex(s => s.storeCode === sCode);
+              const storeObj = {
+                id: configData.id || sCode,
+                storeCode: sCode,
+                storeName: sName,
+                storePhone: sPhone,
+                clientEmail: sEmail,
+                clientPassword: sPass,
+                businessCategory: configData.businessCategory || 'GENERAL',
+                googleReviewUrl: configData.googleReviewUrl || '',
+                customWhatsAppTemplate: configData.customWhatsAppTemplate || '',
+                flyerImageUrl: configData.flyerImageUrl || '',
+                status: 'ACTIVE'
+              };
+
+              if (existingIdx >= 0) {
+                storage.state.clientStores[existingIdx] = { ...storage.state.clientStores[existingIdx], ...storeObj };
+              } else {
+                storage.state.clientStores.push(storeObj);
+              }
+
+              // Ingest into storage users
+              const userIdx = storage.state.users.findIndex(u => u.storeCode === sCode || u.email === sEmail);
+              const userObj = {
+                id: `USR_${sCode}`,
+                email: sEmail,
+                password: sPass,
+                name: `${sName} Owner`,
+                role: 'CLIENT',
+                storeCode: sCode
+              };
+
+              if (userIdx >= 0) {
+                storage.state.users[userIdx] = { ...storage.state.users[userIdx], ...userObj };
+              } else {
+                storage.state.users.push(userObj);
+              }
+            }
+          } catch (pe) {}
+        }
       }
-    } catch (e) {
-      console.warn('[Cloud Auth] Supabase query note:', e.message);
+    } catch (err) {
+      console.warn('[Cloud Auth] Supabase STORE_CONFIG hydration warning:', err.message);
     }
   }
 
+  // 3. Retry authentication with hydrated store/user list
+  return storage.authenticateUser(identifier, password);
+}
+
+app.post('/api/login', async (req, res) => {
+  const email = (req.body.email || req.body.identifier || req.body.username || '').trim();
+  const password = (req.body.password || '').trim();
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email / Store Code and password are required' });
+  }
+
+  const user = await authenticateCloudUser(email, password);
   if (!user) {
     return res.status(401).json({ error: 'Invalid email/store code or password' });
   }
@@ -428,9 +477,6 @@ app.post('/api/auth/login', async (req, res) => {
   });
 });
 
-// -------------------------------------------------------------
-// Authentication Endpoints
-// -------------------------------------------------------------
 app.post('/api/auth/login', async (req, res) => {
   const email = (req.body.email || req.body.identifier || req.body.username || '').trim();
   const password = (req.body.password || '').trim();
@@ -438,25 +484,12 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(400).json({ error: 'Email / Store Code and password are required' });
   }
 
-  let user = storage.authenticateUser(email, password);
-
-  // Cloud Fallback: Pull registered stores & credentials from Supabase if local cache missed
-  if (!user && supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
-    try {
-      await supabaseSync.pullCloudStores();
-      user = storage.authenticateUser(email, password);
-    } catch (e) {
-      console.warn('[Server Auth] Supabase cloud stores pull note:', e.message);
-    }
-  }
-
+  const user = await authenticateCloudUser(email, password);
   if (!user) {
     return res.status(401).json({ error: 'Invalid email/store code or password' });
   }
 
-  // Determine redirect URL based on role
   const redirectUrl = user.role === 'ADMIN' ? '/admin.html' : '/index.html';
-
   res.json({
     success: true,
     user,
