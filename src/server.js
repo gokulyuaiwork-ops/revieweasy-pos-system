@@ -503,7 +503,12 @@ app.post('/api/admin/clients', async (req, res) => {
 app.put('/api/admin/clients/:storeCode', async (req, res) => {
   try {
     const rawCode = decodeURIComponent(req.params.storeCode);
-    const updated = storage.updateStore(rawCode, req.body);
+    let updated;
+    try {
+      updated = storage.updateStore(rawCode, req.body);
+    } catch (e) {
+      updated = storage.createStore({ ...req.body, storeCode: rawCode });
+    }
     if (supabaseSync && typeof supabaseSync.syncStoreToCloud === 'function') {
       await supabaseSync.syncStoreToCloud(updated, {
         email: req.body.clientEmail,

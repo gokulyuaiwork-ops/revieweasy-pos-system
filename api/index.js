@@ -664,13 +664,17 @@ app.get('/api/admin/clients', async (req, res) => {
   }
 });
 
-app.get('/api/admin/clients/:storeCode/details', (req, res) => {
+app.get('/api/admin/clients/:storeCode/details', async (req, res) => {
   try {
-    const store = storage.getStoreByCode(req.params.storeCode);
+    if (supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+      try { await supabaseSync.pullCloudStores(); } catch (e) {}
+    }
+    const rawCode = decodeURIComponent(req.params.storeCode);
+    const store = storage.getStoreByCode(rawCode);
     if (!store) {
       return res.status(404).json({ error: 'Store not found' });
     }
-    const analytics = storage.getClientDetailedAnalytics(req.params.storeCode);
+    const analytics = storage.getClientDetailedAnalytics(rawCode);
     res.json({ success: true, store, analytics });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -760,7 +764,15 @@ app.post('/api/admin/clients', async (req, res) => {
 app.put('/api/admin/clients/:storeCode', async (req, res) => {
   try {
     const rawCode = decodeURIComponent(req.params.storeCode);
-    const updated = storage.updateStore(rawCode, req.body);
+    if (supabaseSync && typeof supabaseSync.pullCloudStores === 'function') {
+      try { await supabaseSync.pullCloudStores(); } catch (e) {}
+    }
+    let updated;
+    try {
+      updated = storage.updateStore(rawCode, req.body);
+    } catch (e) {
+      updated = storage.createStore({ ...req.body, storeCode: rawCode });
+    }
     if (supabaseSync && typeof supabaseSync.syncStoreToCloud === 'function') {
       await supabaseSync.syncStoreToCloud(updated, {
         email: req.body.clientEmail,
