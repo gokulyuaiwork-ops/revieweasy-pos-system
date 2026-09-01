@@ -100,6 +100,16 @@
     "isLiveWhatsAppEnabled": true,
     "enableDuplicateFilter": true,
     "enableSmartReviewShield": true,
+    "flyerOverlayConfig": {
+      "enabled": true,
+      "template": "Specially for {{name}}! ✨",
+      "posX": 50,
+      "posY": 18,
+      "fontSize": 28,
+      "color": "#FFFFFF",
+      "badgeBg": "rgba(0, 0, 0, 0.70)",
+      "fontFamily": "Plus Jakarta Sans, sans-serif"
+    },
     "smartShieldEnabled": true,
     "dailyDigestEnabled": true,
     "dailyDigestTime": "21:00",
@@ -2305,7 +2315,8 @@
     "AUDIT_1524",
     "AUDIT_8798",
     "AUDIT_2721",
-    "AUDIT_5949"
+    "AUDIT_5949",
+    "STORE_TEST_AUTO"
   ],
   "metrics": {
     "totalIntercepted": 0,
