@@ -283,9 +283,12 @@ export class WhatsAppDispatcher {
     }
     */
 
-    const activeStores = (storage.state.clientStores || []).filter(s => s.status !== 'DELETED');
-    const storeCode = tx.storeCode || (activeStores.length > 0 ? activeStores[0].storeCode : config.storeCode) || 'STORE_DEMO_01';
-    const store = storage.getStoreByCode(storeCode) || (activeStores.length > 0 ? activeStores[0] : null);
+    const activeConfigStoreCode = (storage.getConfig().storeCode || 'ABC STORE').toUpperCase();
+    const storeCode = (tx.storeCode && tx.storeCode !== 'STORE_DEMO_01')
+      ? tx.storeCode.toUpperCase()
+      : (this.localBaileys?.storeId ? this.localBaileys.storeId.toUpperCase() : activeConfigStoreCode);
+
+    const store = storage.getStoreByCode(storeCode) || storage.getStoreByCode(activeConfigStoreCode) || storage.getConfig();
     const storeName = store ? store.storeName : config.storeName;
     const baseUrl = config.appBaseUrl || 'https://pos.revieweasy.in';
 
@@ -309,25 +312,45 @@ export class WhatsAppDispatcher {
       reviewLink: reviewLink
     });
 
-    // Look for store promotional review flyer image or fallback placeholder
+    // Look for store promotional review flyer image (Base64 URI, file path, or category preset)
     let flyerImageBuffer = null;
-    const flyerCandidates = [
-      store?.flyerImagePath,
-      store?.flyerImageUrl ? path.join(__dirname, '../../public', store.flyerImageUrl.replace(/^\//, '')) : null,
-      path.join(__dirname, `../../public/uploads/flyers/${storeCode}.jpg`),
-      path.join(__dirname, `../../public/uploads/flyers/${storeCode}.png`),
-      path.join(__dirname, `../../data/flyers/${storeCode}.jpg`),
-      path.join(__dirname, `../../data/flyers/${storeCode}.png`),
-      path.join(__dirname, '../../public/assets/default-review-flyer.jpg'),
-      path.join(__dirname, '../../data/flyers/default-review-flyer.jpg')
-    ].filter(Boolean);
+    const flyerRaw = (store?.flyerImageUrl && !store.flyerImageUrl.includes('default-review-flyer')) 
+      ? store.flyerImageUrl 
+      : (config.flyerImageUrl || store?.flyerImageUrl);
 
-    for (const candidate of flyerCandidates) {
-      if (fs.existsSync(candidate)) {
-        try {
-          flyerImageBuffer = fs.readFileSync(candidate);
-          break;
-        } catch (e) {}
+    // 1. Direct Base64 Data URI
+    if (flyerRaw && typeof flyerRaw === 'string' && flyerRaw.startsWith('data:')) {
+      try {
+        const cleanBase64 = flyerRaw.replace(/^data:image\/\w+;base64,/, '');
+        flyerImageBuffer = Buffer.from(cleanBase64, 'base64');
+        console.log(`[WhatsApp Dispatcher] 🖼️ Loaded custom store flyer from Base64 Data URI (${flyerImageBuffer.length} bytes) for [${storeCode}]`);
+      } catch (e) {
+        console.warn('[WhatsApp Dispatcher] Base64 image decode warning:', e.message);
+      }
+    }
+
+    // 2. Disk file or uploaded path fallback
+    if (!flyerImageBuffer) {
+      const flyerCandidates = [
+        store?.flyerImagePath,
+        flyerRaw && !flyerRaw.startsWith('data:') ? path.join(__dirname, '../../public', flyerRaw.replace(/^\//, '')) : null,
+        flyerRaw && !flyerRaw.startsWith('data:') ? path.join(__dirname, '../..', flyerRaw.replace(/^\//, '')) : null,
+        path.join(__dirname, `../../public/uploads/flyers/${storeCode}.jpg`),
+        path.join(__dirname, `../../public/uploads/flyers/${storeCode}.png`),
+        path.join(__dirname, `../../data/flyers/${storeCode}.jpg`),
+        path.join(__dirname, `../../data/flyers/${storeCode}.png`),
+        path.join(__dirname, '../../public/assets/default-review-flyer.jpg'),
+        path.join(__dirname, '../../data/flyers/default-review-flyer.jpg')
+      ].filter(Boolean);
+
+      for (const candidate of flyerCandidates) {
+        if (fs.existsSync(candidate)) {
+          try {
+            flyerImageBuffer = fs.readFileSync(candidate);
+            console.log(`[WhatsApp Dispatcher] 🖼️ Loaded flyer image from disk: ${candidate}`);
+            break;
+          } catch (e) {}
+        }
       }
     }
 
