@@ -355,25 +355,57 @@ function copySecretKey(key) {
 let addFlyerBase64 = null;
 let editFlyerBase64 = null;
 
-function previewFlyerImage(input, previewImgId, urlInputId, callback) {
-  if (input.files && input.files[0]) {
-    const file = input.files[0];
+function compressImageBase64(file, maxWidth = 900, quality = 0.82) {
+  return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      document.getElementById(previewImgId).src = e.target.result;
-      if (urlInputId === 'add_flyerUrl') {
-        addFlyerBase64 = e.target.result;
-      } else {
-        editFlyerBase64 = e.target.result;
-      }
-      if (callback) callback();
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
     };
+    reader.onerror = () => resolve('/assets/default-review-flyer.jpg');
     reader.readAsDataURL(file);
+  });
+}
+
+async function previewFlyerImage(input, previewImgId, urlInputId, callback) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const dataUrl = await compressImageBase64(file);
+    const imgEl = document.getElementById(previewImgId);
+    if (imgEl) imgEl.src = dataUrl;
+
+    const urlInput = document.getElementById(urlInputId);
+    if (urlInput) urlInput.value = dataUrl;
+
+    if (urlInputId === 'add_flyerUrl') {
+      addFlyerBase64 = dataUrl;
+    } else {
+      editFlyerBase64 = dataUrl;
+    }
+    if (callback) callback();
   }
 }
 
 async function uploadFlyerImageIfNeeded(base64Data, storeCode) {
   if (!base64Data) return null;
+  // If already a static URL or path, return it directly
+  if (!base64Data.startsWith('data:image/')) return base64Data;
   try {
     const res = await fetch('/api/admin/upload-image', {
       method: 'POST',
@@ -381,17 +413,17 @@ async function uploadFlyerImageIfNeeded(base64Data, storeCode) {
       body: JSON.stringify({
         storeCode: storeCode,
         imageBase64: base64Data,
-        fileName: `${storeCode}_flyer.jpg`
+        fileName: `${(storeCode || 'store').replace(/[^a-zA-Z0-9_-]/g, '_')}_flyer.jpg`
       })
     });
     const data = await res.json();
-    if (data.success) {
+    if (data.success && data.imageUrl) {
       return data.imageUrl;
     }
   } catch (err) {
-    console.error('Image upload failed:', err);
+    console.warn('Local disk image upload failed, retaining direct data URL:', err);
   }
-  return null;
+  return base64Data; // Return direct data URL so image works on cloud serverless and local!
 }
 
 // -------------------------------------------------------------
@@ -555,7 +587,7 @@ async function handleAddClient(e) {
   e.preventDefault();
   const storeCode = document.getElementById('add_storeCode').value.trim();
 
-  let flyerImageUrl = document.getElementById('add_flyerUrl').value.trim() || '/assets/default-review-flyer.jpg';
+  let flyerImageUrl = addFlyerBase64 || document.getElementById('add_flyerUrl').value.trim() || '/assets/default-review-flyer.jpg';
   if (addFlyerBase64) {
     const uploadedUrl = await uploadFlyerImageIfNeeded(addFlyerBase64, storeCode);
     if (uploadedUrl) flyerImageUrl = uploadedUrl;
@@ -661,7 +693,7 @@ async function handleEditClient(e) {
   e.preventDefault();
   const storeCode = document.getElementById('edit_storeCode').value;
 
-  let flyerImageUrl = document.getElementById('edit_flyerUrl').value.trim() || '/assets/default-review-flyer.jpg';
+  let flyerImageUrl = editFlyerBase64 || document.getElementById('edit_flyerUrl').value.trim() || '/assets/default-review-flyer.jpg';
   if (editFlyerBase64) {
     const uploadedUrl = await uploadFlyerImageIfNeeded(editFlyerBase64, storeCode);
     if (uploadedUrl) flyerImageUrl = uploadedUrl;
@@ -691,7 +723,7 @@ async function handleEditClient(e) {
   };
 
   try {
-    const res = await fetch(`/api/admin/clients/${storeCode}`, {
+    const res = await fetch(`/api/admin/clients/${encodeURIComponent(storeCode)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -699,9 +731,9 @@ async function handleEditClient(e) {
 
     const data = await res.json();
     if (data.success) {
-      alert(`✅ Store ${storeCode} updated successfully with category & customized WhatsApp template!`);
+      alert(`✅ Store ${storeCode} updated successfully with new image card & WhatsApp settings!`);
       closeEditModal();
-      fetchClients();
+      await fetchClients();
     } else {
       alert('Error: ' + data.error);
     }

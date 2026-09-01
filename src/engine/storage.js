@@ -152,7 +152,9 @@ class ResilientStorage {
         storePhone: store.storePhone || this.state.config.storePhone,
         googleReviewUrl: store.googleReviewUrl || this.state.config.googleReviewUrl,
         businessCategory: store.businessCategory || 'AUTOMOBILE_SERVICE',
-        customWhatsAppTemplate: store.customWhatsAppTemplate || null
+        customWhatsAppTemplate: store.customWhatsAppTemplate || null,
+        flyerImageUrl: store.flyerImageUrl || '/assets/default-review-flyer.jpg',
+        flyerOverlayConfig: store.flyerOverlayConfig || null
       };
     }
     return null;
@@ -335,7 +337,13 @@ class ResilientStorage {
 
   updateStore(storeCode, storeData) {
     this.load();
-    const store = this.getStoreByCode(storeCode);
+    const cleanCode = String(storeCode).trim().toUpperCase();
+    const cleanNoSpaces = cleanCode.replace(/[\s_]/g, '');
+    const store = (this.state.clientStores || []).find(s => {
+      const sCode = (s.storeCode || s.id || '').toUpperCase();
+      const sCodeClean = sCode.replace(/[\s_]/g, '');
+      return sCode === cleanCode || sCodeClean === cleanNoSpaces || (cleanNoSpaces.length >= 3 && sCodeClean.includes(cleanNoSpaces));
+    });
     if (!store) {
       throw new Error(`Store with code ${storeCode} not found`);
     }

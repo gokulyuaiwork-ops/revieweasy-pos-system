@@ -421,7 +421,8 @@ app.post('/api/admin/clients', async (req, res) => {
 
 app.put('/api/admin/clients/:storeCode', async (req, res) => {
   try {
-    const updated = storage.updateStore(req.params.storeCode, req.body);
+    const rawCode = decodeURIComponent(req.params.storeCode);
+    const updated = storage.updateStore(rawCode, req.body);
     if (supabaseSync && typeof supabaseSync.syncStoreToCloud === 'function') {
       await supabaseSync.syncStoreToCloud(updated, {
         email: req.body.clientEmail,

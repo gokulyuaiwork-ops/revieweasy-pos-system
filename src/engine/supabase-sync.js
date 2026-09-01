@@ -178,22 +178,33 @@ export class SupabaseSyncEngine {
                 secretKey: storeData.secretKey || `SEC_${effectiveCode.replace(/[^A-Z0-9]/g, '')}_1234`,
                 status: storeData.status || row.status || 'ACTIVE',
                 plan: storeData.plan || 'PRO_UNLIMITED',
-                businessCategory: storeData.businessCategory || 'RESTAURANT_CAFE',
+                businessCategory: storeData.businessCategory || 'AUTOMOBILE_SERVICE',
                 customWhatsAppTemplate: storeData.customWhatsAppTemplate || null,
                 enableDigitalReceipts: storeData.enableDigitalReceipts !== false,
                 enableImageMessage: storeData.enableImageMessage !== false,
                 flyerImageUrl: storeData.flyerImageUrl || '/assets/default-review-flyer.jpg',
-                flyerOverlayConfig: storeData.flyerOverlayConfig,
+                flyerOverlayConfig: storeData.flyerOverlayConfig || null,
                 createdAt: storeData.createdAt || row.created_at || new Date().toISOString(),
                 clientEmail: cleanEmail,
                 clientPassword: password
               });
             } else {
-              existing.storeName = storeData.storeName || row.customer_name;
-              existing.storePhone = storeData.storePhone || row.customer_phone;
-              existing.googleReviewUrl = storeData.googleReviewUrl || existing.googleReviewUrl;
-              existing.clientEmail = cleanEmail;
-              existing.clientPassword = password;
+              Object.assign(existing, {
+                storeName: storeData.storeName || row.customer_name,
+                storePhone: storeData.storePhone || row.customer_phone,
+                storeGstin: storeData.storeGstin !== undefined ? storeData.storeGstin : existing.storeGstin,
+                googleReviewUrl: storeData.googleReviewUrl || existing.googleReviewUrl,
+                status: storeData.status || row.status || existing.status,
+                plan: storeData.plan || existing.plan,
+                businessCategory: storeData.businessCategory || existing.businessCategory || 'AUTOMOBILE_SERVICE',
+                customWhatsAppTemplate: storeData.customWhatsAppTemplate !== undefined ? storeData.customWhatsAppTemplate : existing.customWhatsAppTemplate,
+                enableDigitalReceipts: storeData.enableDigitalReceipts !== undefined ? storeData.enableDigitalReceipts : existing.enableDigitalReceipts,
+                enableImageMessage: storeData.enableImageMessage !== undefined ? storeData.enableImageMessage : existing.enableImageMessage,
+                flyerImageUrl: storeData.flyerImageUrl || existing.flyerImageUrl || '/assets/default-review-flyer.jpg',
+                flyerOverlayConfig: storeData.flyerOverlayConfig !== undefined ? storeData.flyerOverlayConfig : existing.flyerOverlayConfig,
+                clientEmail: cleanEmail,
+                clientPassword: password
+              });
             }
 
             // 2. Ensure user login exists
