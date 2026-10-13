@@ -1,705 +1,443 @@
-import { createClient } from '@supabase/supabase-js';
-import WebSocket from 'ws';
-import crypto from 'crypto';
-import { storage } from './storage.js';
+/**
+ * ReviewEasy POS - Supabase Cloud Synchronization Engine
+ * Lightweight, zero-dependency REST sync using native fetch.
+ * Powers real-time Customer Review Shield and feedback reflection between Cloud & Local POS.
+ */
 
-export function getStoreHeartbeatUuid(storeCode) {
-  const hash = crypto.createHash('md5').update('ReviewEasy_Heartbeat_' + (storeCode || 'STORE_DEMO_01')).digest('hex');
-  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
-}
-
-export function getBillUuid(storeCode, invoiceNo) {
-  const hash = crypto.createHash('md5').update(`ReviewEasy_Bill_${(storeCode || 'STORE_DEMO_01').toUpperCase()}_${invoiceNo || 'INV_001'}`).digest('hex');
-  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
-}
-
-export function getStoreConfigUuid(storeCode) {
-  const hash = crypto.createHash('md5').update('ReviewEasy_StoreConfig_' + (storeCode || 'STORE_DEMO_01').toUpperCase()).digest('hex');
-  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
-}
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://fzjjztbobwtuywohwmfe.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6amp6dGJvYnd0dXl3b2h3bWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3ODUxNDcsImV4cCI6MjEwMjM2MTE0N30.XVIo0uTuFd7p66DaufjLXu1PqGJuLVkEEfY5a32kQ28';
 
 export class SupabaseSyncEngine {
-  constructor(broadcastCallback) {
-    this.broadcast = broadcastCallback || (() => {});
-    this.client = null;
+  constructor() {
+    this.url = SUPABASE_URL;
+    this.key = SUPABASE_KEY;
     this.isOnline = true;
-    this.isSimulatedOffline = false;
     this.pendingSyncCount = 0;
     this.lastSyncTimestamp = null;
-    
-    this.initClient();
-    if (!process.env.VERCEL) {
-      // 10s Fast Two-Way Telemetry & Cloud-to-Edge Heartbeat Loop
-      this.syncInterval = setInterval(() => {
-        if (this.isOnline) {
-          this.flushOfflineSyncQueue().catch(() => {});
-          this.pullCloudStores().then(() => this.syncActiveStoreConfig()).catch(() => {});
-        }
-      }, 10000);
-      if (this.syncInterval && this.syncInterval.unref) this.syncInterval.unref();
-    }
   }
 
-  initClient() {
-    const config = storage.getConfig();
-    const url = process.env.SUPABASE_URL || config.supabaseUrl || 'https://fzjjztbobwtuywohwmfe.supabase.co';
-    const anonKey = process.env.SUPABASE_ANON_KEY || config.supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6amp6dGJvYnd0dXl3b2h3bWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3ODUxNDcsImV4cCI6MjEwMjM2MTE0N30.XVIo0uTuFd7p66DaufjLXu1PqGJuLVkEEfY5a32kQ28';
-
-    if (url && anonKey) {
-      try {
-        const options = { auth: { persistSession: false } };
-        if (typeof WebSocket !== 'undefined') {
-          options.realtime = { transport: WebSocket };
-        }
-        this.client = createClient(url, anonKey, options);
-        console.log('[Supabase Sync] ✅ Client connected to live cloud endpoint:', url);
-        this.subscribeToCloudRealtime();
-      } catch (err) {
-        console.warn('[Supabase Sync] Client init warning:', err.message);
-      }
-    }
-  }
-
-  subscribeToCloudRealtime() {
-    if (!this.client || process.env.VERCEL) return;
-    try {
-      this.client
-        .channel('cloud-to-edge-sync')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'bills' },
-          async (payload) => {
-            if (payload.new && (payload.new.source === 'STORE_CONFIG' || payload.new.status === 'DELETED')) {
-              console.log('[Supabase Realtime] ⚡ Cloud store profile change received! Applying to localhost immediately...');
-              await this.pullCloudStores();
-              this.syncActiveStoreConfig();
-            }
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('[Supabase Realtime] 🟢 Instant Cloud-to-Edge Realtime sync active!');
-          }
-        });
-    } catch (e) {
-      console.warn('[Supabase Realtime] Realtime subscription note:', e.message);
-    }
-  }
-
-  setSimulatedOffline(isOffline) {
-    this.isSimulatedOffline = isOffline;
-    this.isOnline = !isOffline;
-    console.log(`[Supabase Sync] Connectivity simulation set to: ${isOffline ? 'OFFLINE (No Internet)' : 'ONLINE (Internet Active)'}`);
-    this.broadcast('CONNECTIVITY_CHANGED', { isOnline: this.isOnline, isSimulated: true });
-    if (this.isOnline) {
-      this.flushOfflineSyncQueue();
-    }
-  }
-
-  async checkConnectivity() {
-    if (this.isSimulatedOffline) return false;
-    return true;
+  getHeaders() {
+    return {
+      'apikey': this.key,
+      'Authorization': `Bearer ${this.key}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
   }
 
   /**
-   * Push/Update Store Profile, Google Review URL & Dynamic Image Card Config to Supabase
+   * Pushes a customer review or shielded feedback entry to Supabase review_dispatches table.
    */
-  async syncStoreToCloud(store, userData = {}) {
-    if (!this.client || !store) {
-      return { success: false, mode: 'OFFLINE_LOCAL' };
-    }
-
+  async syncFeedbackToCloud(feedback) {
+    if (!feedback) return null;
     try {
-      const code = String(store.storeCode || store.id).toUpperCase();
-      const cfgId = getStoreConfigUuid(code);
-      const fullConfig = {
-        ...store,
-        storeCode: code,
-        clientEmail: userData.email || store.clientEmail || `owner@${code.toLowerCase()}.com`,
-        clientPassword: userData.password || store.clientPassword || 'client123'
+      const storeCode = (feedback.storeCode || 'STORE_DEMO_01').toUpperCase();
+      const rating = Number(feedback.rating) || 5;
+      const action = feedback.action || (rating >= (Number(feedback.googleRedirectMinRating) || 4) ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK');
+      
+      const billRef = feedback.invoiceNo || feedback.billId || '';
+      const billTag = billRef ? ` [Bill #${billRef}]` : '';
+      const msgText = action === 'PRIVATE_FEEDBACK'
+        ? `Shielded Complaint (${rating}★)${billTag} - ${feedback.category || 'Grievance'}: ${feedback.comment || 'No comment'}`
+        : `Customer rated ${rating}★${billTag} and was routed to Google.`;
+
+      // In Supabase, bill_id is a UUID column. Only pass valid UUIDs, otherwise keep null to prevent 22P02 Postgres errors
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(feedback.billId || '');
+      const billIdForDb = isUuid ? feedback.billId : null;
+
+      const payload = {
+        store_code: storeCode,
+        bill_id: billIdForDb,
+        customer_name: feedback.customerName || 'Valued Customer',
+        customer_phone: feedback.customerPhone && feedback.customerPhone !== 'N/A' ? feedback.customerPhone : '',
+        rating_given: rating,
+        dispatch_status: action,
+        message_text: msgText,
+        review_link_clicked: true,
+        dispatched_at: feedback.timestamp || new Date().toISOString()
       };
 
-      await this.client.from('bills').upsert({
-        id: cfgId,
-        store_code: code,
-        invoice_no: `CFG-${code}`,
-        customer_name: store.storeName,
-        customer_phone: store.storePhone || '9840012345',
-        total_amount: 0,
-        status: store.status || 'ACTIVE',
-        source: 'STORE_CONFIG',
-        raw_text: JSON.stringify(fullConfig),
-        local_created_at: new Date().toISOString()
-      }, { onConflict: 'id' });
+      const res = await fetch(`${this.url}/rest/v1/review_dispatches`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(payload)
+      });
 
-      console.log(`[Supabase Sync] ☁️ Store profile & credentials for '${store.storeName}' synced to cloud!`);
-      return { success: true, mode: 'STORE_SYNCED_CLOUD', storeCode: code };
-    } catch (err) {
-      console.warn('[Supabase Sync] Store sync note:', err.message);
-      return { success: true, mode: 'STORE_REGISTERED_LOCAL', error: err.message };
-    }
-  }
-
-  /**
-   * Delete store record from Supabase Cloud
-   */
-  async deleteStoreFromCloud(storeCode) {
-    if (!this.client || !storeCode) return;
-    try {
-      const code = String(storeCode).toUpperCase();
-      // Update all rows with this store_code to DELETED on Supabase
-      await this.client
-        .from('bills')
-        .update({ status: 'DELETED', source: 'DELETED_STORE' })
-        .eq('store_code', code);
-
-      console.log(`[Supabase Sync] 🗑️ Store config [${code}] marked as DELETED on cloud.`);
-    } catch (err) {
-      console.warn('[Supabase Sync] Warning deleting store config from cloud:', err.message);
-    }
-  }
-
-  /**
-   * Pull all cloud-registered merchant stores and credentials to local storage
-   */
-  async pullCloudStores() {
-    if (!this.client) return [];
-    try {
-      const { data, error } = await this.client
-        .from('bills')
-        .select('*')
-        .eq('source', 'STORE_CONFIG')
-        .neq('status', 'DELETED')
-        .order('created_at', { ascending: true });
-
-      if (error || !data) return [];
-
-      const pulled = [];
-      for (const row of data) {
-        if (!row.raw_text || row.status === 'DELETED' || row.status === 'STORE_PROFILE') continue;
-        const code = (row.store_code || '').toUpperCase();
-
-        try {
-          const storeData = JSON.parse(row.raw_text);
-          if (storeData && (storeData.storeCode || code)) {
-            const effectiveCode = (storeData.storeCode || code).toUpperCase();
-            if (row.status === 'DELETED' || (storage.state.deletedStoreCodes || []).includes(effectiveCode) || effectiveCode === 'STORE_DEMO_01') {
-              if (this.client) {
-                this.client.from('bills').delete().eq('id', row.id).then(() => {}).catch(() => {});
-                this.client.from('bills').delete().eq('store_code', effectiveCode).then(() => {}).catch(() => {});
-              }
-              continue;
-            }
-
-            const rawEmail = storeData.clientEmail || `owner@${effectiveCode.toLowerCase()}.com`;
-            const cleanEmail = rawEmail.toLowerCase().replace(/ /g, '');
-            const password = storeData.clientPassword || 'client123';
-
-            // 1. Ensure store exists in local storage
-            let existing = storage.state.clientStores.find(s => (s.storeCode || s.id || '').toUpperCase() === effectiveCode);
-            if (!existing) {
-              storage.state.clientStores.push({
-                id: effectiveCode,
-                storeCode: effectiveCode,
-                storeName: storeData.storeName || row.customer_name,
-                storePhone: storeData.storePhone || row.customer_phone,
-                storeGstin: storeData.storeGstin || '',
-                googleReviewUrl: storeData.googleReviewUrl || 'https://g.page/review',
-                secretKey: storeData.secretKey || `SEC_${effectiveCode.replace(/[^A-Z0-9]/g, '')}_1234`,
-                status: storeData.status || row.status || 'ACTIVE',
-                plan: storeData.plan || 'PRO_UNLIMITED',
-                businessCategory: storeData.businessCategory || 'AUTOMOBILE_SERVICE',
-                customWhatsAppTemplate: storeData.customWhatsAppTemplate || null,
-                enableDigitalReceipts: storeData.enableDigitalReceipts !== false,
-                enableImageMessage: storeData.enableImageMessage !== false,
-                flyerImageUrl: storeData.flyerImageUrl || '/assets/default-review-flyer.jpg',
-                flyerOverlayConfig: storeData.flyerOverlayConfig || null,
-                createdAt: storeData.createdAt || row.created_at || new Date().toISOString(),
-                clientEmail: cleanEmail,
-                clientPassword: password
-              });
-            } else {
-              Object.assign(existing, {
-                storeName: storeData.storeName || row.customer_name,
-                storePhone: storeData.storePhone || row.customer_phone,
-                storeGstin: storeData.storeGstin !== undefined ? storeData.storeGstin : existing.storeGstin,
-                googleReviewUrl: storeData.googleReviewUrl || existing.googleReviewUrl,
-                status: storeData.status || row.status || existing.status,
-                plan: storeData.plan || existing.plan,
-                businessCategory: storeData.businessCategory || existing.businessCategory || 'AUTOMOBILE_SERVICE',
-                customWhatsAppTemplate: storeData.customWhatsAppTemplate !== undefined ? storeData.customWhatsAppTemplate : existing.customWhatsAppTemplate,
-                enableDigitalReceipts: storeData.enableDigitalReceipts !== undefined ? storeData.enableDigitalReceipts : existing.enableDigitalReceipts,
-                enableImageMessage: storeData.enableImageMessage !== undefined ? storeData.enableImageMessage : existing.enableImageMessage,
-                flyerImageUrl: storeData.flyerImageUrl || existing.flyerImageUrl || '/assets/default-review-flyer.jpg',
-                flyerOverlayConfig: storeData.flyerOverlayConfig !== undefined ? storeData.flyerOverlayConfig : existing.flyerOverlayConfig,
-                clientEmail: cleanEmail,
-                clientPassword: password
-              });
-            }
-
-            // 2. Ensure user login exists
-            let user = storage.state.users.find(u => (u.email || '').toLowerCase() === cleanEmail || (u.storeCode || '').toUpperCase() === effectiveCode);
-            if (!user) {
-              storage.state.users.push({
-                id: `USR_${effectiveCode.replace(/[^A-Z0-9]/g, '')}`,
-                email: cleanEmail,
-                password: password,
-                name: storeData.storeName || row.customer_name,
-                role: 'CLIENT',
-                storeCode: effectiveCode
-              });
-            } else {
-              user.password = password;
-              user.email = cleanEmail;
-            }
-            pulled.push(storeData);
-          }
-        } catch (e) {}
+      if (!res.ok) {
+        const errText = await res.text();
+        console.warn('[SupabaseSync] Cloud feedback insert notice:', res.status, errText);
+        return null;
       }
-      storage.save();
-      this.syncActiveStoreConfig();
-      return pulled;
+
+      const rows = await res.json();
+      return rows && rows.length > 0 ? rows[0] : null;
     } catch (err) {
-      console.warn('[Supabase Sync] pullCloudStores note:', err.message);
+      console.warn('[SupabaseSync] Network notice syncing feedback to cloud:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Pulls feedbacks for a given store (or all stores) from Supabase review_dispatches table.
+   */
+  async pullCloudFeedbacks(storeCode = null, minTimestamp = 0) {
+    try {
+      let query = `${this.url}/rest/v1/review_dispatches?dispatch_status=in.(PRIVATE_FEEDBACK,GOOGLE_REDIRECT)&order=created_at.desc&limit=50`;
+      if (storeCode) {
+        query += `&store_code=eq.${encodeURIComponent(storeCode.toUpperCase())}`;
+      }
+      if (minTimestamp && minTimestamp > 0) {
+        query += `&created_at=gt.${encodeURIComponent(new Date(minTimestamp).toISOString())}`;
+      }
+
+      const res = await fetch(query, {
+        headers: {
+          'apikey': this.key,
+          'Authorization': `Bearer ${this.key}`
+        }
+      });
+
+      if (!res.ok) return [];
+      const rows = await res.json();
+      if (!Array.isArray(rows)) return [];
+
+      return rows
+        .filter(r => r.dispatch_status === 'PRIVATE_FEEDBACK' || r.dispatch_status === 'GOOGLE_REDIRECT')
+        .map(r => {
+          let category = 'General Experience';
+          let comment = r.message_text || '';
+          let invoiceNo = 'N/A';
+
+          const billMatch = comment.match(/\[Bill #([^\]]+)\]/);
+          if (billMatch) {
+            invoiceNo = billMatch[1];
+          }
+
+          if (comment.includes(' - ') && comment.includes(': ')) {
+            const parts = comment.split(' - ');
+            if (parts.length > 1) {
+              const subParts = parts[1].split(': ');
+              category = subParts[0] || category;
+              comment = subParts.slice(1).join(': ') || comment;
+            }
+          }
+          const rating = Number(r.rating_given) || (r.dispatch_status === 'GOOGLE_REDIRECT' ? 5 : 2);
+          return {
+            id: r.id,
+            storeCode: (r.store_code || 'STORE_DEMO_01').toUpperCase(),
+            billId: r.bill_id || 'N/A',
+            invoiceNo: invoiceNo,
+            customerName: r.customer_name || 'Valued Customer',
+            customerPhone: r.customer_phone || 'N/A',
+            rating: rating,
+            action: r.dispatch_status === 'GOOGLE_REDIRECT' ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK',
+            category: category,
+            comment: comment,
+            requestCallback: true,
+            status: r.resolution_status || 'OPEN',
+            timestamp: r.created_at || r.dispatched_at || new Date().toISOString()
+          };
+        });
+    } catch (err) {
+      console.warn('[SupabaseSync] Notice pulling cloud feedbacks:', err.message);
       return [];
     }
   }
 
   /**
-   * Apply cloud merchant changes immediately to local active configuration
+   * Updates resolution status in Supabase.
    */
-  syncActiveStoreConfig() {
+  async updateFeedbackStatus(id, status) {
     try {
-      const activeCode = (storage.getConfig().storeCode || 'ABC STORE').toUpperCase();
-      const activeStore = storage.getStoreByCode(activeCode);
-      if (activeStore) {
-        const prevName = storage.state.config.storeName;
-        const prevReview = storage.state.config.googleReviewUrl;
-        const prevFlyer = storage.state.config.flyerImageUrl;
-
-        storage.state.config = {
-          ...storage.state.config,
-          storeCode: activeStore.storeCode,
-          storeName: activeStore.storeName,
-          storePhone: activeStore.storePhone,
-          storeGstin: activeStore.storeGstin,
-          googleReviewUrl: activeStore.googleReviewUrl,
-          businessCategory: activeStore.businessCategory,
-          flyerImageUrl: activeStore.flyerImageUrl,
-          flyerOverlayConfig: activeStore.flyerOverlayConfig,
-          customWhatsAppTemplate: activeStore.customWhatsAppTemplate
-        };
-        storage.save();
-
-        if (prevName !== activeStore.storeName || prevReview !== activeStore.googleReviewUrl || prevFlyer !== activeStore.flyerImageUrl) {
-          console.log(`[Supabase Sync] 🔄 Local active store [${activeStore.storeName}] updated immediately from cloud!`);
-          this.broadcast('CONFIG_UPDATED', storage.getConfig());
-          this.broadcast('STORE_UPDATED', activeStore);
-        }
-      }
+      await fetch(`${this.url}/rest/v1/review_dispatches?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ resolution_status: status })
+      });
     } catch (e) {}
   }
 
   /**
-   * Sync Edge WhatsApp + Spooler connection heartbeat and live telemetry to Supabase Cloud
+   * Pushes active store config to Supabase bills table under source: 'STORE_CONFIG'.
+   * Allows serverless Vercel cloud to immediately resolve store name and Google Place ID without needing long query params.
    */
-  async syncEdgeHeartbeatToCloud(storeCode, telemetry = {}) {
-    if (!this.client) return;
+  async syncStoreConfigToCloud(config) {
+    if (!config || !config.storeCode) return null;
     try {
-      const code = (storeCode || storage.getConfig().storeCode || 'ABC STORE').toUpperCase();
-      const hbId = getStoreHeartbeatUuid(code);
-      const metrics = storage.getMetrics();
-      const analytics = storage.getClientAnalytics(code);
-
-      const payload = {
-        whatsappStatus: telemetry.whatsappStatus || 'CONNECTED',
-        phoneNumber: telemetry.phoneNumber || '919342350747',
-        spoolerStatus: telemetry.spoolerStatus || 'Healthy',
-        printerName: telemetry.printerName || 'Microsoft Print to PDF (Healthy)',
-        todayBills: analytics.today?.bills || metrics.todayInvoices || 0,
-        todaySent: analytics.today?.sent || metrics.todaySent || 0,
-        todayGoogleRedirects: analytics.today?.googleRedirects || 0,
-        todayShielded: analytics.today?.shieldedFeedback || 0,
-        allTimeBills: analytics.allTime?.bills || 0,
-        allTimeSent: analytics.allTime?.sent || 0,
-        lastHeartbeat: new Date().toISOString()
+      const storeCode = config.storeCode.trim().toUpperCase();
+      const configData = {
+        id: storeCode,
+        storeCode: storeCode,
+        storeName: config.storeName || storeCode,
+        storePhone: config.storePhone || '',
+        ownerPhone: config.ownerPhone || config.storePhone || '',
+        storeGstin: config.storeGstin || '',
+        googlePlaceId: config.googlePlaceId || '',
+        googleReviewUrl: config.googleReviewUrl || (config.googlePlaceId ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(config.googlePlaceId)}` : ''),
+        businessCategory: config.businessCategory || 'RESTAURANT_CAFE',
+        customWhatsAppTemplate: config.customWhatsAppTemplate || null,
+        flyerImageUrl: config.flyerImageUrl || '/assets/default-review-flyer.jpg',
+        status: 'ACTIVE'
       };
 
-      await this.client
-        .from('bills')
-        .upsert({
-          id: hbId,
-          invoice_no: `HB-${code}`,
-          store_code: code,
-          customer_name: 'Edge WhatsApp Agent',
-          customer_phone: payload.phoneNumber,
-          total_amount: 0,
-          status: payload.whatsappStatus,
-          source: 'AGENT_HEARTBEAT',
-          raw_text: JSON.stringify(payload),
-          local_created_at: new Date().toISOString(),
-          synced_at: new Date().toISOString()
-        }, { onConflict: 'id' });
+      const checkRes = await fetch(`${this.url}/rest/v1/bills?source=eq.STORE_CONFIG&store_code=eq.${encodeURIComponent(storeCode)}`, {
+        headers: this.getHeaders()
+      });
+      const existing = await checkRes.json();
+
+      if (Array.isArray(existing) && existing.length > 0) {
+        const rowId = existing[0].id;
+        await fetch(`${this.url}/rest/v1/bills?id=eq.${encodeURIComponent(rowId)}`, {
+          method: 'PATCH',
+          headers: this.getHeaders(),
+          body: JSON.stringify({
+            invoice_no: `CFG-${storeCode}`,
+            customer_name: configData.storeName,
+            customer_phone: configData.storePhone,
+            raw_text: JSON.stringify(configData),
+            status: 'ACTIVE'
+          })
+        });
+      } else {
+        await fetch(`${this.url}/rest/v1/bills`, {
+          method: 'POST',
+          headers: this.getHeaders(),
+          body: JSON.stringify({
+            store_code: storeCode,
+            invoice_no: `CFG-${storeCode}`,
+            customer_name: configData.storeName,
+            customer_phone: configData.storePhone,
+            total_amount: 0,
+            status: 'ACTIVE',
+            source: 'STORE_CONFIG',
+            raw_text: JSON.stringify(configData)
+          })
+        });
+      }
+      console.log(`[SupabaseSync] ☁️ Store config synced to cloud for [${storeCode}] (${configData.storeName})`);
+      return configData;
     } catch (err) {
-      // Non-fatal background telemetry
+      console.warn('[SupabaseSync] Error syncing store config to cloud:', err.message);
+      return null;
     }
   }
 
-  async syncWhatsAppStatusToCloud(storeCode, status, phoneNumber) {
-    return this.syncEdgeHeartbeatToCloud(storeCode, { whatsappStatus: status, phoneNumber });
-  }
-
   /**
-   * Push a single bill to Supabase Cloud with UUID conflict resolution
+   * Pushes a transaction bill to Supabase bills table so cloud review landing page can hydrate customer and invoice data.
    */
   async syncBillToCloud(tx) {
-    const isConnected = await this.checkConnectivity();
-    const config = storage.getConfig();
-    const storeCode = (tx.storeCode || config.storeCode || 'STORE_DEMO_01').toUpperCase();
-
-    if (!isConnected || !this.client) {
-      // OFFLINE-FIRST: Mark as pending sync in local storage
-      tx.synced = 0;
-      tx.syncStatus = isConnected ? 'PENDING_SUPABASE_CREDENTIALS' : 'OFFLINE_QUEUED';
-      storage.updateTransactionStatus(tx.id, null, { synced: 0, syncStatus: tx.syncStatus });
-      storage.incrementMetric('offlineQueuedBills');
-      this.pendingSyncCount++;
-      console.log(`[Supabase Sync] [OFFLINE MODE] Bill #${tx.invoiceNo} queued in local SQLite/disk cache (0% data loss)`);
-      this.broadcast('CLOUD_SYNC_STATUS', { pending: this.pendingSyncCount, isOnline: this.isOnline });
-      return { success: false, mode: 'OFFLINE_QUEUED', tx };
-    }
-
+    if (!tx) return null;
     try {
+      const storeCode = (tx.storeCode || 'STORE_DEMO_01').toUpperCase();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tx.id || '');
+      
       const payload = {
-        id: getBillUuid(storeCode, tx.invoiceNo),
         store_code: storeCode,
-        invoice_no: tx.invoiceNo || 'INV-001',
+        invoice_no: tx.invoiceNo || 'N/A',
         customer_name: tx.customerName || 'Valued Customer',
-        customer_phone: tx.customerPhone || 'N/A',
+        customer_phone: tx.customerPhone && tx.customerPhone !== 'N/A' ? tx.customerPhone : '',
         total_amount: parseFloat(tx.totalAmount) || 0,
         status: tx.status || 'DELIVERED',
         source: tx.source || 'PRINT_SPOOLER',
         raw_text: tx.rawText || '',
         local_created_at: tx.timestamp || new Date().toISOString()
       };
+      if (isUuid) {
+        payload.id = tx.id;
+      }
 
-      const { data, error } = await this.client
-        .from('bills')
-        .upsert(payload, { onConflict: 'id' });
+      const res = await fetch(`${this.url}/rest/v1/bills`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(payload)
+      });
 
-      if (error) throw error;
-
-      tx.synced = 1;
-      tx.syncStatus = 'SYNCED_TO_SUPABASE';
-      storage.updateTransactionStatus(tx.id, null, { synced: 1, syncStatus: 'SYNCED_TO_SUPABASE' });
-      this.lastSyncTimestamp = new Date().toISOString();
-      console.log(`[Supabase Sync] ✅ Bill #${tx.invoiceNo} successfully synced to Supabase cloud!`);
-      this.broadcast('CLOUD_SYNC_STATUS', { pending: this.pendingSyncCount, isOnline: this.isOnline, lastSync: this.lastSyncTimestamp });
-      return { success: true, mode: 'CLOUD_SYNCED', data };
+      if (!res.ok) {
+        const errText = await res.text();
+        console.warn('[SupabaseSync] Bill sync notice:', res.status, errText);
+        return null;
+      }
+      const data = await res.json();
+      return Array.isArray(data) && data.length > 0 ? data[0] : null;
     } catch (err) {
-      console.warn(`[Supabase Sync] Push failed (${err.message}). Falling back to local offline queue.`);
-      tx.synced = 0;
-      tx.syncStatus = 'OFFLINE_QUEUED_RETRY';
-      storage.updateTransactionStatus(tx.id, null, { synced: 0, syncStatus: 'OFFLINE_QUEUED_RETRY' });
-      return { success: false, mode: 'OFFLINE_QUEUED', error: err.message };
+      console.warn('[SupabaseSync] Error syncing bill to cloud:', err.message);
+      return null;
     }
   }
 
   /**
-   * Push WhatsApp Dispatch Status to Supabase
+   * Syncs a dispatch event or status update to Supabase cloud.
    */
   async syncDispatchToCloud(txId, status, details = {}) {
-    const isConnected = await this.checkConnectivity();
-    const config = storage.getConfig();
-    const tx = storage.state.transactions.find(t => t.id === txId);
-
-    if (!isConnected || !this.client || !tx) {
-      return { success: false, mode: 'OFFLINE_LOCAL' };
-    }
-
+    if (!txId) return null;
     try {
-      const storeCode = (tx.storeCode || config.storeCode || 'STORE_DEMO_01').toUpperCase();
-      if (tx.invoiceNo) {
-        const billId = getBillUuid(storeCode, tx.invoiceNo);
-        await this.client
-          .from('bills')
-          .update({ status: status })
-          .eq('id', billId);
-      }
-
-      await this.client
-        .from('review_dispatches')
-        .insert({
-          store_code: storeCode,
-          customer_phone: tx.customerPhone,
-          customer_name: tx.customerName || 'Valued Customer',
-          message_text: details.messagePreview || 'Review invite',
-          dispatch_status: status,
-          dispatched_at: status === 'DELIVERED' ? new Date().toISOString() : null
-        });
-      console.log(`[Supabase Sync] ✅ Dispatch status '${status}' for #${tx.invoiceNo} (${tx.customerPhone}) synced to Supabase.`);
-      return { success: true };
-    } catch (err) {
-      console.warn(`[Supabase Sync] Dispatch status sync warning:`, err.message);
-      return { success: false };
-    }
-  }
-
-  /**
-   * Flush and Batch-Sync All Local Records to Supabase Cloud
-   */
-  async flushOfflineSyncQueue() {
-    const isConnected = await this.checkConnectivity();
-    if (!isConnected || !this.client) return;
-
-    const validTxs = (storage.state.transactions || []).filter(t => t.source !== 'AGENT_HEARTBEAT' && !(t.invoiceNo && t.invoiceNo.startsWith('HB-')));
-    if (validTxs.length === 0) return;
-
-    const config = storage.getConfig();
-    const payloadMap = new Map();
-    for (const tx of validTxs) {
-      const storeCode = (tx.storeCode || config.storeCode || 'STORE_DEMO_01').toUpperCase();
-      const uuid = tx.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tx.id)
-        ? tx.id
-        : getBillUuid(storeCode, tx.invoiceNo);
-      payloadMap.set(uuid, {
-        id: uuid,
-        store_code: storeCode,
-        invoice_no: tx.invoiceNo || 'INV-001',
-        customer_name: tx.customerName || 'Valued Customer',
-        customer_phone: tx.customerPhone || 'N/A',
-        total_amount: parseFloat(tx.totalAmount) || 0,
-        status: tx.status || 'DELIVERED',
-        source: tx.source || 'PRINT_SPOOLER',
-        raw_text: tx.rawText || '',
-        local_created_at: tx.timestamp || new Date().toISOString()
-      });
-    }
-    const payloadList = Array.from(payloadMap.values());
-
-    try {
-      const { data, error } = await this.client
-        .from('bills')
-        .upsert(payloadList, { onConflict: 'id' });
-
-      if (!error) {
-        for (const tx of validTxs) {
-          tx.synced = 1;
-          tx.syncStatus = 'SYNCED_TO_SUPABASE';
-          storage.updateTransactionStatus(tx.id, tx.status, { synced: 1, syncStatus: 'SYNCED_TO_SUPABASE' });
-        }
-        this.pendingSyncCount = 0;
-        this.lastSyncTimestamp = new Date().toISOString();
-        this.broadcast('CLOUD_SYNC_STATUS', { pending: 0, isOnline: true, lastSync: this.lastSyncTimestamp });
-      } else {
-        console.warn('[Supabase Sync] Batch upsert warning:', error.message);
-      }
-    } catch (e) {
-      console.warn('[Supabase Sync] Batch sync error:', e.message);
-    }
-  }
-
-  /**
-   * Bi-Directional: Pull all bills from Supabase Cloud into local database
-   */
-  async pullCloudBills(storeCode = null) {
-    const isConnected = await this.checkConnectivity();
-    if (!isConnected || !this.client) return;
-
-    const stores = storeCode ? [storeCode.toUpperCase()] : (storage.state.clientStores || [{ storeCode: 'ABC STORE' }]).map(s => s.storeCode.toUpperCase());
-    for (const code of stores) {
-      try {
-        const { data: cloudBills, error } = await this.client
-          .from('bills')
-          .select('*')
-          .eq('store_code', code)
-          .order('created_at', { ascending: false });
-
-        if (!error && cloudBills && cloudBills.length > 0) {
-          let newCount = 0;
-          for (const b of cloudBills) {
-            if (b.source === 'AGENT_HEARTBEAT' || (b.invoice_no && b.invoice_no.startsWith('HB-'))) continue;
-            
-            const billTime = b.local_created_at || b.created_at || new Date().toISOString();
-            let existing = storage.state.transactions.find(t => 
-              t.id === b.id || 
-              (t.invoiceNo && b.invoice_no && t.invoiceNo === b.invoice_no && (t.storeCode || '').toUpperCase() === (b.store_code || '').toUpperCase())
-            );
-            
-            if (!existing) {
-              storage.state.transactions.push({
-                id: b.id || getBillUuid(b.store_code, b.invoice_no),
-                storeCode: b.store_code,
-                invoiceNo: b.invoice_no,
-                customerName: b.customer_name || 'Valued Customer',
-                customerPhone: b.customer_phone || 'N/A',
-                formattedPhone: b.customer_phone ? (b.customer_phone.startsWith('+') ? b.customer_phone : `+91 ${b.customer_phone}`) : 'N/A',
-                totalAmount: (b.total_amount || 0).toFixed(2),
-                status: b.status || 'DELIVERED',
-                source: b.source || 'PRINT_SPOOLER',
-                rawText: b.raw_text || '',
-                timestamp: billTime,
-                synced: 1,
-                syncStatus: 'SYNCED_TO_SUPABASE'
-              });
-              newCount++;
-            } else {
-              existing.id = b.id || existing.id;
-              if (existing.status !== 'SCHEDULED_DISPATCH' && b.status) existing.status = b.status;
-              if (b.total_amount) existing.totalAmount = (b.total_amount || 0).toFixed(2);
-              if (b.customer_phone) existing.customerPhone = b.customer_phone;
-              if (b.customer_name) existing.customerName = b.customer_name;
-              if (b.local_created_at || b.created_at) existing.timestamp = b.local_created_at || b.created_at;
-            }
-          }
-          if (newCount > 0) {
-            // Sort by timestamp descending
-            storage.state.transactions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            storage.save();
-            console.log(`[Supabase Sync] 📥 Pulled ${newCount} cloud bills into local database for ${code}! Total: ${storage.state.transactions.length}`);
-            this.broadcast('TRANSACTION_UPDATED', {});
-            this.broadcast('METRICS_UPDATED', storage.getMetrics());
-          }
-        }
-      } catch (e) {
-        console.warn(`[Supabase Sync] Pull error note for ${code}:`, e.message);
-      }
-    }
-  }
-
-  /**
-   * Push feedback event to Supabase Cloud
-   */
-  async syncFeedbackToCloud(fb) {
-    if (!this.client) return false;
-    try {
-      const isUuid = fb.billId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fb.billId);
-      const isPositive = (Number(fb.rating) >= 4) || fb.action === 'GOOGLE_REDIRECT';
-      const action = isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK';
-      const messageText = isPositive
-        ? (fb.comment || '5-Star Google Review Redirect')
-        : `Shielded Complaint (${fb.rating}★) - ${fb.category || 'General'}: ${fb.comment || 'No comment'}`;
-
-      const payload = {
-        store_code: (fb.storeCode || 'STORE_DEMO_01').toUpperCase(),
-        customer_phone: fb.customerPhone || '9876543210',
-        customer_name: fb.customerName || 'Valued Customer',
-        message_text: messageText,
-        dispatch_status: action,
-        rating_given: parseInt(fb.rating, 10) || (isPositive ? 5 : 2),
-        review_link_clicked: true,
-        dispatched_at: new Date().toISOString()
-      };
-
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(txId);
       if (isUuid) {
-        payload.bill_id = fb.billId;
+        await fetch(`${this.url}/rest/v1/bills?id=eq.${encodeURIComponent(txId)}`, {
+          method: 'PATCH',
+          headers: this.getHeaders(),
+          body: JSON.stringify({ status })
+        }).catch(() => {});
       }
-
-      const res = await this.client.from('review_dispatches').insert(payload);
-      if (res.error) {
-        console.warn('[Supabase Sync] Feedback insert note:', res.error.message);
-        return false;
-      }
-      console.log(`[Supabase Sync] ⭐ Customer feedback/rating synced to Supabase for ${payload.customer_phone}!`);
-      return true;
-    } catch (e) {
-      console.warn('[Supabase Sync] Feedback sync note:', e.message);
-      return false;
+      return { success: true, txId, status };
+    } catch (err) {
+      console.warn('[SupabaseSync] Notice syncing dispatch status to cloud:', err.message);
+      return null;
     }
   }
 
-  /**
-   * Bi-Directional: Pull customer ratings & feedbacks from Supabase Cloud into local database
-   */
-  async pullCloudFeedbacks(storeCode = null) {
-    const isConnected = await this.checkConnectivity();
-    if (!isConnected || !this.client) return;
-
-    const stores = storeCode ? [storeCode.toUpperCase()] : (storage.state.clientStores || [{ storeCode: 'ABC STORE' }]).map(s => s.storeCode.toUpperCase());
-    for (const code of stores) {
-      try {
-        const { data, error } = await this.client
-          .from('review_dispatches')
-          .select('*')
-          .eq('store_code', code)
-          .in('dispatch_status', ['PRIVATE_FEEDBACK', 'GOOGLE_REDIRECT'])
-          .order('created_at', { ascending: false });
-
-        if (!error && data && data.length > 0) {
-          let newCount = 0;
-          for (const r of data) {
-            const isPositive = (Number(r.rating_given) >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
-            const action = isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK';
-
-            let existing = storage.state.privateFeedback.find(f => f.id === r.id);
-            if (!existing) {
-              let category = isPositive ? 'Satisfied Customer' : 'General Grievance';
-              let comment = r.message_text || '';
-              if (comment.includes(' - ') && comment.includes(': ')) {
-                const parts = comment.split(' - ');
-                if (parts.length > 1) {
-                  const subParts = parts[1].split(': ');
-                  category = subParts[0] || category;
-                  comment = subParts.slice(1).join(': ') || comment;
-                }
-              }
-
-              storage.state.privateFeedback.push({
-                id: r.id || `FB_${Date.now()}_${Math.floor(Math.random()*1000)}`,
-                billId: r.bill_id || null,
-                storeCode: r.store_code,
-                invoiceNo: 'INV-4920',
-                customerName: r.customer_name || 'Customer',
-                customerPhone: r.customer_phone || '9876543210',
-                rating: r.rating_given || (isPositive ? 5 : 2),
-                action: action,
-                category: category,
-                comment: comment,
-                requestCallback: !isPositive,
-                status: 'OPEN',
-                timestamp: r.created_at || new Date().toISOString()
-              });
-              newCount++;
-            }
-          }
-          if (newCount > 0) {
-            storage.state.privateFeedback.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            storage.save();
-            console.log(`[Supabase Sync] ⭐ Pulled ${newCount} customer review(s)/complaint(s) from cloud for ${code}! Total: ${storage.state.privateFeedback.length}`);
-            this.broadcast('FEEDBACK_RECEIVED', {});
-            this.broadcast('METRICS_UPDATED', storage.getMetrics());
-          }
-        }
-      } catch (e) {
-        console.warn(`[Supabase Sync] Feedback pull note for ${code}:`, e.message);
-      }
-    }
+  async syncStoreToCloud(store) {
+    return this.syncStoreConfigToCloud(store);
   }
 
-  async broadcastHeartbeatToCloud() {
-    if (!this.client) return;
+  async deleteStoreFromCloud(storeCode) {
     try {
-      const config = storage.getConfig();
-      const code = (config.storeCode || 'STORE_DEMO_01').toUpperCase();
-      const phone = config.storePhone || '919342350747';
-      await this.syncWhatsAppStatusToCloud(code, 'CONNECTED', phone);
+      const code = storeCode.toUpperCase();
+      await fetch(`${this.url}/rest/v1/bills?source=eq.STORE_CONFIG&store_code=eq.${encodeURIComponent(code)}`, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ status: 'DELETED' })
+      });
     } catch (e) {}
   }
 
-  startPeriodicSyncWorker() {
-    // Initial sync
-    setTimeout(() => {
-      this.pullCloudBills();
-      this.pullCloudFeedbacks();
-      this.flushOfflineSyncQueue();
-      this.broadcastHeartbeatToCloud();
-    }, 2000);
+  async pullCloudStores() {
+    try {
+      const res = await fetch(`${this.url}/rest/v1/bills?source=eq.STORE_CONFIG&status=neq.DELETED`, {
+        headers: {
+          'apikey': this.key,
+          'Authorization': `Bearer ${this.key}`
+        }
+      });
+      if (!res.ok) return [];
+      const rows = await res.json();
+      return (rows || []).map(r => {
+        try {
+          return typeof r.raw_text === 'string' ? JSON.parse(r.raw_text) : r.raw_text;
+        } catch (e) {
+          return null;
+        }
+      }).filter(Boolean);
+    } catch (e) {
+      return [];
+    }
+  }
 
-    setInterval(() => {
-      this.flushOfflineSyncQueue();
-      this.pullCloudBills();
-      this.pullCloudFeedbacks();
-      this.broadcastHeartbeatToCloud();
-    }, 15000);
+  async pullCloudBills(storeCode) {
+    try {
+      let url = `${this.url}/rest/v1/bills?order=created_at.desc&limit=50`;
+      if (storeCode) url += `&store_code=eq.${encodeURIComponent(storeCode.toUpperCase())}`;
+      const res = await fetch(url, {
+        headers: {
+          'apikey': this.key,
+          'Authorization': `Bearer ${this.key}`
+        }
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async getStoreConfig(storeCode) {
+    if (!storeCode) return null;
+    try {
+      const code = storeCode.trim().toUpperCase();
+      const res = await fetch(`${this.url}/rest/v1/bills?source=eq.STORE_CONFIG&store_code=eq.${encodeURIComponent(code)}&status=neq.DELETED&limit=1`, {
+        headers: this.getHeaders()
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const row = data[0];
+        const cfg = typeof row.raw_text === 'string' ? JSON.parse(row.raw_text) : row.raw_text;
+        const placeId = cfg.googlePlaceId || '';
+        const reviewUrl = (cfg.googleReviewUrl && !cfg.googleReviewUrl.includes('outbid'))
+          ? cfg.googleReviewUrl
+          : (placeId ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}` : '');
+        let effectiveName = cfg.storeName || row.customer_name || code;
+        if (code === 'RUCHI-KABAB' && effectiveName === 'Gokul Hotel') {
+          effectiveName = 'RUCHI KABAB';
+        }
+        return {
+          id: code,
+          storeCode: code,
+          storeName: effectiveName,
+          storePhone: cfg.storePhone || row.customer_phone || '',
+          ownerPhone: cfg.ownerPhone || row.customer_phone || '',
+          googlePlaceId: placeId,
+          googleReviewUrl: reviewUrl,
+          businessCategory: cfg.businessCategory || 'RESTAURANT_CAFE'
+        };
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async getBill(storeCode, billId) {
+    if (!billId) return null;
+    try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(billId);
+      let query = `${this.url}/rest/v1/bills?`;
+      if (isUuid) {
+        query += `or=(id.eq.${billId},invoice_no.eq.${billId})`;
+      } else {
+        query += `invoice_no=eq.${encodeURIComponent(billId)}`;
+      }
+      if (storeCode) {
+        query += `&store_code=eq.${encodeURIComponent(storeCode.toUpperCase())}`;
+      }
+      query += `&order=created_at.desc&limit=1`;
+
+      const res = await fetch(query, { headers: this.getHeaders() });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const b = data[0];
+        return {
+          id: b.id,
+          invoiceNo: b.invoice_no,
+          totalAmount: (b.total_amount || 0).toFixed(2),
+          customerName: b.customer_name || 'Valued Customer',
+          customerPhone: b.customer_phone || ''
+        };
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async clearCloudStoreData(storeCode) {
+    if (!storeCode) return false;
+    try {
+      const code = storeCode.toUpperCase();
+      const codes = [code];
+      if (code === 'GOKUL' || code === 'STORE') {
+        codes.push('GOKUL', 'STORE');
+      }
+      const uniqueCodes = Array.from(new Set(codes)).join(',');
+
+      // Delete dispatches from Supabase
+      await fetch(`${this.url}/rest/v1/review_dispatches?store_code=in.(${uniqueCodes})`, {
+        method: 'DELETE',
+        headers: this.getHeaders()
+      });
+
+      // Delete bills from Supabase
+      await fetch(`${this.url}/rest/v1/bills?store_code=in.(${uniqueCodes})`, {
+        method: 'DELETE',
+        headers: this.getHeaders()
+      });
+
+      console.log(`[SupabaseSync] 🧹 Cleared cloud bills & dispatches for store: ${uniqueCodes}`);
+      return true;
+    } catch (e) {
+      console.warn('[SupabaseSync] Cloud clear note:', e.message);
+      return false;
+    }
   }
 }
