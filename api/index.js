@@ -844,6 +844,9 @@ app.get('/api/review-info/:billId', async (req, res) => {
   } else {
     // If query params provided explicit name or placeid, prioritize them
     if (queryName) store.storeName = queryName;
+    if (storeCode === 'RUCHI-KABAB' && (!queryName || store.storeName === 'Gokul Hotel')) {
+      store.storeName = 'RUCHI KABAB';
+    }
     if (queryPlaceId) {
       store.googlePlaceId = queryPlaceId;
       store.googleReviewUrl = `https://search.google.com/local/writereview?placeid=${encodeURIComponent(queryPlaceId)}`;
