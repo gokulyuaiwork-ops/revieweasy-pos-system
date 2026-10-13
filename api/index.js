@@ -7,7 +7,6 @@ import { storage } from '../src/engine/storage.js';
 import { SupabaseSyncEngine } from '../src/engine/supabase-sync.js';
 import { PersonalizedImageGenerator } from '../src/engine/personalized-image-generator.js';
 import { generateInvoicePdfBuffer } from '../src/engine/invoice-generator.js';
-import { WinBackEngine } from '../src/engine/winback-engine.js';
 
 function getStoreHeartbeatUuid(storeCode) {
   const hash = crypto.createHash('md5').update('ReviewEasy_Heartbeat_' + (storeCode || 'STORE_DEMO_01')).digest('hex');
@@ -59,7 +58,6 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '../public')));
 
 const supabaseSync = new SupabaseSyncEngine();
-const winBackEngine = new WinBackEngine();
 
 // Helper to fetch bills for a store from Supabase or fallback to storage
 async function getStoreBills(storeCode) {
@@ -102,62 +100,6 @@ async function getStoreBills(storeCode) {
   return bills;
 }
 
-// Helper to build customer RFM directory from bills
-function buildCustomerDirectoryFromBills(bills) {
-  const customerMap = {};
-  const now = Date.now();
-
-  for (const b of bills) {
-    const phone = (b.customerPhone || '').replace(/\D/g, '').slice(-10);
-    if (!phone || phone.length < 10) continue;
-
-    const billDate = new Date(b.timestamp).getTime();
-    const amount = parseFloat(b.totalAmount) || 0;
-
-    if (!customerMap[phone]) {
-      customerMap[phone] = {
-        name: b.customerName || 'Valued Customer',
-        phone: phone,
-        formattedPhone: `+91 ${phone}`,
-        totalVisits: 0,
-        totalSpend: 0,
-        lastVisit: new Date(billDate).toISOString(),
-        firstVisit: new Date(billDate).toISOString(),
-        lastVisitTimestamp: billDate
-      };
-    }
-
-    customerMap[phone].totalVisits++;
-    customerMap[phone].totalSpend += amount;
-
-    if (billDate > customerMap[phone].lastVisitTimestamp) {
-      customerMap[phone].lastVisitTimestamp = billDate;
-      customerMap[phone].lastVisit = new Date(billDate).toISOString();
-      if (b.customerName && b.customerName !== 'Valued Customer') {
-        customerMap[phone].name = b.customerName;
-      }
-    }
-  }
-
-  let directory = Object.values(customerMap).map(c => {
-    const daysSinceLastVisit = Math.floor((now - c.lastVisitTimestamp) / (24 * 60 * 60 * 1000));
-    let segment = 'ACTIVE';
-    if (daysSinceLastVisit > 60) segment = 'DORMANT';
-    else if (daysSinceLastVisit >= 30) segment = 'LAPSED';
-
-    return {
-      ...c,
-      daysSinceLastVisit,
-      segment,
-      winBackStatus: 'ELIGIBLE'
-    };
-  });
-
-  // STRICT FILTER: Only return customers inactive for 30+ days in the Win-Back list
-  return directory
-    .filter(c => c.daysSinceLastVisit >= 30)
-    .sort((a, b) => b.daysSinceLastVisit - a.daysSinceLastVisit);
-}
 
 function getStartOfTodayIst() {
   const now = new Date();
@@ -168,9 +110,14 @@ function getStartOfTodayIst() {
 
 function buildCloudClientAnalytics(storeCode, validBills, dispatches = []) {
   const code = (storeCode || 'STORE_DEMO_01').toUpperCase();
+  const storeThreshold = Number(storage.getStoreByCode(code)?.googleRedirectMinRating) || 4;
   const startOfTodayUtc = getStartOfTodayIst();
   const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+  const clearedAt = (storage.state.clearedAt && (
+    storage.state.clearedAt[code] ||
+    ((code === 'STORE' || code === 'GOKUL') ? (storage.state.clearedAt['STORE'] || storage.state.clearedAt['GOKUL']) : 0)
+  )) || 0;
 
   const aggregate = (txList, minTimestamp = 0) => {
     let sentCount = 0;
@@ -195,9 +142,10 @@ function buildCloudClientAnalytics(storeCode, validBills, dispatches = []) {
       }
     }
 
-    const periodDispatches = dispatches.filter(d => new Date(d.dispatched_at || d.created_at || 0).getTime() >= minTimestamp);
-    const positiveRedirects = periodDispatches.filter(d => d.dispatch_status === 'GOOGLE_REDIRECT' || Number(d.rating_given) >= 4).length;
-    const shieldedGrievances = periodDispatches.filter(d => d.dispatch_status === 'PRIVATE_FEEDBACK' || (d.rating_given && Number(d.rating_given) <= 3)).length;
+    const effectiveMin = Math.max(minTimestamp, clearedAt);
+    const periodDispatches = dispatches.filter(d => new Date(d.dispatched_at || d.created_at || 0).getTime() >= effectiveMin);
+    const positiveRedirects = periodDispatches.filter(d => d.dispatch_status === 'GOOGLE_REDIRECT' || Number(d.rating_given) >= storeThreshold).length;
+    const shieldedGrievances = periodDispatches.filter(d => d.dispatch_status === 'PRIVATE_FEEDBACK' || (d.rating_given && Number(d.rating_given) < storeThreshold)).length;
     const reachRate = totalBills > 0 ? Math.round((sentCount / totalBills) * 100) : 0;
 
     return {
@@ -216,8 +164,8 @@ function buildCloudClientAnalytics(storeCode, validBills, dispatches = []) {
   const weekTxs = validBills.filter(t => new Date(t.timestamp || t.created_at || 0).getTime() >= sevenDaysAgo);
   const monthTxs = validBills.filter(t => new Date(t.timestamp || t.created_at || 0).getTime() >= thirtyDaysAgo);
 
-  const shieldedCount = dispatches.filter(d => d.dispatch_status === 'PRIVATE_FEEDBACK' || (d.rating_given && Number(d.rating_given) <= 3)).length;
-  const redirectedCount = dispatches.filter(d => d.dispatch_status === 'GOOGLE_REDIRECT' || Number(d.rating_given) >= 4).length;
+  const shieldedCount = dispatches.filter(d => d.dispatch_status === 'PRIVATE_FEEDBACK' || (d.rating_given && Number(d.rating_given) < storeThreshold)).length;
+  const redirectedCount = dispatches.filter(d => d.dispatch_status === 'GOOGLE_REDIRECT' || Number(d.rating_given) >= storeThreshold).length;
 
   return {
     storeCode: code,
@@ -261,7 +209,7 @@ app.get('/api/state', async (req, res) => {
 
         if (hbRow) {
           whatsappStatus = hbRow.status || 'NOT_LINKED';
-          whatsappPhone = hbRow.customer_phone || (store && store.storePhone) || '919342350747';
+          whatsappPhone = hbRow.customer_phone || (store && store.storePhone) || null;
           if (hbRow.raw_text) {
             try {
               const hbData = JSON.parse(hbRow.raw_text);
@@ -278,7 +226,7 @@ app.get('/api/state', async (req, res) => {
       const delivered = rawBills.find(b => b.status === 'DELIVERED' || b.status === 'WHATSAPP_SENT');
       if (delivered) {
         whatsappStatus = 'CONNECTED';
-        whatsappPhone = (store && store.storePhone) || '919342350747';
+        whatsappPhone = (store && store.storePhone) || null;
       }
     }
 
@@ -366,7 +314,9 @@ app.get('/api/feedback', async (req, res) => {
 app.post('/api/feedback', async (req, res) => {
   try {
     const feedback = storage.addFeedback(req.body);
-    if (supabaseSync) supabaseSync.syncFeedbackToCloud(feedback);
+    if (supabaseSync && typeof supabaseSync.syncFeedbackToCloud === 'function') {
+      await supabaseSync.syncFeedbackToCloud(feedback);
+    }
     res.json({ success: true, feedback });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -865,46 +815,57 @@ app.post('/api/admin/flyer/preview', async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/review-info/:billId', async (req, res) => {
   const { billId } = req.params;
-  const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  const store = storage.getStoreByCode(storeCode) || {
-    storeCode,
-    storeName: storage.getConfig().storeName || 'Sunshine Cafe & Bistro',
-    googleReviewUrl: storage.getConfig().googleReviewUrl || 'https://g.page/review'
-  };
+  const storeCode = (req.query.store || req.query.s || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
+  const queryName = (req.query.name || req.query.n || req.query.store_name || '').trim();
+  const queryPlaceId = (req.query.placeid || req.query.p || req.query.place_id || '').trim();
+  const queryReviewUrl = (req.query.rurl || req.query.review_url || '').trim();
+  const queryInv = (req.query.inv || req.query.b || req.query.invoice || '').trim();
+  const queryTotal = (req.query.total || '').trim();
+  const queryPhone = (req.query.phone || '').trim();
+  const queryCname = (req.query.cname || req.query.customer || '').trim();
+
+  let store = storage.getStoreByCode(storeCode);
+
+  // Hydrate store from Supabase STORE_CONFIG if not in cloud memory
+  if (!store && supabaseSync && typeof supabaseSync.getStoreConfig === 'function') {
+    store = await supabaseSync.getStoreConfig(storeCode);
+  }
+
+  if (!store) {
+    const defaultStoreName = queryName || (storeCode === 'RUCHI-KABAB' ? 'RUCHI KABAB' : (storeCode === 'GOKUL' ? 'Gokul Hotel' : (storage.getConfig().storeName || 'RUCHI KABAB')));
+    const placeId = queryPlaceId || storage.getConfig().googlePlaceId || '';
+    const googleReviewUrl = queryReviewUrl || (placeId ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}` : (storage.getConfig().googleReviewUrl || 'https://search.google.com/local/writereview'));
+    store = {
+      storeCode,
+      storeName: defaultStoreName,
+      googlePlaceId: placeId,
+      googleReviewUrl: googleReviewUrl
+    };
+  } else {
+    // If query params provided explicit name or placeid, prioritize them
+    if (queryName) store.storeName = queryName;
+    if (queryPlaceId) {
+      store.googlePlaceId = queryPlaceId;
+      store.googleReviewUrl = `https://search.google.com/local/writereview?placeid=${encodeURIComponent(queryPlaceId)}`;
+    }
+  }
 
   let bill = storage.state.transactions.find(t => t.id === billId || t.invoiceNo === billId);
 
   // If on Cloud, fetch from Supabase if not found locally
-  if (!bill && supabaseSync && supabaseSync.client) {
-    try {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(billId);
-      let query = supabaseSync.client.from('bills').select('*');
-      if (isUuid) {
-        query = query.or(`id.eq.${billId},invoice_no.eq.${billId}`);
-      } else {
-        query = query.eq('invoice_no', billId);
-      }
-      const { data } = await query.limit(1);
-      if (data && data.length > 0) {
-        const b = data[0];
-        bill = {
-          id: b.id,
-          invoiceNo: b.invoice_no,
-          totalAmount: (b.total_amount || 0).toFixed(2),
-          customerName: b.customer_name || 'Valued Customer',
-          customerPhone: b.customer_phone || '9876543210'
-        };
-      }
-    } catch (e) {}
+  if (!bill && supabaseSync && typeof supabaseSync.getBill === 'function') {
+    bill = await supabaseSync.getBill(storeCode, billId);
   }
 
   if (!bill) {
+    const fallbackInv = queryInv || (billId && billId.startsWith('INV-') ? billId : (billId !== 'DEMO_BILL' ? billId : 'N/A'));
+    const fallbackTotal = queryTotal ? Number(queryTotal).toFixed(2) : '0.00';
     bill = {
       id: billId,
-      invoiceNo: billId.startsWith('INV-') ? billId : 'INV-4920',
-      totalAmount: '450.00',
-      customerName: 'Valued Customer',
-      customerPhone: '9876543210'
+      invoiceNo: fallbackInv,
+      totalAmount: fallbackTotal,
+      customerName: queryCname || 'Valued Customer',
+      customerPhone: queryPhone || ''
     };
   }
 
@@ -921,68 +882,6 @@ app.get('/api/review-info/:billId', async (req, res) => {
   }
 
   res.json({ success: true, store, bill });
-});
-
-app.post('/api/feedback', async (req, res) => {
-  try {
-    const fb = storage.addFeedback(req.body);
-    if (supabaseSync && typeof supabaseSync.syncFeedbackToCloud === 'function') {
-      await supabaseSync.syncFeedbackToCloud(fb);
-    }
-    res.json({ success: true, feedback: fb });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/feedback', async (req, res) => {
-  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  let feedbacks = storage.getFeedback(storeCode);
-  
-  if (supabaseSync && supabaseSync.client) {
-    try {
-      const { data, error } = await supabaseSync.client
-        .from('review_dispatches')
-        .select('*')
-        .eq('store_code', storeCode)
-        .order('created_at', { ascending: false });
-      
-      if (!error && data && data.length > 0) {
-        feedbacks = data.map(r => {
-          const isPositive = (r.rating_given && r.rating_given >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
-          let category = isPositive ? 'Satisfied Customer' : 'Customer Grievance';
-          let comment = r.message_text || '';
-          if (comment.includes(' - ') && comment.includes(': ')) {
-            const parts = comment.split(' - ');
-            if (parts.length > 1) {
-              const sub = parts[1].split(': ');
-              category = sub[0] || category;
-              comment = sub.slice(1).join(': ') || comment;
-            }
-          }
-          return {
-            id: r.id,
-            storeCode: r.store_code,
-            customerPhone: r.customer_phone || '9876543210',
-            customerName: r.customer_name || 'Valued Customer',
-            invoiceNo: 'INV-4920',
-            rating: r.rating_given || (isPositive ? 5 : 2),
-            action: r.dispatch_status || (isPositive ? 'GOOGLE_REDIRECT' : 'PRIVATE_FEEDBACK'),
-            category: category,
-            comment: comment,
-            requestCallback: !isPositive,
-            status: 'OPEN',
-            timestamp: r.created_at || new Date().toISOString()
-          };
-        });
-      }
-    } catch (e) {
-      console.warn('Supabase feedback get error:', e.message);
-    }
-  }
-  
-  feedbacks = feedbacks.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  res.json({ success: true, feedbacks });
 });
 
 app.put('/api/feedback/:id/status', (req, res) => {
@@ -1095,6 +994,7 @@ app.get('/api/state', async (req, res) => {
     }
 
     let storeFeedbacks = storage.getFeedback(storeCode);
+    const cloudThreshold = Number(storage.getStoreByCode(storeCode)?.googleRedirectMinRating) || 4;
     if (supabaseSync && supabaseSync.client) {
       try {
         const { data, error } = await supabaseSync.client
@@ -1103,7 +1003,7 @@ app.get('/api/state', async (req, res) => {
           .eq('store_code', storeCode);
         if (!error && data && data.length > 0) {
           storeFeedbacks = data.map(r => {
-            const isPositive = (r.rating_given && r.rating_given >= 4) || r.dispatch_status === 'GOOGLE_REDIRECT';
+            const isPositive = (r.rating_given && r.rating_given >= cloudThreshold) || r.dispatch_status === 'GOOGLE_REDIRECT';
             return {
               id: r.id,
               storeCode: r.store_code,
@@ -1167,7 +1067,10 @@ app.get('/api/state', async (req, res) => {
       quota: storage.getTodayQuotaUsage(storeCode),
       transactions: bills,
       health: { isOnline: true, uptime: process.uptime(), lastSync: new Date().toISOString() },
-      whatsapp: { status: 'CONNECTED', mode: 'CLOUD_EDGE_GATEWAY' },
+      whatsapp: {
+        status: (bills && bills.some(b => b.status === 'DELIVERED' || b.status === 'WHATSAPP_SENT')) ? 'CONNECTED' : 'NOT_LINKED',
+        mode: 'CLOUD_EDGE_GATEWAY'
+      },
       supabase: { isOnline: true, connected: true }
     });
   } catch (err) {
@@ -1218,87 +1121,6 @@ app.get('/api/client/analytics/:storeCode?', async (req, res) => {
   res.json({ success: true, storeCode, analytics });
 });
 
-// Win-Back Radar Endpoints (Unified Supabase Ingestion)
-app.get('/api/winback/directory', async (req, res) => {
-  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  const bills = await getStoreBills(storeCode);
-  const directory = buildCustomerDirectoryFromBills(bills);
-  res.json({ success: true, directory });
-});
-
-app.get('/api/winback/customers', async (req, res) => {
-  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  const bills = await getStoreBills(storeCode);
-  const customers = buildCustomerDirectoryFromBills(bills);
-  res.json({ success: true, customers });
-});
-
-app.get('/api/winback/analytics', async (req, res) => {
-  const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  const bills = await getStoreBills(storeCode);
-  const customers = buildCustomerDirectoryFromBills(bills);
-
-  const lapsed = customers.filter(c => c.segment === 'LAPSED').length;
-  res.json({
-    success: true,
-    analytics: {
-      lapsedCount: lapsed,
-      winBacksSent: 0,
-      customersRecovered: 0,
-      recoveryRate: 0,
-      totalRecoveredRevenue: 0
-    }
-  });
-});
-
-app.get('/api/winback/template', (req, res) => {
-  const storeCode = (req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-  const store = storage.getStoreByCode(storeCode) || storage.getConfig();
-  const cfg = storage.getConfig();
-  const defaultTpl = `Hi {{name}}! ✨ We noticed it’s been a while since your last visit to {{storeName}}.\n\nWe’ve refreshed our seasonal specialties and ambiance, and our entire team would love to welcome you back! ☕🍰\n\nHope to see you again soon!\n📍 Directions & Location: {{googleMapUrl}}\n\n(Reply STOP to unsubscribe)`;
-  
-  const activeTemplate = store.customWinBackTemplate || cfg.customWinBackTemplate || defaultTpl;
-  res.json({
-    success: true,
-    template: activeTemplate,
-    isCustom: !!(store.customWinBackTemplate || cfg.customWinBackTemplate)
-  });
-});
-
-app.post('/api/winback/template', (req, res) => {
-  try {
-    const { storeCode, template } = req.body;
-    const code = (storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-    
-    storage.updateStore(code, { customWinBackTemplate: template });
-    storage.updateConfig({ customWinBackTemplate: template });
-    
-    res.json({ success: true, message: 'Win-Back WhatsApp template updated successfully!' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/winback/dispatch', async (req, res) => {
-  try {
-    const { storeCode, customerPhone, mode, customMessage } = req.body;
-    const code = storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01';
-
-    if (mode === 'BATCH_SCAN') {
-      const result = await winBackEngine.runDailyScanAndDispatch(code, req.body.maxBatch || 5);
-      return res.json(result);
-    }
-
-    if (!customerPhone) {
-      return res.status(400).json({ error: 'customerPhone is required for direct winback dispatch' });
-    }
-
-    const result = await winBackEngine.dispatchToCustomer(code, customerPhone, customMessage);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // -------------------------------------------------------------
 // Smart Review Shield & Customer Feedback Endpoints
@@ -1308,47 +1130,22 @@ app.get('/api/feedback', async (req, res) => {
     const storeCode = (req.query.store || req.query.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
     let feedbacks = storage.getFeedback(storeCode);
 
-    if (supabaseSync && supabaseSync.client) {
-      const { data, error } = await supabaseSync.client
-        .from('review_dispatches')
-        .select('*')
-        .eq('store_code', storeCode)
-        .eq('dispatch_status', 'PRIVATE_FEEDBACK')
-        .order('created_at', { ascending: false });
-
-      if (!error && data && data.length > 0) {
-        feedbacks = data
-          .filter(r => (r.rating_given && Number(r.rating_given) <= 3) || r.dispatch_status === 'PRIVATE_FEEDBACK')
-          .map(r => {
-            let category = 'General Grievance';
-            let comment = r.message_text || '';
-            if (comment.includes(' - ') && comment.includes(': ')) {
-              const parts = comment.split(' - ');
-              if (parts.length > 1) {
-                const subParts = parts[1].split(': ');
-                category = subParts[0] || category;
-                comment = subParts.slice(1).join(': ') || comment;
-              }
+    if (supabaseSync && typeof supabaseSync.pullCloudFeedbacks === 'function') {
+      try {
+        const cloudFbs = await supabaseSync.pullCloudFeedbacks(storeCode);
+        if (cloudFbs && cloudFbs.length > 0) {
+          const seen = new Set(feedbacks.map(f => f.id));
+          for (const c of cloudFbs) {
+            if (!seen.has(c.id)) {
+              feedbacks.push(c);
+              seen.add(c.id);
             }
-            return {
-              id: r.id,
-              billId: r.bill_id,
-              storeCode: r.store_code,
-              invoiceNo: 'INV-4920',
-              customerName: r.customer_name || 'Customer',
-              customerPhone: r.customer_phone || '9876543210',
-              rating: r.rating_given || 2,
-              action: 'PRIVATE_FEEDBACK',
-              category: category,
-              comment: comment,
-              requestCallback: true,
-              status: r.resolution_status || 'OPEN',
-              timestamp: r.created_at || new Date().toISOString()
-            };
-          });
-      }
+          }
+        }
+      } catch (e) {}
     }
 
+    feedbacks.sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
     res.json({ success: true, feedbacks });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1380,12 +1177,18 @@ app.get('/api/bill-info/:billId', async (req, res) => {
   try {
     const billId = req.params.billId;
     const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-    const store = storage.getStoreByCode(storeCode) || {
+    const queryName = (req.query.name || '').trim();
+    const queryPlaceId = (req.query.placeid || '').trim();
+    const loadedStore = storage.getStoreByCode(storeCode) || storage.getConfig();
+    const store = {
       storeCode: storeCode,
-      storeName: storage.getConfig().storeName || 'Sunshine Cafe & Bistro',
-      storePhone: storage.getConfig().storePhone || '9840012345',
-      storeGstin: storage.getConfig().storeGstin || '33AABCS1429B1ZB',
-      googleReviewUrl: storage.getConfig().googleReviewUrl || 'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4'
+      storeName: queryName || loadedStore.storeName || 'Our Business',
+      storePhone: loadedStore.storePhone || '9840012345',
+      storeGstin: loadedStore.storeGstin || '',
+      googlePlaceId: queryPlaceId || loadedStore.googlePlaceId || '',
+      googleReviewUrl: (loadedStore.googleReviewUrl && !loadedStore.googleReviewUrl.includes('outbid'))
+        ? loadedStore.googleReviewUrl
+        : ((queryPlaceId || loadedStore.googlePlaceId) ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(queryPlaceId || loadedStore.googlePlaceId)}` : 'https://search.google.com/local/writereview')
     };
 
     let tx = null;
@@ -1500,57 +1303,45 @@ app.get('/api/bill-pdf/:billId', async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// Review Info & Feedback Endpoints
+// Ultra-Compact Short Review Link Route (/r?s=GOKUL&b=INV-5501)
 // -------------------------------------------------------------
-app.get('/api/review-info/:billId', async (req, res) => {
+app.get(['/r', '/r/:storeCode/:billId?'], async (req, res) => {
   try {
-    const billId = req.params.billId;
-    const storeCode = (req.query.store || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
-    const store = storage.getStoreByCode(storeCode) || storage.getConfig();
+    const storeCode = (req.params.storeCode || req.query.s || req.query.store || 'MAIN').toUpperCase();
+    const billId = req.params.billId || req.query.b || req.query.inv || req.query.id || '';
 
-    let tx = storage.state.transactions.find(t => t.id === billId || t.invoiceNo === billId);
-    if (!tx && supabaseSync.client) {
-      try {
-        const { data } = await supabaseSync.client.from('bills').select('*').or(`id.eq.${billId},invoice_no.eq.${billId}`).limit(1);
-        if (data && data.length > 0) {
-          tx = {
-            id: data[0].id,
-            invoiceNo: data[0].invoice_no,
-            customerName: data[0].customer_name,
-            customerPhone: data[0].customer_phone,
-            totalAmount: data[0].total_amount
-          };
-        }
-      } catch (e) {}
+    let store = storage.getStoreByCode(storeCode);
+    if (!store && supabaseSync && typeof supabaseSync.getStoreConfig === 'function') {
+      store = await supabaseSync.getStoreConfig(storeCode);
     }
 
-    if (!tx) {
-      tx = {
-        id: billId,
-        invoiceNo: 'INV-8172',
-        customerName: 'Rahul',
-        customerPhone: '9342350747',
-        totalAmount: '346.50'
-      };
-    }
+    const reviewHtmlPath = path.join(__dirname, '../public/review.html');
+    let html = fs.readFileSync(reviewHtmlPath, 'utf8');
 
-    res.json({
-      success: true,
-      store: {
+    if (store && store.storeName && store.storeName !== 'Demo business') {
+      const preloadedData = JSON.stringify({
         storeCode: store.storeCode || storeCode,
-        storeName: store.storeName || 'Sunshine Cafe & Bistro',
-        googleReviewUrl: store.googleReviewUrl || 'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4'
-      },
-      bill: tx
-    });
+        storeName: store.storeName,
+        googlePlaceId: store.googlePlaceId || '',
+        googleReviewUrl: store.googleReviewUrl || ''
+      });
+      html = html.replace('<script>', `<script>window.__PRELOADED_STORE__ = ${preloadedData};`);
+      html = html.replace('id="storeNameDisplay"></h1>', `id="storeNameDisplay">${store.storeName}</h1>`);
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.sendFile(path.join(__dirname, '../public/review.html'));
   }
 });
 
 app.post('/api/clear-history', async (req, res) => {
   const storeCode = (req.query.store || req.body?.storeCode || storage.getConfig().storeCode || 'STORE_DEMO_01').toUpperCase();
   storage.clearStoreFeed(storeCode);
+  if (supabaseSync && typeof supabaseSync.clearCloudStoreData === 'function') {
+    try { await supabaseSync.clearCloudStoreData(storeCode); } catch (e) {}
+  }
   res.json({ success: true, storeCode });
 });
 
